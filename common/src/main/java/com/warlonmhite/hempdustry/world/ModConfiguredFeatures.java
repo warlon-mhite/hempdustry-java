@@ -54,6 +54,7 @@ public class ModConfiguredFeatures {
     public static final ResourceKey<ConfiguredFeature<?, ?>> CRIMSON_KEY = registerKey("crimson");
     public static final ResourceKey<ConfiguredFeature<?, ?>> ENDER_HAZE_KEY = registerKey("ender_haze");
     public static final ResourceKey<ConfiguredFeature<?, ?>> CHERRY_WINE_KEY = registerKey("cherry_wine");
+    public static final ResourceKey<ConfiguredFeature<?, ?>> WHITE_WIDOW_KEY = registerKey("white_widow");
 
     /** A handful of plants on one stretch of an island: tries within three blocks, on the centre's level or one off. */
     private static final int ENDER_HAZE_TRIES = 8;
@@ -139,6 +140,10 @@ public class ModConfiguredFeatures {
 
         // Wild Cherry Wine: a flower of its own, as Wild Purple Kush is.
         register(context, CHERRY_WINE_KEY, wildPatch(ModBlocks.CHERRY_WINE_FLOWER));
+
+        // Wild White Widow: a flower of its own, as Wild Purple Kush is. It generates closed and
+        // opens at its first night's random tick, as a flower set down by day would.
+        register(context, WHITE_WIDOW_KEY, wildPatch(ModBlocks.WHITE_WIDOW_FLOWER));
 
         // Ditchweed — feral Industrial Hemp — grows where escaped fibre crops do, along water. So it
         // is placed exactly as sugar cane is: each plant must stand on its ground with water beside

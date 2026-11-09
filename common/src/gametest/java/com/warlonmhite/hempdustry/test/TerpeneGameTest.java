@@ -91,7 +91,7 @@ public final class TerpeneGameTest {
             String other = namedBy.put(key, id);
             context.assertTrue(other == null, id + " and " + other + " share " + key.identifier());
         }
-        Sweep.atLeast(context, "plant strains", plants, 7);
+        Sweep.atLeast(context, "plant strains", plants, 9);
 
         context.assertValueEqual(Optional.of(0xA89A6E), strain(world, ModStrains.SCHWAG).value().smokeTint(registries),
                 "schwag's smoke, stale hay");

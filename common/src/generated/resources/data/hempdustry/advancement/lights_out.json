@@ -1,0 +1,43 @@
+{
+  "parent": "hempdustry:midnight_sun",
+  "criteria": {
+    "harvested_white_widow_under_a_grow_lamp": {
+      "conditions": {
+        "condition": "grow_lamp",
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "location": {
+                "dimension": "minecraft:overworld"
+              }
+            }
+          }
+        ],
+        "strain": "hempdustry:white_widow"
+      },
+      "trigger": "hempdustry:harvest_hemp"
+    }
+  },
+  "display": {
+    "background": "hempdustry:block/hempcrete_powder_block",
+    "description": {
+      "translate": "advancements.hempdustry.lights_out.description"
+    },
+    "hidden": true,
+    "icon": {
+      "count": 1,
+      "id": "hempdustry:white_widow_buds"
+    },
+    "title": {
+      "translate": "advancements.hempdustry.lights_out.title"
+    }
+  },
+  "requirements": [
+    [
+      "harvested_white_widow_under_a_grow_lamp"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

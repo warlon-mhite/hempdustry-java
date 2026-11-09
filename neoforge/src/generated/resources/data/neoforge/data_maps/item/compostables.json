@@ -116,6 +116,15 @@
     },
     "hempdustry:washed_decarboxylated_hemp": {
       "chance": 0.5
+    },
+    "hempdustry:white_widow_buds": {
+      "chance": 0.5
+    },
+    "hempdustry:white_widow_flower": {
+      "chance": 0.65
+    },
+    "hempdustry:white_widow_seeds": {
+      "chance": 0.3
     }
   }
 }
