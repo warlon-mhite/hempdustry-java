@@ -27,6 +27,12 @@
     "hempdustry:ditchweed": {
       "chance": 0.65
     },
+    "hempdustry:dud_weed_buds": {
+      "chance": 0.5
+    },
+    "hempdustry:dud_weed_seeds": {
+      "chance": 0.3
+    },
     "hempdustry:ender_haze_buds": {
       "chance": 0.5
     },

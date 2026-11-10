@@ -218,6 +218,37 @@
         }
       ],
       "rolls": 1.0
+    },
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "block": "hempdustry:industrial_hemp_crop",
+          "condition": "minecraft:block_state_property",
+          "properties": {
+            "age": "7",
+            "segment": "lower"
+          }
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "functions": [
+            {
+              "add": false,
+              "count": {
+                "type": "minecraft:binomial",
+                "n": 1.0,
+                "p": 0.015625
+              },
+              "function": "minecraft:set_count"
+            }
+          ],
+          "name": "hempdustry:dud_weed_seeds"
+        }
+      ],
+      "rolls": 1.0
     }
   ]
 }

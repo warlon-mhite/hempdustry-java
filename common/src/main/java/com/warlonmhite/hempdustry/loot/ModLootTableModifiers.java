@@ -45,6 +45,7 @@ import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 import com.warlonmhite.hempdustry.block.custom.BeldiaCropBlock;
 import com.warlonmhite.hempdustry.block.custom.CherryWineCropBlock;
+import com.warlonmhite.hempdustry.block.custom.DudWeedCropBlock;
 import com.warlonmhite.hempdustry.block.custom.WhiteWidowCropBlock;
 import java.util.Map;
 import java.util.Set;
@@ -166,6 +167,14 @@ public class ModLootTableModifiers {
      * smoking strain do not thin out. Pitched below that pool's 30%: Ditchweed is the main source.
      */
     private static final float SHIPWRECK_INDUSTRIAL_SEED_CHANCE = 0.25f;
+
+    /**
+     * Chance a shipwreck's supply chest holds a seed or two of Dud Weed, the sport of the fibre crop
+     * beside it in the stores: seed hemp is a ship's food and bird seed, and a plant with nothing to
+     * smoke is the one a cargo of it would be. Its own roll, as Industrial Hemp's is, and less than half
+     * as likely, so the farm stays the main way to it.
+     */
+    private static final float SHIPWRECK_DUD_WEED_SEED_CHANCE = 0.10f;
 
     /**
      * Chance a bastion's treasure chest keeps a few Nether buds beside its gold. The piglins' grave
@@ -365,13 +374,21 @@ public class ModLootTableModifiers {
     }
 
     /**
+     * Whether these seeds plant Dud Weed, which is found in a field of ripe Industrial Hemp (its crop
+     * table's sport) and in a shipwreck's stores: never in the grass, the shared chests or the villages.
+     */
+    private static boolean isSportSeed(Item seeds) {
+        return plants(seeds) instanceof DudWeedCropBlock;
+    }
+
+    /**
      * Whether these seeds belong to one place, and so stay out of the tall grass and the generic
      * chests that every other strain shares. Each such strain is found where it belongs, and leaving
      * all of them out keeps the others' share of those rolls what it was.
      */
     private static boolean isRegionBound(Item seeds) {
         return isDesertSeed(seeds) || isNetherSeed(seeds) || isBuriedSeed(seeds) || isStableSeed(seeds)
-                || isEndSeed(seeds) || isPaleSeed(seeds);
+                || isEndSeed(seeds) || isPaleSeed(seeds) || isSportSeed(seeds);
     }
 
     /** The block these seeds plant, or null for an item that plants nothing. */
@@ -384,8 +401,8 @@ public class ModLootTableModifiers {
      * {@code found} there, at equal weight, so the chance stays {@code base} however many strains exist
      * and which you get is a coin flip. A region-bound plant is found only where it belongs -- Beldía
      * in the desert, Warped Kush in the Nether, Ruderalis underground, Crimson Weed in the hoglin
-     * stables, Ender Haze in the end cities, White Widow in the pale garden's mansions -- and
-     * every other strain everywhere else. Driven off the loaded strain registry, so a
+     * stables, Ender Haze in the end cities, White Widow in the pale garden's mansions, Dud Weed in a
+     * hemp field and a shipwreck's stores -- and every other strain everywhere else. Driven off the loaded strain registry, so a
      * datapack strain appears here without touching this file.
      */
     private static LootPool.Builder seedStash(HolderLookup.Provider registries, float base, Predicate<Item> found) {
@@ -532,6 +549,14 @@ public class ModLootTableModifiers {
                         .when(LootItemRandomChanceCondition.randomChance(chance(SHIPWRECK_INDUSTRIAL_SEED_CHANCE)))
                         .add(LootItem.lootTableItem(ModItems.INDUSTRIAL_HEMP_SEEDS)
                                 .apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 3)))));
+                for (Holder.Reference<Strain> strain : Strain.all(registries)) {
+                    strain.value().seedItem().filter(ModLootTableModifiers::isSportSeed)
+                            .ifPresent(seeds -> table.addPool(LootPool.lootPool()
+                                    .setRolls(ConstantValue.exactly(1))
+                                    .when(LootItemRandomChanceCondition.randomChance(chance(SHIPWRECK_DUD_WEED_SEED_CHANCE)))
+                                    .add(LootItem.lootTableItem(seeds)
+                                            .apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 2))))));
+                }
             }
 
             // Both of these have exactly one pool, so the hemp goes in beside vanilla's own entries

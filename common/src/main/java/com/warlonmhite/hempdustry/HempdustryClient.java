@@ -74,6 +74,7 @@ public class HempdustryClient {
         client.blockLayer(ModBlocks.WHITE_WIDOW_CROP, ChunkSectionLayer.CUTOUT);
         client.blockLayer(ModBlocks.WHITE_WIDOW_FLOWER, ChunkSectionLayer.CUTOUT);
         client.blockLayer(ModBlocks.POTTED_WHITE_WIDOW_FLOWER, ChunkSectionLayer.CUTOUT);
+        client.blockLayer(ModBlocks.DUD_WEED_CROP, ChunkSectionLayer.CUTOUT);
         // The chains the Grow Lamp hangs from are see-through between the links.
         client.blockLayer(ModBlocks.GROW_LAMP, ChunkSectionLayer.CUTOUT);
         // The compost crumbs over the pot's soil are drawn with see-through pixels.
@@ -184,7 +185,8 @@ public class HempdustryClient {
             return light.artificial() && light != GrowLight.STRESSED
                     ? ARGB.srgbLerp(0.25F, tint, LAMP_GROWN_TINT) : tint;
         }, ModBlocks.INDICA_CROP, ModBlocks.SATIVA_CROP, ModBlocks.BELDIA_CROP,
-                ModBlocks.INDUSTRIAL_HEMP_CROP, ModBlocks.CHERRY_WINE_CROP, ModBlocks.WHITE_WIDOW_CROP);
+                ModBlocks.INDUSTRIAL_HEMP_CROP, ModBlocks.CHERRY_WINE_CROP, ModBlocks.WHITE_WIDOW_CROP,
+                ModBlocks.DUD_WEED_CROP);
 
         // A packed bong set down shows its load on tint index 1. A block tint can ask the world and
         // not the stack, so it is one dried-bud green whatever the strain; the strain's own colour
