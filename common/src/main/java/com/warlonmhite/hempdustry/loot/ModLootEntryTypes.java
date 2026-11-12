@@ -41,6 +41,9 @@ public class ModLootEntryTypes {
     public static final LootItemFunctionType<SetPotencyFunction> SET_POTENCY = Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE,
             Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "set_potency"), new LootItemFunctionType<>(SetPotencyFunction.CODEC));
 
+    public static final LootItemFunctionType<SetTierFunction> SET_TIER = Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE,
+            Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "set_tier"), new LootItemFunctionType<>(SetTierFunction.CODEC));
+
     public static void registerLootEntryTypes() {
         Hempdustry.LOGGER.info("Registering Loot Entry Types for " + Hempdustry.MOD_ID);
     }

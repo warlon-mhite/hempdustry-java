@@ -10,6 +10,9 @@
     },
     {
       "function": "hempdustry:set_potency"
+    },
+    {
+      "function": "hempdustry:set_tier"
     }
   ],
   "pools": [
