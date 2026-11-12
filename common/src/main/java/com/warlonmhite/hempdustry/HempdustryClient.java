@@ -1,5 +1,11 @@
 package com.warlonmhite.hempdustry;
 
+import com.warlonmhite.hempdustry.block.custom.stash.StashPieces;
+import com.warlonmhite.hempdustry.item.custom.StashJarItem;
+import com.warlonmhite.hempdustry.client.item.StashPieceTintSource;
+import com.warlonmhite.hempdustry.client.item.StashFillProperty;
+import com.warlonmhite.hempdustry.client.StashJarTooltip;
+import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.GrowLight;
 import com.warlonmhite.hempdustry.client.render.FlipFlopsModel;
@@ -75,6 +81,10 @@ public class HempdustryClient {
         client.blockLayer(ModBlocks.WHITE_WIDOW_FLOWER, ChunkSectionLayer.CUTOUT);
         client.blockLayer(ModBlocks.POTTED_WHITE_WIDOW_FLOWER, ChunkSectionLayer.CUTOUT);
         client.blockLayer(ModBlocks.DUD_WEED_CROP, ChunkSectionLayer.CUTOUT);
+        // The Stash Jars' glass is clear between its streaks.
+        client.blockLayer(ModBlocks.STASH_JAR, ChunkSectionLayer.CUTOUT);
+        client.blockLayer(ModBlocks.GILDED_STASH_JAR, ChunkSectionLayer.CUTOUT);
+        client.blockLayer(ModBlocks.DIAMOND_STASH_JAR, ChunkSectionLayer.CUTOUT);
         // The chains the Grow Lamp hangs from are see-through between the links.
         client.blockLayer(ModBlocks.GROW_LAMP, ChunkSectionLayer.CUTOUT);
         // The compost crumbs over the pot's soil are drawn with see-through pixels.
@@ -107,6 +117,7 @@ public class HempdustryClient {
 
         registerItemModelHooks(client);
         registerBlockColors(client);
+        registerStashJarTints(client);
 
         // A bong's bubbling is played here, per client, so it can stop when the drawer lets go.
         SmokingDeviceItem.drawSound = drawer -> Minecraft.getInstance().getSoundManager()
@@ -199,6 +210,31 @@ public class HempdustryClient {
     private static final int PLACED_LOAD = 0x6F8F3A;
 
     /**
+     * A placed Stash Jar's stash pieces: tint indices 0 to 4 are the five pieces' bodies (bud green, or
+     * schwag's brown), 5 to 9 their pistils, in the colour of the strain each piece is a share of. Read from the jar's block entity when the chunk section is built (the section's
+     * copy of it, so a section compiled off the main thread reads a settled value); the jar rebuilds
+     * its section whenever its contents change, so nothing is drawn per frame. Only the block entity
+     * is asked, and only through {@code instanceof}: a break particle, coloured after the block went,
+     * finds none there and takes the default bud green.
+     */
+    private static void registerStashJarTints(ClientRegistration client) {
+        client.blockColor((state, view, pos, tintIndex) -> {
+            if (tintIndex < 0 || tintIndex >= 10) {
+                return NO_TINT;
+            }
+            int index = tintIndex % 5;
+            boolean pistils = tintIndex >= 5;
+            if (view != null && pos != null && view.getBlockEntity(pos) instanceof StashJarBlockEntity jar) {
+                StashPieces.Colours colours = jar.pieceColours();
+                if (index < colours.count()) {
+                    return ARGB.opaque(pistils ? colours.pistils()[index] : colours.bodies()[index]);
+                }
+            }
+            return ARGB.opaque(pistils ? StashPieces.PLAIN_PISTILS : StashPieces.BUD_GREEN);
+        }, ModBlocks.STASH_JAR, ModBlocks.GILDED_STASH_JAR, ModBlocks.DIAMOND_STASH_JAR);
+    }
+
+    /**
      * {@code grassColor} blended towards white by {@code 1 - client.biomeTintStrength}.
      *
      * <p>Strength {@code 0} therefore returns pure white — a multiply by 1.0, so the config's "off"
@@ -226,5 +262,8 @@ public class HempdustryClient {
     private static void registerItemModelHooks(ClientRegistration client) {
         client.rangeSelectProperty(ModItemProperties.STRAIN, StrainModelIndexProperty.CODEC);
         client.itemTintSource(ModItemProperties.STRAIN_TINT, StrainTintSource.CODEC);
+        client.rangeSelectProperty(ModItemProperties.STASH_FILL, StashFillProperty.CODEC);
+        client.itemTintSource(ModItemProperties.STASH_PIECE, StashPieceTintSource.CODEC);
+        client.tooltipComponent(StashJarItem.StashTooltip.class, StashJarTooltip::new);
     }
 }
