@@ -212,8 +212,8 @@ public class IndicaCropBlock extends CropBlock implements EntityBlock {
     }
 
     /**
-     * Whether a light at night stresses the plant, and a lost light a stage early: the light leak
-     * ({@link PlantStress#touchyStep}). White Widow only.
+     * Whether a light at night stresses the plant: the light leak ({@link PlantStress#touchyStep}), every
+     * plant of the strain alike. White Widow only, the one strain whose most likely light step is very weak.
      */
     protected boolean leaksAtNight() {
         return false;
@@ -322,7 +322,7 @@ public class IndicaCropBlock extends CropBlock implements EntityBlock {
         // state early-outs in LevelChunk#setBlockState) but each still paid a chunk lookup.
         // isShapeSettled answers the same question in one block read.
         if (grown != age || !this.isShapeSettled(world, pos, age, state.getValue(GrowLight.PROPERTY))) {
-            this.setAge(world, pos, grown, 0.0F, random);
+            this.setAge(world, pos, grown, StressCause.NONE, random);
         }
     }
 
@@ -409,7 +409,7 @@ public class IndicaCropBlock extends CropBlock implements EntityBlock {
      * <p>The clamp deliberately never lowers an age the plant already has: a finished plant that a
      * player later builds over keeps its age and its harvest instead of silently reverting.
      */
-    private void setAge(Level world, BlockPos pos, int newAge, float extraStress, RandomSource random) {
+    private void setAge(Level world, BlockPos pos, int newAge, StressCause extraStress, RandomSource random) {
         BlockState current = world.getBlockState(pos);
         int currentAge = current.is(this) && this.isRoot(current) ? this.getAge(current) : 0;
         newAge = Math.min(newAge, this.getMaxAge());

@@ -126,6 +126,7 @@ public final class HempdustryGameTests {
         register("a_bee_step_is_a_growth_step", PlantStressGameTest::aBeeStepIsAGrowthStep);
         register("a_pot_takes_one_bottle", PlantStressGameTest::aPotTakesOneBottle);
         register("a_dispenser_waters_a_pot", PlantStressGameTest::aDispenserWatersAPot);
+        register("a_plants_resistance_scales_its_stress", PlantStressGameTest::aPlantsResistanceScalesItsStress);
         register("beldia_grows_on_watered_sand", BeldiaGameTest::beldiaGrowsOnWateredSand);
         register("beldia_harvests_leafy_and_sifts_double", BeldiaGameTest::beldiaHarvestsLeafyAndSiftsDouble);
         register("beldia_smokes_a_mirage", BeldiaGameTest::beldiaSmokesAMirage);
@@ -282,6 +283,9 @@ public final class HempdustryGameTests {
         register("the_tier_is_on_the_bud_and_not_in_butter", TierGameTest::theTierIsOnTheBudAndNotInButter);
         register("kief_and_hash_carry_their_batches_tier", TierGameTest::kiefAndHashCarryTheirBatchesTier);
         register("a_box_from_a_2_1_world_sifts_as_it_did_there", TierGameTest::aBoxFromA21WorldSiftsAsItDidThere);
+        register("the_resistance_spread_is_the_agreed_table", ResistanceGameTest::theResistanceSpreadIsTheAgreedTable);
+        register("every_strain_carries_its_resistance_profile", ResistanceGameTest::everyStrainCarriesItsResistanceProfile);
+        register("a_plant_rolls_its_resistances_at_planting", ResistanceGameTest::aPlantRollsItsResistancesAtPlanting);
     }
 
     /** Registers {@code test} as {@code name}, which must have a {@code test_instance} JSON of its own. */
