@@ -21,7 +21,6 @@ import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
-import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -52,7 +51,7 @@ import java.util.function.BiConsumer;
  * anchored half, never the tip: with the tip canonical, losing the tip would leave an anchored stump
  * with no age at all. Every reference below to "the lower half" means the root.
  */
-public class IndicaCropBlock extends CropBlock implements EntityBlock {
+public class IndicaCropBlock extends CropBlock implements RecordOnTheRoot {
     public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
     public static final IntegerProperty AGE = BlockStateProperties.AGE_7;
     /** Highest age value; a lower half at this age is mature. Matches {@code BlockStateProperties.AGE_7}. */
@@ -607,7 +606,12 @@ public class IndicaCropBlock extends CropBlock implements EntityBlock {
      */
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return this.keepsRecord() && this.isRoot(state) ? new PlantRecordBlockEntity(pos, state) : null;
+        return this.holdsRecord(state) ? new PlantRecordBlockEntity(pos, state) : null;
+    }
+
+    @Override
+    public boolean holdsRecord(BlockState state) {
+        return this.keepsRecord() && this.isRoot(state);
     }
 
     /** Whether this crop keeps a record of its own rolls: every crop that grows buds. */

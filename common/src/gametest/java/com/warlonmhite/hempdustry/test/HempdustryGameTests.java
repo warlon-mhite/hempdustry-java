@@ -123,6 +123,7 @@ public final class HempdustryGameTests {
         register("ender_haze_harvest", EnderHazeGameTest::enderHazeHarvest);
         register("ender_haze_stays_in_the_end", EnderHazeGameTest::enderHazeStaysInTheEnd);
         register("wild_ender_haze_grows_ripe", EnderHazeGameTest::wildEnderHazeGrowsRipe);
+        register("a_wild_plant_loads_without_a_warning", WildPlantChunkGameTest::aWildPlantLoadsWithoutAWarning);
         register("light_and_pot_change_the_harvest", IndoorGrowGameTest::lightAndPotChangeTheHarvest);
         register("stress_has_more_causes_than_light", PlantStressGameTest::stressHasMoreCausesThanLight);
         register("a_bee_step_is_a_growth_step", PlantStressGameTest::aBeeStepIsAGrowthStep);

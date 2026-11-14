@@ -20,7 +20,6 @@ import net.minecraft.world.level.ScheduledTickAccess;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
-import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
 import org.jetbrains.annotations.Nullable;
@@ -56,7 +55,7 @@ import java.util.function.BiConsumer;
  * growth step rather than being edge-triggered at one exact age, which is what made the pre-rewrite
  * indica crop unrecoverable.
  */
-public class SativaCropBlock extends CropBlock implements EntityBlock {
+public class SativaCropBlock extends CropBlock implements RecordOnTheRoot {
     public static final EnumProperty<TriplePlantSegment> SEGMENT =
             EnumProperty.create("segment", TriplePlantSegment.class);
     public static final IntegerProperty AGE = BlockStateProperties.AGE_7;
@@ -666,7 +665,12 @@ public class SativaCropBlock extends CropBlock implements EntityBlock {
      */
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return this.keepsRecord() && isLower(state) ? new PlantRecordBlockEntity(pos, state) : null;
+        return this.holdsRecord(state) ? new PlantRecordBlockEntity(pos, state) : null;
+    }
+
+    @Override
+    public boolean holdsRecord(BlockState state) {
+        return this.keepsRecord() && isLower(state);
     }
 
     /** Whether this crop keeps a record of its own rolls: every crop that grows buds. */
