@@ -136,6 +136,9 @@ def expectedGametestLog = [
 	// the first batch starts every test in one tick, and on a slower machine that tick runs long --
 	// the server's own timing, not anything the mod logged
 	~/\(Minecraft\) Can't keep up! Is the server overloaded\?/,
+	// the tests that harvest in the End load it, and its dragon fight, finding no player there to fly at,
+	// says so -- vanilla's, and only as often as the fight happens to tick before the test is done
+	~/\(Minecraft\) Skipping player strafe phase because no player was found/,
 	// a fresh checkout's first run: build/gametest holds no server files yet, and the server says so
 	~/\(Minecraft\) Failed to load properties from file: server\.properties/,
 	~/\(Minecraft\) Failed to load eula\.txt/,
