@@ -12,7 +12,8 @@
 		"EnderManMixin",
 		"PointOfInterestTypesAccessor",
 		"ReloadableServerRegistriesMixin",
-		"Schema1460Mixin"
+		"Schema1460Mixin",
+		"WorldGenRegionMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

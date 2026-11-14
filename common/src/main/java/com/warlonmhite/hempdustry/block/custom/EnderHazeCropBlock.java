@@ -27,7 +27,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealSource;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
-import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
 import org.jetbrains.annotations.Nullable;
@@ -81,7 +80,7 @@ import java.util.function.BiConsumer;
  * segment takes the whole plant and pays it once, and so does anything else that takes a segment. The
  * wild plant is this block, generated ripe on the outer islands.
  */
-public class EnderHazeCropBlock extends CropBlock implements EntityBlock {
+public class EnderHazeCropBlock extends CropBlock implements RecordOnTheRoot {
     /** How tall the plant stands grown. */
     public static final int HEIGHT = 5;
     /** Which block of the plant this is, counted up from the root at 0. */
@@ -538,7 +537,12 @@ public class EnderHazeCropBlock extends CropBlock implements EntityBlock {
      */
     @Override
     public @Nullable BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return isRoot(state) ? new PlantRecordBlockEntity(pos, state) : null;
+        return this.holdsRecord(state) ? new PlantRecordBlockEntity(pos, state) : null;
+    }
+
+    @Override
+    public boolean holdsRecord(BlockState state) {
+        return isRoot(state);
     }
 
     /**
