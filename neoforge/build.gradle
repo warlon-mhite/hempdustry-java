@@ -103,6 +103,8 @@ dependencies {
 def expectedGametestLog = [
 	// the first batch starts every test in one tick, and on a slower machine that tick runs long
 	~/Can't keep up! Is the server overloaded\?/,
+	// the tests that harvest in the End load it, and its dragon fight, finding no player there, says so
+	~/Skipping player strafe phase because no player was found/,
 	// a fresh checkout's first run: build/gametest holds no server files yet, and the server says so
 	~/Failed to load properties from file: server\.properties/,
 	~/Failed to load eula\.txt/,
