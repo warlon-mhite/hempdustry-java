@@ -44,16 +44,42 @@ public final class MildewGameTest {
 
     private static final RandomSource HIT = decided(0.0F, 0);
     private static final RandomSource MISS = decided(0.999F, 0);
+    /** Under a roof's onset (1 in 150) and over the open sky's (1 in 1,500): it tells the two apart. */
+    private static final float BETWEEN_ROLL = 0.005F;
+    private static final RandomSource BETWEEN = decided(BETWEEN_ROLL, 0);
 
-    public static void mildewStartsOnlyUnderARoof(GameTestHelper context) {
-        context.assertTrue(Mildew.ONSET == 1.0F / 150 && Mildew.SPREAD == 1.0F / 2,
-                "the mildew odds are not 1 in 150 a step under a roof and 1 in 2 a spread");
+    /**
+     * Onset: 1 in 150 a step under a roof, 1 in 1,500 under open sky. {@link #BETWEEN} lands under the first and
+     * over the second, so it tells a roof from the sky: glass, stone, hempcrete and a hung glowstone are roofs;
+     * the open sky, a tree's leaves and a Grow Lamp are not.
+     */
+    public static void mildewStartsTenTimesLikelierUnderARoof(GameTestHelper context) {
+        context.assertTrue(Mildew.ONSET == 1.0F / 150 && Mildew.ONSET_OUTDOORS == 1.0F / 1500
+                        && Mildew.SPREAD == 1.0F / 2 && Mildew.SPREAD_OUTDOORS == 1.0F / 100,
+                "the mildew odds are not 1 in 150 a step under a roof and 1 in 1,500 outdoors, and 1 in 2 a spread "
+                        + "under a roof and 1 in 100 outdoors");
 
         openSky(context, CROP);
-        expect(context, step(context, ModBlocks.INDICA_CROP, 2, Blocks.AIR, HIT), Mildew.CLEAN,
-                "a field plant under open sky");
-        expect(context, step(context, ModBlocks.INDICA_CROP, 2, Blocks.OAK_LEAVES, HIT), Mildew.CLEAN,
-                "a plant under a tree's leaves");
+        expect(context, step(context, ModBlocks.INDICA_CROP, 2, Blocks.AIR, BETWEEN), Mildew.CLEAN,
+                "a field plant under open sky, at " + BETWEEN_ROLL);
+        expect(context, step(context, ModBlocks.INDICA_CROP, 2, Blocks.AIR, decided(0.00066F, 0)), Mildew.MILDEWED,
+                "a field plant under open sky, at 0.00066");
+        expect(context, step(context, ModBlocks.INDICA_CROP, 2, Blocks.AIR, decided(0.00067F, 0)), Mildew.CLEAN,
+                "a field plant under open sky, at 0.00067");
+        expect(context, step(context, ModBlocks.INDICA_CROP, 2, Blocks.OAK_LEAVES, BETWEEN), Mildew.CLEAN,
+                "a plant under a tree's leaves, at " + BETWEEN_ROLL);
+        expect(context, step(context, ModBlocks.INDICA_CROP, 2, Blocks.OAK_LEAVES, decided(0.00066F, 0)), Mildew.MILDEWED,
+                "a plant under a tree's leaves, at 0.00066");
+        expect(context, step(context, ModBlocks.INDICA_CROP, 2, ModBlocks.GROW_LAMP, BETWEEN), Mildew.CLEAN,
+                "a plant under a Grow Lamp, at " + BETWEEN_ROLL);
+        context.assertTrue(context.getBlockState(ROOF).is(ModBlocks.GROW_LAMP), "the Grow Lamp over the plant did not stay, "
+                + "so the probe under it proves nothing");
+        expect(context, step(context, ModBlocks.INDICA_CROP, 2, ModBlocks.HEMPCRETE_BLOCK, BETWEEN), Mildew.MILDEWED,
+                "a plant under a hempcrete roof, at " + BETWEEN_ROLL);
+        expect(context, step(context, ModBlocks.INDICA_CROP, 2, Blocks.GLOWSTONE, BETWEEN), Mildew.MILDEWED,
+                "a plant under a hung glowstone, at " + BETWEEN_ROLL);
+        expect(context, step(context, ModBlocks.INDICA_CROP, 2, Blocks.GLASS, BETWEEN), Mildew.MILDEWED,
+                "a plant under a glass roof, at " + BETWEEN_ROLL);
         expect(context, step(context, ModBlocks.INDICA_CROP, 2, Blocks.GLASS, MISS), Mildew.CLEAN,
                 "a missed roll under a glass roof");
         expect(context, step(context, ModBlocks.INDICA_CROP, 4, Blocks.GLASS, HIT), Mildew.MILDEWED,
@@ -133,31 +159,55 @@ public final class MildewGameTest {
         expect(context, context.getBlockState(twoAway).getValue(Mildew.PROPERTY), Mildew.CLEAN,
                 "a plant two blocks from the mildewed one");
 
-        // Out from under the roof, a neighbour does not catch it.
+        // Out from under the roof, a neighbour catches it at 1 in 100: the one that catches it decides.
         context.setBlock(east.above(3), Blocks.AIR);
         openSky(context, east);
         sow(context, east, ModBlocks.INDICA_CROP, 4, Mildew.CLEAN);
-        Mildew.randomTick(world, context.absolutePos(sick), decided(0.0F, EAST));
-        expect(context, context.getBlockState(east).getValue(Mildew.PROPERTY), Mildew.CLEAN, "a neighbour under open sky");
+        Mildew.randomTick(world, context.absolutePos(sick), decided(0.0101F, EAST));
+        expect(context, context.getBlockState(east).getValue(Mildew.PROPERTY), Mildew.CLEAN,
+                "a neighbour under open sky, from under the roof, at 0.0101");
+        Mildew.randomTick(world, context.absolutePos(sick), decided(0.0099F, EAST));
+        expect(context, context.getBlockState(east).getValue(Mildew.PROPERTY), Mildew.MILDEWED,
+                "a neighbour under open sky, from under the roof, at 0.0099");
+
+        // And the other way: the open-sky plant, mildewed, reaches its roofed neighbour at a roof's 1 in 2.
+        for (float roll : new float[]{0.51F, 0.49F}) {
+            sow(context, sick, ModBlocks.INDICA_CROP, 4, Mildew.CLEAN);
+            sow(context, east, ModBlocks.INDICA_CROP, 4, Mildew.MILDEWED);
+            Mildew.randomTick(world, context.absolutePos(east), decided(roll, WEST));
+            expect(context, context.getBlockState(sick).getValue(Mildew.PROPERTY), roll < 0.5F ? Mildew.MILDEWED : Mildew.CLEAN,
+                    "a roofed neighbour of a mildewed field plant, at " + roll);
+        }
         context.succeed();
     }
 
     /**
-     * A plant's mildew resistance scales its onset (1 in 150 at neutral: very weak 1 in 75, very resistant 1 in
-     * 600) and the spread to it (1 in 2 at neutral: very weak certain, very resistant 1 in 8).
+     * A plant's mildew resistance scales its onset (1 in 150 at neutral under a roof: very weak 1 in 75, very
+     * resistant 1 in 600; 1 in 1,500 outdoors: 1 in 750, 1 in 6,000) and the spread to it (1 in 2 at neutral
+     * under a roof: very weak certain, very resistant 1 in 8; 1 in 100 outdoors: 1 in 50, 1 in 400).
      */
     public static void mildewResistanceScalesOnsetAndSpread(GameTestHelper context) {
         ServerLevel world = context.getLevel();
         Block indica = ModBlocks.INDICA_CROP;
         float[][] onsets = {{0.013F, 0.014F}, {0.0066F, 0.0067F}, {0.0016F, 0.0017F}};
+        float[][] fieldOnsets = {{0.00133F, 0.00134F}, {0.00066F, 0.00067F}, {0.000166F, 0.000167F}};
         Resistance[] steps = {Resistance.VERY_WEAK, Resistance.NEUTRAL, Resistance.VERY_RESISTANT};
         for (int i = 0; i < steps.length; i++) {
             ResistanceGenes genes = ResistanceGenes.NEUTRAL.with(StressPhenomenon.MILDEW, steps[i]);
-            expect(context, onset(context, indica, genes, onsets[i][0]), Mildew.MILDEWED,
+            expect(context, onset(context, indica, genes, Blocks.GLASS, onsets[i][0]), Mildew.MILDEWED,
                     "a plant " + steps[i] + " to mildew under a roof, at " + onsets[i][0]);
-            expect(context, onset(context, indica, genes, onsets[i][1]), Mildew.CLEAN,
+            expect(context, onset(context, indica, genes, Blocks.GLASS, onsets[i][1]), Mildew.CLEAN,
                     "a plant " + steps[i] + " to mildew under a roof, at " + onsets[i][1]);
         }
+        openSky(context, CROP);
+        for (int i = 0; i < steps.length; i++) {
+            ResistanceGenes genes = ResistanceGenes.NEUTRAL.with(StressPhenomenon.MILDEW, steps[i]);
+            expect(context, onset(context, indica, genes, Blocks.AIR, fieldOnsets[i][0]), Mildew.MILDEWED,
+                    "a plant " + steps[i] + " to mildew under open sky, at " + fieldOnsets[i][0]);
+            expect(context, onset(context, indica, genes, Blocks.AIR, fieldOnsets[i][1]), Mildew.CLEAN,
+                    "a plant " + steps[i] + " to mildew under open sky, at " + fieldOnsets[i][1]);
+        }
+        context.setBlock(new BlockPos(CROP.getX(), 8, CROP.getZ()), Blocks.BARRIER);
 
         BlockPos sick = new BlockPos(2, 2, 2);
         BlockPos east = sick.east();
@@ -174,12 +224,27 @@ public final class MildewGameTest {
                         "a neighbour " + steps[i] + " to mildew, at " + spreads[i][hit]);
             }
         }
+
+        // The neighbour under open sky.
+        context.setBlock(east.above(3), Blocks.AIR);
+        openSky(context, east);
+        float[][] fieldSpreads = {{0.0199F, 0.0201F}, {0.0099F, 0.0101F}, {0.00249F, 0.00251F}};
+        for (int i = 0; i < steps.length; i++) {
+            for (int hit = 0; hit < 2; hit++) {
+                sow(context, east, indica, 4, Mildew.CLEAN);
+                Genes.set(context, east, ResistanceGenes.NEUTRAL.with(StressPhenomenon.MILDEW, steps[i]));
+                sow(context, sick, indica, 4, Mildew.MILDEWED);
+                Mildew.randomTick(world, context.absolutePos(sick), decided(fieldSpreads[i][hit], EAST));
+                expect(context, context.getBlockState(east).getValue(Mildew.PROPERTY), hit == 0 ? Mildew.MILDEWED : Mildew.CLEAN,
+                        "a neighbour under open sky " + steps[i] + " to mildew, at " + fieldSpreads[i][hit]);
+            }
+        }
         context.succeed();
     }
 
-    /** One bone meal step under a glass roof on a fresh plant at age 4 with {@code genes}, at {@code roll}. */
-    private static Mildew onset(GameTestHelper context, Block crop, ResistanceGenes genes, float roll) {
-        context.setBlock(ROOF, Blocks.GLASS);
+    /** One bone meal step under {@code roof} on a fresh plant at age 4 with {@code genes}, at {@code roll}. */
+    private static Mildew onset(GameTestHelper context, Block crop, ResistanceGenes genes, Block roof, float roll) {
+        context.setBlock(ROOF, roof);
         plant(context, crop, 4, Mildew.CLEAN);
         Genes.set(context, CROP, genes);
         ServerLevel world = context.getLevel();
@@ -228,6 +293,23 @@ public final class MildewGameTest {
         sow(context, near, ModBlocks.INDICA_CROP, 2, Mildew.CLEAN);
         ((CropBlock) ModBlocks.INDICA_CROP).performBonemeal(world, HIT, lower, world.getBlockState(lower), BonemealSource.INTERACTION);
         expect(context, context.getBlockState(near).getValue(Mildew.PROPERTY), Mildew.CLEAN, "a growth step in the gas");
+
+        // Under open sky the gas does the same: a field beside a pool is cleared, and sulfured in flower.
+        context.setBlock(near.above(3), Blocks.AIR);
+        openSky(context, near);
+        sow(context, near, ModBlocks.INDICA_CROP, 5, Mildew.MILDEWED);
+        Mildew.randomTick(world, lower, HIT);
+        expect(context, context.getBlockState(near).getValue(Mildew.PROPERTY), Mildew.SULFURED,
+                "a flowering mildewed field plant in the gas");
+        sow(context, near, ModBlocks.INDICA_CROP, 2, Mildew.MILDEWED);
+        Mildew.randomTick(world, lower, HIT);
+        expect(context, context.getBlockState(near).getValue(Mildew.PROPERTY), Mildew.CLEAN, "a young mildewed field plant in the gas");
+        sow(context, near, ModBlocks.INDICA_CROP, 4, Mildew.CLEAN);
+        Mildew.randomTick(world, lower, HIT);
+        expect(context, context.getBlockState(near).getValue(Mildew.PROPERTY), Mildew.SULFURED, "a clean flowering field plant in the gas");
+        sow(context, near, ModBlocks.INDICA_CROP, 2, Mildew.CLEAN);
+        ((CropBlock) ModBlocks.INDICA_CROP).performBonemeal(world, HIT, lower, world.getBlockState(lower), BonemealSource.INTERACTION);
+        expect(context, context.getBlockState(near).getValue(Mildew.PROPERTY), Mildew.CLEAN, "a field plant's growth step in the gas");
 
         // A wall between the pool and the plant keeps the gas off it.
         BlockPos walled = new BlockPos(1, 2, 2);

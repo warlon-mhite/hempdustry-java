@@ -31,18 +31,21 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Powdery mildew: the price of the stale air under a roof. A <b>record the plant keeps</b>, like
- * {@link GrowLight}: canonical on the LOWER and copied up every segment, so the blockstate can draw
- * the powder on each of them.
+ * Powdery mildew: the price of the stale air under a roof, and now and then of a field. A <b>record the
+ * plant keeps</b>, like {@link GrowLight}: canonical on the LOWER and copied up every segment, so the
+ * blockstate can draw the powder on each of them.
  *
  * <ul>
- *   <li><b>It starts</b> only on a plant under a roof — anything above it that stops movement, glass
- *       included, leaves not — at {@link #ONSET} per growth step. A field never catches it.</li>
+ *   <li><b>It starts</b> on a growth step at {@link #ONSET} under a roof — anything above the plant
+ *       that stops movement, glass included, leaves not — and at a tenth of that,
+ *       {@link #ONSET_OUTDOORS}, under open sky. Still air is what it thrives in.</li>
  *   <li><b>A plant's mildew resistance</b>, rolled at planting, scales its onset and the spread to it:
  *       very weak ×2 to very resistant ×¼ ({@link Resistance#factor}). A plant with no record is neutral.</li>
  *   <li><b>It spreads</b> one plant at a time: each random tick, a mildewed plant tries one of its
- *       eight neighbours at {@link #SPREAD}. A one-block gap stops it, which is what spacing does
- *       in a real grow room. It never kills a plant.</li>
+ *       eight neighbours, at {@link #SPREAD} if that neighbour is under a roof and
+ *       {@link #SPREAD_OUTDOORS} if it stands in the open, where the wind thins the spores out. A
+ *       one-block gap stops it, which is what spacing does in a real grow room. It never kills a
+ *       plant.</li>
  *   <li><b>Shears clear it</b> in a trim window: the cut is that window's trim, and the diseased
  *       leaf is thrown away ({@link Defoliation#tryCut}).</li>
  *   <li><b>Vanilla's sulfur gas clears and prevents it</b> — the noxious gas over a potent sulfur
@@ -69,8 +72,12 @@ public enum Mildew implements StringRepresentable {
 
     /** The odds a growth step under a roof brings mildew. About 30% of nine-plant grows see a case, and 86% of 49-plant ones. */
     public static final float ONSET = 1.0F / 150;
-    /** The odds a mildewed plant's random tick infects the neighbour it picked. */
+    /** The odds a growth step under open sky brings mildew: a tenth of a roof's. About one 64-plant field in four sees a case. */
+    public static final float ONSET_OUTDOORS = 1.0F / 1500;
+    /** The odds a mildewed plant's random tick infects the neighbour it picked, when that neighbour is under a roof. */
     public static final float SPREAD = 1.0F / 2;
+    /** The same for a neighbour under open sky: about one case in five reaches a neighbour before the field is ripe. */
+    public static final float SPREAD_OUTDOORS = 1.0F / 100;
 
     /** How far vanilla's noxious gas reaches from its source, which is where it reaches a plant from too. */
     private static final double GAS_REACH = PotentSulfurBlockEntity.EFFECT_RANGE;
@@ -89,9 +96,9 @@ public enum Mildew implements StringRepresentable {
     }
 
     /**
-     * What a plant's random tick does about mildew, after any growth: nothing outdoors; under a roof,
-     * the gas clears or sulfurs it, and a mildewed plant out of the gas reaches for a neighbour.
-     * With the config switch off, a plant that still has it is cleaned instead.
+     * What a plant's random tick does about mildew, after any growth, under a roof or in the open: the
+     * gas clears or sulfurs it, and a mildewed plant out of the gas reaches for a neighbour. With the
+     * config switch off, a plant that still has it is cleaned instead.
      */
     public static void randomTick(Level world, BlockPos lower, RandomSource random) {
         BlockState plant = world.getBlockState(lower);
@@ -105,10 +112,10 @@ public enum Mildew implements StringRepresentable {
             }
             return;
         }
-        if (!roofed(world, lower)) {
-            return;
-        }
-        if (gassed(world, lower)) {
+        // The gas changes only a mildewed plant and a clean one in flower; the search for it walks every
+        // block entity around, and every plant of a field carries one, so it is not made for the rest.
+        boolean gasActs = now == MILDEWED || now == CLEAN && flowering(plant) && !ripe(plant);
+        if (gasActs && gassed(world, lower)) {
             Mildew next = now;
             if (now == MILDEWED) {
                 next = flowering(plant) ? SULFURED : CLEAN;
@@ -127,8 +134,8 @@ public enum Mildew implements StringRepresentable {
 
     /**
      * The record after a growth step of the plant at {@code lower}: {@code current} kept, or mildew
-     * caught at {@link #ONSET}. Draws from {@code random} only under a roof, so a field plant's step
-     * takes exactly the draws it always did.
+     * caught at {@link #ONSET} under a roof or {@link #ONSET_OUTDOORS} in the open. Draws from
+     * {@code random} only for a plant that can catch it at all.
      */
     public static Mildew afterStep(Level world, BlockPos lower, BlockState plant, Mildew current,
                                    RandomSource random) {
@@ -139,8 +146,10 @@ public enum Mildew implements StringRepresentable {
     }
 
     /**
-     * A mildewed plant's reach: one of its eight neighbours, at {@link #SPREAD} scaled by the neighbour's own
-     * mildew resistance.
+     * A mildewed plant's reach: one of its eight neighbours, at the odds of the air that neighbour stands in
+     * ({@link #SPREAD} under a roof, {@link #SPREAD_OUTDOORS} in the open), scaled by its own mildew
+     * resistance. The plant that catches it decides, as a block catching fire does: a greenhouse's mildew
+     * reaches a plant outside it rarely, and a field's reaches into the greenhouse easily.
      */
     private static void spread(Level world, BlockPos lower, RandomSource random) {
         int pick = random.nextInt(8);
@@ -148,16 +157,19 @@ public enum Mildew implements StringRepresentable {
         BlockState plant = world.getBlockState(target);
         if (!plant.hasProperty(PROPERTY) || plant.getValue(PROPERTY) == MILDEWED
                 || world.getBlockState(target.below()).is(plant.getBlock())
-                || random.nextFloat() >= mildewStep(world, target).apply(SPREAD)
+                || random.nextFloat() >= mildewStep(world, target).apply(roofed(world, target) ? SPREAD : SPREAD_OUTDOORS)
                 || !canCatch(world, target, plant) || gassed(world, target)) {
             return;
         }
         write(world, target, MILDEWED);
     }
 
-    /** The odds one growth step of the plant at {@code lower} brings mildew: {@link #ONSET}, scaled by its resistance. */
+    /**
+     * The odds one growth step of the plant at {@code lower} brings mildew: {@link #ONSET} under a roof,
+     * {@link #ONSET_OUTDOORS} in the open, scaled by its resistance.
+     */
     private static float onsetFor(Level world, BlockPos lower) {
-        return mildewStep(world, lower).apply(ONSET);
+        return mildewStep(world, lower).apply(roofed(world, lower) ? ONSET : ONSET_OUTDOORS);
     }
 
     /**
@@ -182,17 +194,22 @@ public enum Mildew implements StringRepresentable {
         }
     }
 
-    /** Mildew may take hold of this plant at all: switched on, a crop that takes it and does not resist it, unripe, under a roof. */
+    /** Mildew may take hold of this plant at all: switched on, a crop that takes it and does not resist it, unripe. */
     private static boolean canCatch(Level world, BlockPos lower, BlockState plant) {
         return HempdustryConfig.get().world().mildew() && plant.hasProperty(PROPERTY)
                 && plant.getBlock() instanceof Host host && host.catchesMildew()
-                && !plant.is(ModTags.Blocks.MILDEW_RESISTANT) && !ripe(plant) && roofed(world, lower);
+                && !plant.is(ModTags.Blocks.MILDEW_RESISTANT) && !ripe(plant);
     }
 
     /**
      * Something above the plant that stops movement: a roof of any block, glass included, so a
-     * greenhouse gets mildew too. Leaves are not a roof — a field under a tree is still a field.
+     * greenhouse is roofed too. Leaves are not a roof — a field under a tree is still a field.
      * The plant itself stops nothing, so the heightmap stands at its floor when the sky is open.
+     *
+     * <p>Since 26.3 the heightmap reads {@code #minecraft:blocks_motion_no_leaves}, a list, not a block's
+     * own solidity: a block missing from it is no roof. Every solid block of ours is in it but the Grow
+     * Lamp, a light hung over a plant and not a ceiling; vanilla's light blocks (glowstone, a lantern)
+     * are in it, so one hung over a field roofs the plant under it.
      */
     public static boolean roofed(Level world, BlockPos lower) {
         return world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, lower.getX(), lower.getZ()) > lower.getY();
