@@ -138,6 +138,26 @@ public class ModBlockTagProvider extends FabricTagsProvider.BlockTagsProvider {
                 .addOptionalTag(ModTags.Conventional.HEMP_STORAGE_BLOCKS_BLOCK);
         valueLookupBuilder(ConventionalBlockTags.CONCRETES).add(ModBlocks.HEMPCRETE_BLOCK);
 
+        // Since 26.3 vanilla's heightmaps no longer ask a block whether it is solid: they read this tag,
+        // which lists vanilla's solid blocks by name (its cake, farmland and furnaces among them). A solid
+        // block left out is a hole in a roof -- rain falls through it, and the plant under it stands under
+        // open sky. The building pieces are in through #planks, #slabs, #stairs and the rest; these are
+        // the blocks no such tag carries. The hempcrete powder is in through #concrete_powders. The Grow
+        // Lamp stays out: a light hung over a plant, not a ceiling.
+        valueLookupBuilder(BlockTags.BLOCKS_MOTION_NO_LEAVES)
+                .add(ModBlocks.HEMPCRETE_BLOCK)
+                .add(ModBlocks.HEMP_BRICKS_BLOCK)
+                .add(ModBlocks.HEMP_PARQUET)
+                .add(ModBlocks.HEMP_BALE)
+                .add(ModBlocks.HEMP_WOOL)
+                .add(ModBlocks.DECARBOXYLATOR)
+                .add(ModBlocks.INFUSER)
+                .add(ModBlocks.HEMP_PRESS)
+                .add(ModBlocks.SIFTING_BOX)
+                .add(ModBlocks.GROW_POT)
+                .add(ModBlocks.HYDRO_TRAY)
+                .add(ModBlocks.SPACE_CAKE);
+
         // HEMP_LEAVES joins the vanilla leaves tag, which is the only route to shears' 15x mining
         // rule — that rule names this tag rather than a block list (ShearsItem#createToolComponent).
         // It brings #minecraft:mineable/hoe and #minecraft:sword_efficient along, since both include
