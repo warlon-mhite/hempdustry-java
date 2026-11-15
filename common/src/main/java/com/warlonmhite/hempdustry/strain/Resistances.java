@@ -1,7 +1,9 @@
 package com.warlonmhite.hempdustry.strain;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import java.util.Optional;
 import net.minecraft.util.RandomSource;
 
 /**
@@ -10,24 +12,34 @@ import net.minecraft.util.RandomSource;
  *
  * <p>Written in a strain's {@code plant} object as {@code "resistances": {"dry_ground": "neutral",
  * "overwatering": "resistant", "light": "neutral", "mildew": "weak"}}, each phenomenon as its most likely step
- * or as five weights ({@link ResistanceOdds}). <b>A phenomenon the file does not name is always neutral</b>, and a
- * strain with no {@code resistances} is neutral on all four: the plant every strain grew before resistances,
- * so a datapack strain written for 2.1 stresses exactly as it did. A strain that wants the shared spread around
- * neutral names it: {@code "light": "neutral"}.
+ * or as five weights ({@link ResistanceOdds}). <b>A phenomenon the file does not name takes the shared spread around
+ * neutral</b>, as {@code "light": "neutral"} does, and a strain with no {@code resistances} takes it on all four: a
+ * datapack strain written for 2.1 varies plant to plant like every strain. A strain that wants every plant neutral,
+ * as before resistances, writes {@code "light": {"neutral": 100}}. A sheet is written back with all four named.
  */
 public record Resistances(ResistanceOdds dryGround, ResistanceOdds overwatering, ResistanceOdds light,
                           ResistanceOdds mildew) {
 
-    /** Neutral on everything, always: a strain that names no resistances. */
-    public static final Resistances DEFAULT = new Resistances(ResistanceOdds.ALWAYS_NEUTRAL,
-            ResistanceOdds.ALWAYS_NEUTRAL, ResistanceOdds.ALWAYS_NEUTRAL, ResistanceOdds.ALWAYS_NEUTRAL);
+    /** The odds of a phenomenon a file leaves out: the shared spread around neutral (#266). */
+    private static final ResistanceOdds UNNAMED = ResistanceOdds.spread(Resistance.NEUTRAL);
+
+    /** The spread around neutral on all four: a strain that names no resistances. */
+    public static final Resistances DEFAULT = new Resistances(UNNAMED, UNNAMED, UNNAMED, UNNAMED);
 
     public static final Codec<Resistances> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            ResistanceOdds.CODEC.optionalFieldOf("dry_ground", ResistanceOdds.ALWAYS_NEUTRAL).forGetter(Resistances::dryGround),
-            ResistanceOdds.CODEC.optionalFieldOf("overwatering", ResistanceOdds.ALWAYS_NEUTRAL).forGetter(Resistances::overwatering),
-            ResistanceOdds.CODEC.optionalFieldOf("light", ResistanceOdds.ALWAYS_NEUTRAL).forGetter(Resistances::light),
-            ResistanceOdds.CODEC.optionalFieldOf("mildew", ResistanceOdds.ALWAYS_NEUTRAL).forGetter(Resistances::mildew)
+            phenomenon("dry_ground").forGetter(Resistances::dryGround),
+            phenomenon("overwatering").forGetter(Resistances::overwatering),
+            phenomenon("light").forGetter(Resistances::light),
+            phenomenon("mildew").forGetter(Resistances::mildew)
     ).apply(instance, Resistances::new));
+
+    /**
+     * One phenomenon's key: read as the spread around neutral when left out, always written, so a file written
+     * from a sheet names all four even where they are neutral.
+     */
+    private static MapCodec<ResistanceOdds> phenomenon(String key) {
+        return ResistanceOdds.CODEC.optionalFieldOf(key).xmap(odds -> odds.orElse(UNNAMED), Optional::of);
+    }
 
     /** A sheet of most likely steps, each spread by the shared spread: how every built-in strain is written. */
     public static Resistances of(Resistance dryGround, Resistance overwatering, Resistance light, Resistance mildew) {
