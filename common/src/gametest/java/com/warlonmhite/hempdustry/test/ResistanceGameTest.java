@@ -91,7 +91,7 @@ public final class ResistanceGameTest {
             context.assertValueEqual(ResistanceOdds.spread(step).mostLikelyIfSpread().orElse(null), step,
                     "the spread around " + step + " read back");
         }
-        context.assertTrue(ResistanceOdds.ALWAYS_NEUTRAL.mostLikelyIfSpread().isEmpty(),
+        context.assertTrue(new ResistanceOdds(0, 0, 100, 0, 0).mostLikelyIfSpread().isEmpty(),
                 "an always-neutral phenomenon reads as the spread around neutral, so it would write as one");
 
         // A lost light: a resistant plant ignores it 1 time in 2, a very resistant one 3 in 4; one draw for those, none for the rest.
@@ -144,15 +144,29 @@ public final class ResistanceGameTest {
         context.assertTrue(encode(ResistanceOdds.CODEC, new ResistanceOdds(0, 5, 0, 95, 0)).isJsonObject(),
                 "odds of their own written back as a step");
 
-        // A strain file: no plant object is the old plant; a named phenomenon spreads, an unnamed one stays neutral.
+        // A strain file (#266): a phenomenon it leaves out takes the spread around neutral, as naming "neutral" does,
+        // so a file with no plant object, or no resistances, rolls the spread on all four.
+        ResistanceOdds neutral = ResistanceOdds.spread(Resistance.NEUTRAL);
+        Resistances unnamed = new Resistances(neutral, neutral, neutral, neutral);
         Strain bare = parse(Strain.CODEC, "{\"translation_key\":\"x\",\"color\":1,\"buds\":\"minecraft:wheat\"}");
         context.assertValueEqual(bare.plant(), Strain.Plant.DEFAULT, "a strain file naming no plant");
-        context.assertValueEqual(bare.resistances(), Resistances.DEFAULT, "a strain file naming no resistances");
+        context.assertValueEqual(bare.resistances(), unnamed, "a strain file naming no plant object");
+        Strain plain = parse(Strain.CODEC, "{\"translation_key\":\"x\",\"color\":1,\"buds\":\"minecraft:wheat\","
+                + "\"plant\":{}}");
+        context.assertValueEqual(plain.resistances(), unnamed, "a strain file naming no resistances");
         Strain touchy = parse(Strain.CODEC, "{\"translation_key\":\"x\",\"color\":1,\"buds\":\"minecraft:wheat\","
                 + "\"plant\":{\"resistances\":{\"light\":\"very_weak\"}}}");
-        context.assertValueEqual(touchy.resistances(), new Resistances(ResistanceOdds.ALWAYS_NEUTRAL,
-                        ResistanceOdds.ALWAYS_NEUTRAL, ResistanceOdds.spread(Resistance.VERY_WEAK), ResistanceOdds.ALWAYS_NEUTRAL),
+        context.assertValueEqual(touchy.resistances(), new Resistances(neutral, neutral,
+                        ResistanceOdds.spread(Resistance.VERY_WEAK), neutral),
                 "a strain file naming only its light");
+        context.assertValueEqual(parse(Resistances.CODEC, "{\"mildew\": {\"neutral\": 100}}").mildew(),
+                new ResistanceOdds(0, 0, 100, 0, 0), "a phenomenon a file keeps always neutral");
+        // A sheet writes every phenomenon back, neutral ones too: a generated file names all four.
+        JsonElement written = encode(Resistances.CODEC, Resistances.of(Resistance.NEUTRAL, Resistance.RESISTANT,
+                Resistance.NEUTRAL, Resistance.WEAK));
+        context.assertValueEqual(written.toString(),
+                "{\"dry_ground\":\"neutral\",\"overwatering\":\"resistant\",\"light\":\"neutral\",\"mildew\":\"weak\"}",
+                "a sheet written back");
         context.assertValueEqual(touchy.quality(), GrowQuality.DEFAULT, "a plant object naming no quality");
         context.succeed();
     }

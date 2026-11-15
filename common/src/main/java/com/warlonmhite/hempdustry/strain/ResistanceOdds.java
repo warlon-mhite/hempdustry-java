@@ -29,9 +29,6 @@ import net.minecraft.util.RandomSource;
  */
 public record ResistanceOdds(int veryWeak, int weak, int neutral, int resistant, int veryResistant) {
 
-    /** Every plant neutral: a phenomenon a strain file does not name, as every plant was before resistances. */
-    public static final ResistanceOdds ALWAYS_NEUTRAL = new ResistanceOdds(0, 0, 100, 0, 0);
-
     /** The shared spread's shares: on the step, one step away, two steps away. */
     private static final int[] SPREAD = {60, 25, 15};
 
