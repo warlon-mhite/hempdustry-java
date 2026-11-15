@@ -568,6 +568,63 @@ public final class SweepGameTest {
     }
 
     /**
+     * Every block of ours that stops movement is in the tag vanilla's heightmaps read for it:
+     * {@code #blocks_motion_no_leaves}, or {@code #blocks_motion} for a leaf. Since 26.3 the heightmaps no
+     * longer ask a block whether it is solid; they read these tags, which list vanilla's solid blocks by
+     * name. A block left out is a hole in a roof: rain and snow fall through it, and a plant under it
+     * stands under open sky. A hempcrete or hemp-brick ceiling was such a hole.
+     */
+    public static void everySolidBlockIsARoof(GameTestHelper context) {
+        Map<String, String> findings = new TreeMap<>();
+        int checked = 0;
+        for (Block block : BuiltInRegistries.BLOCK) {
+            Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+            if (!Sweep.ours(id) || block.getStateDefinition().getPossibleStates().stream().noneMatch(BlockState::isSolid)) {
+                continue;
+            }
+            checked++;
+            BlockState state = block.defaultBlockState();
+            TagKey<Block> roof = state.is(BlockTags.LEAVES) ? BlockTags.BLOCKS_MOTION : BlockTags.BLOCKS_MOTION_NO_LEAVES;
+            if (!state.is(roof)) findings.put(id.toString(), "solid, and not in #" + roof.location());
+        }
+        Sweep.atLeast(context, "solid blocks", checked, 20);
+        Sweep.report(context, "Every solid block of ours is a roof", findings, Map.of(
+                "hempdustry:grow_lamp", "a light hung over a plant, not a ceiling: the plant under it keeps its sky"));
+        context.succeed();
+    }
+
+    /**
+     * Every vanilla tag we add to is one vanilla has: it holds something of vanilla's besides ours. A file
+     * under {@code data/minecraft/tags} that names a tag vanilla does not have makes a new, empty-but-ours
+     * tag that nothing reads, without a word (26.2 renamed {@code concrete_powder} to
+     * {@code concrete_powders}, and the hempcrete powder was in neither).
+     */
+    public static void everyVanillaTagWeAddToIsVanillas(GameTestHelper context) {
+        Map<String, String> findings = new TreeMap<>();
+        Pattern file = Pattern.compile("data/minecraft/tags/(.+?)/(.+)\\.json");
+        RegistryAccess access = context.getLevel().registryAccess();
+        int checked = 0;
+        for (String path : Sweep.modFiles().keySet()) {
+            Matcher match = file.matcher(path);
+            if (!match.matches()) continue;
+            checked++;
+            ResourceKey<? extends Registry<Object>> key = ResourceKey.createRegistryKey(Identifier.withDefaultNamespace(match.group(1)));
+            Optional<? extends Registry<Object>> registry = access.lookup(key);
+            if (registry.isEmpty()) {
+                findings.put(path, "no registry " + key.identifier());
+                continue;
+            }
+            TagKey<Object> tag = TagKey.create(key, Identifier.withDefaultNamespace(match.group(2)));
+            boolean vanillas = registry.get().get(tag).stream().flatMap(set -> set.stream())
+                    .anyMatch(holder -> holder.unwrapKey().map(k -> k.identifier().getNamespace().equals("minecraft")).orElse(false));
+            if (!vanillas) findings.put(path, "#" + tag.location() + " holds nothing of vanilla's: not a vanilla tag");
+        }
+        Sweep.atLeast(context, "vanilla tag files of ours", checked, 60);
+        Sweep.report(context, "Every vanilla tag we add to is vanilla's", findings, Map.of());
+        context.succeed();
+    }
+
+    /**
      * Every sound of ours is mono, every file {@code sounds.json} names is there, every sound file is
      * named, and every sound event the mod registers has an entry.
      *
