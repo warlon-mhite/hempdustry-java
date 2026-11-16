@@ -53,6 +53,12 @@ public class ModTags {
          * modded deep-dark biome joins by name and still grows it only inside a city.
          */
         public static final TagKey<Biome> ECHO_OG_GEN = createTag("echo_og_gen");
+        /**
+         * Where Maui Wowie grows wild, and where ocean ruin chests hold its seeds: the warm and lukewarm oceans,
+         * vanilla's warm ruins' own. A modded tropical sea joins by name; {@code #c:is_ocean} would take the
+         * cold seas too.
+         */
+        public static final TagKey<Biome> MAUI_WOWIE_GEN = createTag("maui_wowie_gen");
         private static TagKey<Biome> createTag(String name) {
             return TagKey.create(Registries.BIOME, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name));
         }
@@ -62,6 +68,12 @@ public class ModTags {
     public static class Items {
 
         public static final TagKey<Item> HEMP_SEEDS = createTag("hemp_seeds");
+        /**
+         * Seeds of strains that only grow where the world puts them, never in another mod's pot machine (a
+         * Botany Pot, a cloche, a planter): White Widow, whose light leak and timer are the strain, and Maui
+         * Wowie, which lives under the sea. A compat recipe that grows a seed skips every seed in here.
+         */
+        public static final TagKey<Item> FIELD_ONLY_SEEDS = createTag("field_only_seeds");
         /**
          * What feeds a Grow Pot or a Hydro Tray: every {@code c:fertilizers} item, plus the fertilisers of
          * mods that leave theirs out of it (Immersive Engineering's, Farming for Blockheads' three).
@@ -303,6 +315,24 @@ public class ModTags {
 
         /** What Echo OG grows on: sculk by name, and nothing else. Never farmland, a pot or a tray. */
         public static final TagKey<Block> ECHO_OG_SOIL = createTag("echo_og_soil");
+
+        /**
+         * What Maui Wowie grows on, under the sea: sand, red sand, gravel, clay and mud by name. Never
+         * {@code #minecraft:sand}, which holds suspicious sand, and never farmland, a pot or a tray.
+         */
+        public static final TagKey<Block> MAUI_WOWIE_SOIL = createTag("maui_wowie_soil");
+
+        /**
+         * The seagrass meadow that is Maui Wowie's farmland: seagrass, tall seagrass and kelp. A plant of these
+         * beside its root counts as watered farmland counts for a land crop.
+         */
+        public static final TagKey<Block> MAUI_WOWIE_MEADOW = createTag("maui_wowie_meadow");
+
+        /**
+         * What a sponge takes with its drops as it soaks up the water, beside vanilla's own list (kelp and
+         * seagrass): the blocks of ours that hold their own water.
+         */
+        public static final TagKey<Block> SPONGE_CLEARS = createTag("sponge_clears");
 
         private static TagKey<Block> createTag(String name) {
             return TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name));

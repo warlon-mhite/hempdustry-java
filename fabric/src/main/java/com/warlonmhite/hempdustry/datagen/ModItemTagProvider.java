@@ -45,7 +45,14 @@ public class ModItemTagProvider extends FabricTagsProvider.ItemTagsProvider {
                 .add(ModItems.CHERRY_WINE_SEEDS)
                 .add(ModItems.WHITE_WIDOW_SEEDS)
                 .add(ModItems.DUD_WEED_SEEDS)
-                .add(ModItems.ECHO_OG_SEEDS);
+                .add(ModItems.ECHO_OG_SEEDS)
+                .add(ModItems.MAUI_WOWIE_SEEDS);
+
+        // Grown only where the world puts them, never in another mod's pot machine: White Widow (its light leak
+        // and timer are the strain) and Maui Wowie (the sea is its home).
+        valueLookupBuilder(ModTags.Items.FIELD_ONLY_SEEDS)
+                .add(ModItems.WHITE_WIDOW_SEEDS)
+                .add(ModItems.MAUI_WOWIE_SEEDS);
 
         // Striders eat warped fungus, and only that; Warped Kush grows beside it. Joining the tag is
         // the whole feature -- breeding, and #minecraft:strider_tempt_items includes it, so a strider
@@ -304,6 +311,7 @@ public class ModItemTagProvider extends FabricTagsProvider.ItemTagsProvider {
                 .add(ModItems.WHITE_WIDOW_BUDS)
                 .add(ModItems.DUD_WEED_BUDS)
                 .add(ModItems.ECHO_OG_BUDS)
+                .add(ModItems.MAUI_WOWIE_BUDS)
                 .add(ModItems.HEMP_LEAF);
         valueLookupBuilder(ConventionalItemTags.CROPS)
                 .addOptionalTag(ModTags.Conventional.HEMP_CROPS);

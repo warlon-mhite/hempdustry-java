@@ -66,17 +66,23 @@ public record Terpene(String translationKey, int color) {
      * eleventh.
      */
     public static final ResourceKey<Terpene> BORNEOL = key("borneol");
+    /**
+     * Sweet, tropical and green, a smell of basil and mango: the ocean strain's, Maui Wowie's, and the
+     * twelfth. Its colour is the sea's, not its smell's: every green band was taken.
+     */
+    public static final ResourceKey<Terpene> OCIMENE = key("ocimene");
 
     /** The share of a terpene's colour that goes into smoke, and into vapour. */
     public static final float SMOKE_SHARE = 0.33F;
     public static final float VAPOUR_SHARE = 0.25F;
 
     /**
-     * The eleven, each coloured from its smell: limonene the lemon, linalool lavender, myrcene ripe mango,
+     * The twelve, each coloured from its smell: limonene the lemon, linalool lavender, myrcene ripe mango,
      * caryophyllene black pepper's warm red, pinene the pine needle, eucalyptol the cool blue of
      * eucalyptus, terpinolene green apple and lilac's fresh green, geraniol rose pink, humulene the
      * dried hop, nerolidol bark, borneol the cold of an ice box: vanilla sculk's own deep teal, darker
-     * than eucalyptol's blue.
+     * than eucalyptol's blue. Ocimene alone is coloured by place, not by smell: the open sea's blue, the one
+     * band no other terpene was near, where its sweet green smell would have read as pinene's in the smoke.
      */
     public static void bootstrap(BootstrapContext<Terpene> context) {
         register(context, LIMONENE, 0xF5D547);
@@ -90,6 +96,7 @@ public record Terpene(String translationKey, int color) {
         register(context, HUMULENE, 0xB3AE5C);
         register(context, NEROLIDOL, 0xB0835A);
         register(context, BORNEOL, 0x009295);
+        register(context, OCIMENE, 0x4A7BD8);
     }
 
     private static void register(BootstrapContext<Terpene> context, ResourceKey<Terpene> key, int color) {

@@ -1,6 +1,7 @@
 package com.warlonmhite.hempdustry.datagen;
 
 import com.warlonmhite.hempdustry.Hempdustry;
+import com.warlonmhite.hempdustry.entity.ModEntities;
 import com.warlonmhite.hempdustry.advancement.EdibleKicksInCriterion;
 import com.warlonmhite.hempdustry.advancement.HarvestHempCriterion;
 import com.warlonmhite.hempdustry.advancement.ModCriteria;
@@ -40,6 +41,10 @@ import net.minecraft.core.ClientAsset;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.advancements.triggers.Criterion;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.resources.ResourceKey;
+import com.warlonmhite.hempdustry.strain.Strain;
 import net.minecraft.core.component.DataComponentExactPredicate;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.advancements.predicates.FoodPredicate;
@@ -338,6 +343,18 @@ public class ModAdvancementProvider extends FabricAdvancementProvider {
                 .addCriterion("smoked_dud_weed", SmokeCriterion.Conditions.of(ModStrains.DUD_WEED, 0))
                 .parent(firstContact)
                 .save(consumer, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "damp_squib"));
+
+        // Hidden: Deep Purple's riff, done properly -- smoke Maui Wowie on the water, riding a hemp boat or a
+        // hemp chest boat. The ocean strain, the sailors' hemp under you, and the smoke over the water. The
+        // song's title stays English in every language. Under First Contact, as every smoke joke is. One
+        // criterion per boat, either one granting it.
+        Advancement.Builder.advancement()
+                .display(display(ModItems.MAUI_WOWIE_BUDS, "smoke_on_the_water", AdvancementType.TASK, true))
+                .addCriterion("smoked_maui_wowie_on_a_hemp_boat", smokedAboard(registryLookup, ModEntities.HEMP_BOAT, ModStrains.MAUI_WOWIE))
+                .addCriterion("smoked_maui_wowie_on_a_hemp_chest_boat", smokedAboard(registryLookup, ModEntities.HEMP_CHEST_BOAT, ModStrains.MAUI_WOWIE))
+                .requirements(AdvancementRequirements.Strategy.OR)
+                .parent(firstContact)
+                .save(consumer, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "smoke_on_the_water"));
 
         // Hidden: vanilla's Sneak 100 is a sculk sensor or a Warden letting a vibration go because you were
         // sneaking; this is the same, because you were Hushed. Echo OG is a smoke, so it hangs under First
@@ -668,5 +685,15 @@ public class ModAdvancementProvider extends FabricAdvancementProvider {
                     InventoryChangeTrigger.TriggerInstance.hasItems(resin));
         }
         aroundTheWorld.save(consumer, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "around_the_world_in_80_grams"));
+    }
+
+    /** A hit of {@code strain} taken while riding a {@code vehicle}. */
+    private static Criterion<SmokeCriterion.Conditions> smokedAboard(HolderLookup.Provider registryLookup,
+                                                                     EntityType<?> vehicle, ResourceKey<Strain> strain) {
+        LootItemCondition aboard = LootItemEntityPropertyCondition.hasProperties(LootContext.EntityTarget.THIS,
+                EntityPredicate.Builder.entity().vehicle(EntityPredicate.Builder.entity()
+                        .of(registryLookup.lookupOrThrow(Registries.ENTITY_TYPE), vehicle))).build();
+        return ModCriteria.SMOKE.createCriterion(new SmokeCriterion.Conditions(
+                Optional.of(Holder.direct(aboard)), Optional.empty(), Optional.empty(), Optional.of(strain)));
     }
 }

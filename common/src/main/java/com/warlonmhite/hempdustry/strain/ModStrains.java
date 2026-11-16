@@ -99,6 +99,11 @@ public class ModStrains {
      */
     public static final ResourceKey<Strain> ECHO_OG = key("echo_og");
     /**
+     * The ocean's plant, Lemon Haze's three-block body under water, holding its own water as seagrass does. Its
+     * wild flower is a flower of its own, in warm and lukewarm shallows.
+     */
+    public static final ResourceKey<Strain> MAUI_WOWIE = key("maui_wowie");
+    /**
      * Not a plant and not resin: spent hemp, smoked for what little is left in it. <b>Deliberately
      * outside {@link #BUILT_IN}</b> — it has no art and no recipes of its own, so it takes
      * {@code model_index} 0 and the shared tinted look, and none of the per-strain datagen loops
@@ -123,7 +128,7 @@ public class ModStrains {
      */
     public static final List<ResourceKey<Strain>> BUILT_IN =
             List.of(INDICA, SATIVA, HASHISH, CHARAS, FILTERED_HASHISH, ROSIN, BELDIA, WARPED_KUSH, RUDERALIS,
-                    CRIMSON, ENDER_HAZE, CHERRY_WINE, WHITE_WIDOW, DUD_WEED, ECHO_OG);
+                    CRIMSON, ENDER_HAZE, CHERRY_WINE, WHITE_WIDOW, DUD_WEED, ECHO_OG, MAUI_WOWIE);
 
     /** First {@code model_index} this mod claims for its own art. */
     public static final int RESERVED_MODEL_INDEX_MIN = 1;
@@ -145,6 +150,12 @@ public class ModStrains {
      * to cancel the Hush it comes with.
      */
     static final float ECHO_DARKNESS_DURATION_FACTOR = 0.25F;
+
+    /**
+     * Maui Wowie's Mining Fatigue lasts a quarter of the hit, on the exhale, as Echo OG's Darkness does: about
+     * nine seconds off a pipe. It bites while you swim back out and lifts before you set to work.
+     */
+    static final float MAUI_FATIGUE_DURATION_FACTOR = 0.25F;
 
     /**
      * The registry itself is registered with the other datapack registries, before anything else
@@ -525,6 +536,38 @@ public class ModStrains {
                 .withQuality(new GrowQuality(2, 12, 46, 32, 10))
                 .withResistances(Resistances.of(Resistance.NEUTRAL, Resistance.NEUTRAL, Resistance.VERY_WEAK, Resistance.WEAK))
                 .withResin(new ResinSheet(15, 40, 35, 10, 0, ResinTexture.EVEN)));
+
+        // Maui Wowie -- the ocean's plant: an island sativa of the 1960s and 70s, one of the stoner classics.
+        // Its "Hawaiian landrace" history is seed-bank folklore, so the game calls it an island name and no more.
+        //
+        // WATER BREATHING and DOLPHIN'S GRACE are the signature, both the plant's own and both flat, because
+        // vanilla reads neither one's level: more buds buy a longer dive instead, half the device's duration for
+        // every bud past the first (a bong of three, 100 s, well under a potion's 3:00). Dolphin's Grace is the
+        // draw: no potion gives it, and a dolphin gives it five seconds at a time. Both do nothing on land.
+        //
+        // MINING FATIGUE is the tax, the elder guardian's own curse, on the exhale and for a quarter of the hit:
+        // it bites while you swim back out and lifts before you work. Shared with Purple Kush as Darkness is
+        // shared with Warped Kush. HUNGER, as ever, is the THC's.
+        //
+        // Type I, Lemon Haze's band odds, Purple Kush's gene odds. Overwatering and mildew both very resistant,
+        // the one smoke strain allowed two (its roots breathe water as in deep-water culture, and water on the
+        // leaves washes powdery mildew's spores off); a dry bed is its weakness, though nothing under water
+        // dries. Resin low to medium and Sticky: warm water keeps the trichome heads soft.
+        //
+        // The coral of its pistils, the reef it grows beside.
+        context.register(MAUI_WOWIE, new Strain("hempdustry.strain.maui_wowie", 0xFF6F4F, modelIndex(MAUI_WOWIE),
+                Optional.of(ModItems.MAUI_WOWIE_SEEDS), ModItems.MAUI_WOWIE_BUDS,
+                Optional.of(ModBlocks.MAUI_WOWIE_FLOWER), 1.0F, 1,
+                List.of(
+                        SmokeEffect.dosedByTime(MobEffects.WATER_BREATHING),
+                        SmokeEffect.dosedByTime(MobEffects.DOLPHINS_GRACE),
+                        new SmokeEffect(MobEffects.MINING_FATIGUE, 0, EffectLabel.STRAIN, MAUI_FATIGUE_DURATION_FACTOR, true,
+                                1.0F, SmokeEffect.NO_CAP),
+                        new SmokeEffect(MobEffects.HUNGER, 0, EffectLabel.THC, 1.0F, false, 1.0F, SmokeEffect.NO_CAP)),
+                1.0F, Chemotype.THC_DOMINANT).withTerpene(Terpene.OCIMENE)
+                .withQuality(new GrowQuality(0, 20, 50, 25, 5))
+                .withResistances(Resistances.of(Resistance.WEAK, Resistance.VERY_RESISTANT, Resistance.NEUTRAL, Resistance.VERY_RESISTANT))
+                .withResin(new ResinSheet(5, 35, 45, 15, 0, ResinTexture.STICKY)));
 
         // Hashish -- strainless by construction. Sifting keeps the trichome heads and throws the
         // plant away, and a trichome head is a trichome head whichever plant grew it. Its identity

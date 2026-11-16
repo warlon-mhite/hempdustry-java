@@ -18,6 +18,8 @@ import com.warlonmhite.hempdustry.block.custom.WhiteWidowCropBlock;
 import com.warlonmhite.hempdustry.block.custom.WhiteWidowFlowerBlock;
 import com.warlonmhite.hempdustry.block.custom.WhiteWidowPotBlock;
 import com.warlonmhite.hempdustry.block.custom.EchoOgCropBlock;
+import com.warlonmhite.hempdustry.block.custom.MauiWowieCropBlock;
+import com.warlonmhite.hempdustry.block.custom.MauiWowieFlowerBlock;
 import com.warlonmhite.hempdustry.block.custom.EnderHazeCropBlock;
 import com.warlonmhite.hempdustry.block.custom.CustomConcreteBlock;
 import com.warlonmhite.hempdustry.block.custom.DecarboxylatorBlock;
@@ -437,6 +439,17 @@ public class ModBlocks {
     public static final Block ECHO_OG_CROP = registerBlockWithoutItem("echo_og_crop", EchoOgCropBlock::new,
             BlockBehaviour.Properties.ofFullCopy(Blocks.WHEAT).sound(SoundType.SCULK)
                     .lightLevel(state -> state.getValue(BlockStateProperties.AGE_7) == IndicaCropBlock.MAX_AGE ? 1 : 0));
+
+    // No block item, for the reason on INDICA_CROP above. Every block of it holds water, as seagrass does, and
+    // sounds like seagrass. Never registered as flammable -- nothing under the sea burns.
+    public static final Block MAUI_WOWIE_CROP = registerBlockWithoutItem("maui_wowie_crop", MauiWowieCropBlock::new,
+            BlockBehaviour.Properties.ofFullCopy(Blocks.WHEAT).sound(SoundType.WET_GRASS));
+
+    // Wild Maui Wowie, Purple Kush's kind of wild flower, in the warm shallows: one block holding its own water.
+    // Its suspicious-stew effect is as dead as Wild Purple Kush's (see INDICA_FLOWER), and kept meaningful the
+    // same way: Water Breathing is what the strain does when smoked. No potted form: no pot holds seagrass.
+    public static final Block MAUI_WOWIE_FLOWER = registerBlock("maui_wowie_flower", settings -> new MauiWowieFlowerBlock(MobEffects.WATER_BREATHING, 1, settings),
+            BlockBehaviour.Properties.ofFullCopy(Blocks.ALLIUM).sound(SoundType.WET_GRASS));
 
 
     /**

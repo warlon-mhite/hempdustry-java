@@ -1,0 +1,54 @@
+{
+  "parent": "hempdustry:first_contact",
+  "criteria": {
+    "smoked_maui_wowie_on_a_hemp_boat": {
+      "conditions": {
+        "player": {
+          "type": "minecraft:entity_properties",
+          "entity": "this",
+          "predicate": {
+            "minecraft:vehicle": {
+              "minecraft:entity_type": "hempdustry:hemp_boat"
+            }
+          }
+        },
+        "strain": "hempdustry:maui_wowie"
+      },
+      "trigger": "hempdustry:smoke"
+    },
+    "smoked_maui_wowie_on_a_hemp_chest_boat": {
+      "conditions": {
+        "player": {
+          "type": "minecraft:entity_properties",
+          "entity": "this",
+          "predicate": {
+            "minecraft:vehicle": {
+              "minecraft:entity_type": "hempdustry:hemp_chest_boat"
+            }
+          }
+        },
+        "strain": "hempdustry:maui_wowie"
+      },
+      "trigger": "hempdustry:smoke"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.hempdustry.smoke_on_the_water.description"
+    },
+    "hidden": true,
+    "icon": {
+      "id": "hempdustry:maui_wowie_buds"
+    },
+    "title": {
+      "translate": "advancements.hempdustry.smoke_on_the_water.title"
+    }
+  },
+  "requirements": [
+    [
+      "smoked_maui_wowie_on_a_hemp_boat",
+      "smoked_maui_wowie_on_a_hemp_chest_boat"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

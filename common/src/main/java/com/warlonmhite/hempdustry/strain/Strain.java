@@ -554,7 +554,8 @@ public record Strain(String translationKey, int color, int modelIndex,
     public List<MobEffectInstance> effects(int units, int thcDose, Chemotype chemotype, int durationTicks,
                                               boolean onExhale, int buffBonus, RandomGenerator random) {
         return effects(new Burn(units, thcDose, chemotype, durationTicks, durationTicks,
-                        SmokeContents.cbdTicks(units * (double) chemotype.cbdHalves() / Chemotype.FULL_WEIGHT)),
+                        SmokeContents.cbdTicks(units * (double) chemotype.cbdHalves() / Chemotype.FULL_WEIGHT),
+                        durationTicks + durationTicks * Math.max(0, units - 1) / 2),
                 onExhale, buffBonus, random);
     }
 
@@ -563,9 +564,15 @@ public record Strain(String translationKey, int color, int modelIndex,
      * effect's level, the chemotype, and how long each kind of effect lasts — {@code thcTicks} for a
      * THC-labelled one (the exact dose buys time, {@code SmokeContents#thcTicks}), {@code ticks} for a
      * strain- or smoke-labelled one (a bud past the buff cap buys time), {@code cbdTicks} for a
-     * CBD-labelled one ({@code SmokeContents#cbdTicks}).
+     * CBD-labelled one ({@code SmokeContents#cbdTicks}), and {@code doseTicks} for a strain- or smoke-labelled one
+     * that {@link SmokeEffect#doseBuysTime} (each bud past the first buys half the device's duration).
      */
-    public record Burn(int units, int thcDose, Chemotype chemotype, int thcTicks, int ticks, int cbdTicks) {
+    public record Burn(int units, int thcDose, Chemotype chemotype, int thcTicks, int ticks, int cbdTicks,
+                       int doseTicks) {
+        /** As above, for a load where every bud past the first buys no time of its own ({@code doseTicks} = {@code ticks}). */
+        public Burn(int units, int thcDose, Chemotype chemotype, int thcTicks, int ticks, int cbdTicks) {
+            this(units, thcDose, chemotype, thcTicks, ticks, cbdTicks, ticks);
+        }
     }
 
     /** Fresh status-effect instances for one hit of {@code burn}, each label at its own level and length. */
@@ -605,7 +612,7 @@ public record Strain(String translationKey, int color, int modelIndex,
             int ticks = switch (label) {
                 case THC -> burn.thcTicks();
                 case CBD -> burn.cbdTicks();
-                case STRAIN, SMOKE -> burn.ticks();
+                case STRAIN, SMOKE -> effect.doseBuysTime() ? burn.doseTicks() : burn.ticks();
             };
             // At least a tick: a datapack's 0 or negative factor is a very short effect, never one
             // that silently does not exist.
@@ -641,10 +648,15 @@ public record Strain(String translationKey, int color, int modelIndex,
      * @param declaredLabel  what the effect comes from, and so what makes it stronger (see
      *                       {@link EffectLabel}); when a file names none, {@link #label} reads it off
      *                       {@code scales}
+     * @param doseBuysTime   whether every bud past the first lengthens a strain- or smoke-labelled effect
+     *                       by half the device's duration ({@link Burn#doseTicks}), where an effect without
+     *                       it gains time only from buds past the buff cap. For an effect whose level buys
+     *                       nothing, so that a bigger dose still buys something. {@code false} for nearly
+     *                       everything; a THC or CBD effect keeps its own clock either way
      */
     public record SmokeEffect(Holder<MobEffect> effect, int baseAmplifier, boolean scales,
                               float durationFactor, boolean onExhale, float chance, int maxAmplifier,
-                              Optional<EffectLabel> declaredLabel) {
+                              Optional<EffectLabel> declaredLabel, boolean doseBuysTime) {
         /** Vanilla's highest amplifier, and the default: no cap a dose could reach. */
         public static final int NO_CAP = 255;
 
@@ -656,8 +668,16 @@ public record Strain(String translationKey, int color, int modelIndex,
                 Codec.BOOL.optionalFieldOf("on_exhale", false).forGetter(SmokeEffect::onExhale),
                 Codec.floatRange(0.0F, 1.0F).optionalFieldOf("chance", 1.0F).forGetter(SmokeEffect::chance),
                 Codec.intRange(0, NO_CAP).optionalFieldOf("max_amplifier", NO_CAP).forGetter(SmokeEffect::maxAmplifier),
-                EffectLabel.CODEC.optionalFieldOf("label").forGetter(SmokeEffect::declaredLabel)
+                EffectLabel.CODEC.optionalFieldOf("label").forGetter(SmokeEffect::declaredLabel),
+                Codec.BOOL.optionalFieldOf("dose_buys_time", false).forGetter(SmokeEffect::doseBuysTime)
         ).apply(instance, SmokeEffect::new));
+
+        /** Every effect written before {@code dose_buys_time} existed: a dose past the cap buys its time. */
+        public SmokeEffect(Holder<MobEffect> effect, int baseAmplifier, boolean scales,
+                           float durationFactor, boolean onExhale, float chance, int maxAmplifier,
+                           Optional<EffectLabel> declaredLabel) {
+            this(effect, baseAmplifier, scales, durationFactor, onExhale, chance, maxAmplifier, declaredLabel, false);
+        }
 
         /** Every effect written before {@code label} existed: the label its {@code scales} stood for. */
         public SmokeEffect(Holder<MobEffect> effect, int baseAmplifier, boolean scales,
@@ -670,6 +690,14 @@ public record Strain(String translationKey, int color, int modelIndex,
                            float durationFactor, boolean onExhale, float chance, int maxAmplifier) {
             this(effect, baseAmplifier, label.scales(), durationFactor, onExhale, chance, maxAmplifier,
                     Optional.of(label));
+        }
+
+        /**
+         * A flat effect of the plant's own whose every bud past the first buys time, never a level (Maui
+         * Wowie's Water Breathing and Dolphin's Grace, which vanilla reads at no level).
+         */
+        public static SmokeEffect dosedByTime(Holder<MobEffect> effect) {
+            return new SmokeEffect(effect, 0, false, 1.0F, false, 1.0F, NO_CAP, Optional.of(EffectLabel.STRAIN), true);
         }
 
         /** What the effect comes from: the label the file names, or the one {@code scales} stood for. */

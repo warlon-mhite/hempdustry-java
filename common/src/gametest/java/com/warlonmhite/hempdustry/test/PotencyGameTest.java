@@ -109,6 +109,7 @@ public final class PotencyGameTest {
         roots.put(ModBlocks.ECHO_OG_CROP, lower);
         roots.put(ModBlocks.CRIMSON_CROP, state -> state.getValue(IndicaCropBlock.HALF) == DoubleBlockHalf.UPPER);
         roots.put(ModBlocks.SATIVA_CROP, state -> state.getValue(SativaCropBlock.SEGMENT) == TriplePlantSegment.LOWER);
+        roots.put(ModBlocks.MAUI_WOWIE_CROP, state -> state.getValue(SativaCropBlock.SEGMENT) == TriplePlantSegment.LOWER);
         roots.put(ModBlocks.ENDER_HAZE_CROP, state -> state.getValue(EnderHazeCropBlock.SEGMENT) == 0);
         roots.put(ModBlocks.RUDERALIS_CROP, state -> true);
         // Fibre hemp grows no bud, but keeps a record of what it will pass on: its resistances.

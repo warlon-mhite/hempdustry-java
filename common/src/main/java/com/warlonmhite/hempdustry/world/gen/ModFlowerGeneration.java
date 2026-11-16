@@ -94,6 +94,13 @@ public class ModFlowerGeneration {
                 ModPlacedFeatures.WHITE_WIDOW_PLACED_KEY
         );
 
+        // Maui Wowie, wild, in the warm and lukewarm shallows.
+        Services.REGISTRATION.addFeature(
+                ModTags.Biomes.MAUI_WOWIE_GEN,
+                GenerationStep.Decoration.VEGETAL_DECORATION,
+                ModPlacedFeatures.MAUI_WOWIE_PLACED_KEY
+        );
+
         // Echo OG, ripe and wild, on the sculk floors of Ancient Cities -- never the open deep dark.
         Services.REGISTRATION.addFeature(
                 ModTags.Biomes.ECHO_OG_GEN,

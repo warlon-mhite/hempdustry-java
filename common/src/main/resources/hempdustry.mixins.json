@@ -7,6 +7,7 @@
 		"BeeGrowCropsGoalMixin",
 		"CreeperEntityMixin",
 		"DataFixersMixin",
+		"DrownedMixin",
 		"ItemComponentsSchemaMixin",
 		"ItemStackComponentizationFixMixin",
 		"EnderManMixin",
@@ -16,6 +17,7 @@
 		"Schema1460Mixin",
 		"SculkBlockMixin",
 		"SniffingMixin",
+		"SpongeBlockMixin",
 		"VibrationListenerMixin",
 		"WorldGenRegionMixin"
 	],

@@ -5,6 +5,7 @@ import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.strain.Resistance;
 import com.warlonmhite.hempdustry.util.ModTags;
 import net.minecraft.core.BlockPos;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -210,9 +211,27 @@ public enum Mildew implements StringRepresentable {
      * own solidity: a block missing from it is no roof. Every solid block of ours is in it but the Grow
      * Lamp, a light hung over a plant and not a ceiling; vanilla's light blocks (glowstone, a lantern)
      * are in it, so one hung over a field roofs the plant under it.
+     *
+     * <p>The heightmap counts any fluid too, so for a plant that holds water the sea above it is walked
+     * instead, and only a block in the heightmap's tag roofs it.
      */
     public static boolean roofed(Level world, BlockPos lower) {
-        return world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, lower.getX(), lower.getZ()) > lower.getY();
+        int top = world.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, lower.getX(), lower.getZ());
+        if (top <= lower.getY()) {
+            return false;
+        }
+        if (world.getFluidState(lower).isEmpty()) {
+            return true;
+        }
+        // A plant that holds water (Maui Wowie): the heightmap counts every fluid as well, so the sea over it
+        // would roof it. Only a block in the heightmap's own tag between the plant and that height is a roof.
+        BlockPos.MutableBlockPos at = lower.mutable();
+        for (int y = lower.getY() + 1; y < top; y++) {
+            if (world.getBlockState(at.setY(y)).is(BlockTags.BLOCKS_MOTION_IN_HEIGHTMAP_NO_LEAVES)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

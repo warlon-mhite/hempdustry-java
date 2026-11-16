@@ -103,14 +103,16 @@ public final class OtherModsGameTest {
                 continue;
             }
             crops++;
+            // A plant that holds its own water (Maui Wowie) stands in the sea and grows only into it.
+            boolean sea = !plain.getFluidState().isEmpty();
             for (int up = 3; up >= 0; up--) {
-                context.setBlock(CROP.above(up), Blocks.AIR);
+                context.setBlock(CROP.above(up), sea ? Blocks.WATER : Blocks.AIR);
             }
-            // A pot of ours, which holds most tall crops (Beldía's water rule included), or farmland for one
-            // that grows in the field only (Industrial Hemp): a plant on a soil it refuses breaks off at the
-            // first update that reaches it.
+            // A pot of ours, which holds most tall crops (Beldía's water rule included), farmland for one
+            // that grows in the field only (Industrial Hemp), or sand for one of the sea floor: a plant on a soil
+            // it refuses breaks off at the first update that reaches it.
             context.setBlock(CROP.east(), Blocks.GLOWSTONE);
-            for (Block soil : List.of(ModBlocks.GROW_POT, Blocks.FARMLAND)) {
+            for (Block soil : List.of(ModBlocks.GROW_POT, Blocks.FARMLAND, Blocks.SAND)) {
                 context.setBlock(SOIL, soil);
                 if (plain.canSurvive(world, context.absolutePos(CROP))) {
                     break;

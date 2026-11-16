@@ -1,0 +1,25 @@
+{
+  "type": "hempdustry:stamped_shaped",
+  "group": "spliff",
+  "key": {
+    "B": "hempdustry:maui_wowie_buds",
+    "P": "minecraft:paper"
+  },
+  "pattern": [
+    "BB",
+    "PP"
+  ],
+  "result": {
+    "components": {
+      "hempdustry:smoke_contents": {
+        "entries": [
+          {
+            "count": 2,
+            "strain": "hempdustry:maui_wowie"
+          }
+        ]
+      }
+    },
+    "id": "hempdustry:spliff"
+  }
+}
