@@ -16,7 +16,8 @@ import sys
 from PIL import Image
 
 STAGES = ["indica_crop_stage%d" % i for i in range(12)]
-STRESSED = ["indica_crop_stage%d_stressed" % i for i in range(4, 12)]
+# Stressed from age 3 too (#265): Purple Kush's stage 3 has a stressed texture of its own.
+STRESSED = ["indica_crop_stage%d_stressed" % i for i in range(3, 12)]
 
 
 def move(rgb):

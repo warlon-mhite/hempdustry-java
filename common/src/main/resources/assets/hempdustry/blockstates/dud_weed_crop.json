@@ -57,7 +57,8 @@
     {
       "when": {
         "half": "lower",
-        "age": "3"
+        "age": "3",
+        "condition": "!stressed"
       },
       "apply": {
         "model": "hempdustry:block/dud_weed_crop_stage3"
@@ -65,11 +66,32 @@
     },
     {
       "when": {
+        "half": "lower",
+        "age": "3",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/dud_weed_crop_stage3_stressed"
+      }
+    },
+    {
+      "when": {
         "half": "upper",
-        "age": "3"
+        "age": "3",
+        "condition": "!stressed"
       },
       "apply": {
         "model": "hempdustry:block/dud_weed_crop_stage8"
+      }
+    },
+    {
+      "when": {
+        "half": "upper",
+        "age": "3",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/dud_weed_crop_stage8_stressed"
       }
     },
     {

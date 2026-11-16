@@ -239,8 +239,14 @@ emit('beldia_age5', age5(), [('beldia_crop_stage9',0),('beldia_crop_stage5',16)]
 emit('beldia_age6', age6(), [('beldia_crop_stage10',0),('beldia_crop_stage6',16)], out)
 emit('beldia_age7', age7(), [('beldia_crop_stage11',0),('beldia_crop_stage7',16)], out)
 
-# The flowering ages again, light-starved: a plant can only be stressed from age 4 (GrowLight).
+# The flowering ages again, light-starved (GrowLight): from age 4, and a weak plant from age 3 by a
+# lost light, so the one-block age 3 has a sick sheet too -- no anthers, it has no flowers yet.
 out += ['@palette beldia_stressed extends=beldia', PAL_STRESSED, '']
+out.append('@sheet beldia_age3_stressed %dx%d palette=beldia_stressed' % (W, H))
+out.extend(''.join(r) for r in sicken(age3(), anthers=0, dead=4))
+out.append('')
+out.append('@slice block/beldia_crop_stage3_stressed 0 16 16 16 type=plant')
+out.append('')
 for age, build, (upper, lower) in ((4, age4, (8, 4)), (5, age5, (9, 5)),
                                    (6, age6, (10, 6)), (7, age7, (11, 7))):
     ripe = age >= 6      # anthers need flowers to sit in
