@@ -4,6 +4,7 @@ package com.warlonmhite.hempdustry.world;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.util.ModTags;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Vec3i;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstrapContext;
@@ -27,6 +28,7 @@ import net.minecraft.world.level.levelgen.VerticalAnchor;
 import net.minecraft.world.level.levelgen.placement.PlacementModifier;
 import net.minecraft.world.level.levelgen.placement.RandomOffsetPlacement;
 import net.minecraft.world.level.levelgen.placement.RarityFilter;
+import net.minecraft.world.level.material.Fluids;
 import java.util.List;
 
 public class ModPlacedFeatures {
@@ -50,6 +52,7 @@ public class ModPlacedFeatures {
     public static final ResourceKey<PlacedFeature> ENDER_HAZE_PLACED_KEY = registerKey("ender_haze_placed");
     public static final ResourceKey<PlacedFeature> CHERRY_WINE_PLACED_KEY = registerKey("cherry_wine_placed");
     public static final ResourceKey<PlacedFeature> WHITE_WIDOW_PLACED_KEY = registerKey("white_widow_placed");
+    public static final ResourceKey<PlacedFeature> MAUI_WOWIE_PLACED_KEY = registerKey("maui_wowie_placed");
     public static final ResourceKey<PlacedFeature> ECHO_OG_PLACED_KEY = registerKey("echo_og_placed");
 
     /**
@@ -166,6 +169,18 @@ public class ModPlacedFeatures {
         register(context, WHITE_WIDOW_PLACED_KEY,
                 configured.getOrThrow(ModConfiguredFeatures.WHITE_WIDOW_KEY), surfacePatch(16));
 
+        // Wild Maui Wowie: Purple Kush's patch, on the sea floor of warm and lukewarm oceans, each plant only
+        // where the water over it is 3 to 6 blocks deep (the patch's own filter, shallows()) -- shelves by the
+        // coast and the tops of underwater hills, as the ocean floor itself lies some 18 blocks down. The depth
+        // is read off the water column's shape, never a fixed Y and never the light, which worldgen has not
+        // computed yet.
+        register(context, MAUI_WOWIE_PLACED_KEY,
+                configured.getOrThrow(ModConfiguredFeatures.MAUI_WOWIE_KEY),
+                RarityFilter.onAverageOnceEvery(MAUI_WOWIE_RARITY),
+                InSquarePlacement.spread(),
+                PlacementUtils.HEIGHTMAP_TOP_SOLID,
+                BiomeFilter.biome());
+
         // Wild Beldía: an attempt every few desert chunks, but the attempt only grows where sand meets
         // water, so in practice a riverbank find. The seeds' real home is the desert temple.
         register(context, BELDIA_PLACED_KEY,
@@ -226,6 +241,34 @@ public class ModPlacedFeatures {
         register(context, RUDERALIS_PLACED_KEY,
                 configured.getOrThrow(ModConfiguredFeatures.RUDERALIS_KEY), surfacePatch(RUDERALIS_RARITY));
     }
+
+    /** One wild Maui Wowie patch in this many warm or lukewarm ocean chunks: Purple Kush's rarity. */
+    static final int MAUI_WOWIE_RARITY = 48;
+    /** The water over a wild Maui Wowie: at least this deep, so its crop has room for its three blocks... */
+    static final int MAUI_WOWIE_MIN_DEPTH = 3;
+    /** ...and at most this deep, the deepest its crop grows under open sky (light 9). */
+    static final int MAUI_WOWIE_MAX_DEPTH = 6;
+
+    /**
+     * Where a wild Maui Wowie may stand: in plain still water on its soil, with water to
+     * {@link #MAUI_WOWIE_MIN_DEPTH} blocks over the soil and something that is not water within
+     * {@link #MAUI_WOWIE_MAX_DEPTH} + 1 -- the sea's surface, read off the column's shape.
+     */
+    static BlockPredicate shallows() {
+        BlockPredicate[] surface = new BlockPredicate[MAUI_WOWIE_MAX_DEPTH - MAUI_WOWIE_MIN_DEPTH + 1];
+        for (int depth = MAUI_WOWIE_MIN_DEPTH; depth <= MAUI_WOWIE_MAX_DEPTH; depth++) {
+            surface[depth - MAUI_WOWIE_MIN_DEPTH] = BlockPredicate.not(BlockPredicate.matchesFluids(new Vec3i(0, depth, 0), List.of(Fluids.WATER)));
+        }
+        BlockPredicate[] column = new BlockPredicate[MAUI_WOWIE_MIN_DEPTH + 3];
+        column[0] = BlockPredicate.matchesTag(new Vec3i(0, -1, 0), ModTags.Blocks.MAUI_WOWIE_SOIL);
+        column[1] = BlockPredicate.matchesBlocks(Blocks.WATER);
+        for (int height = 0; height < MAUI_WOWIE_MIN_DEPTH; height++) {
+            column[height + 2] = BlockPredicate.matchesFluids(new Vec3i(0, height, 0), List.of(Fluids.WATER));
+        }
+        column[MAUI_WOWIE_MIN_DEPTH + 2] = BlockPredicate.anyOf(surface);
+        return BlockPredicate.allOf(column);
+    }
+
 
     /** Standard surface-vegetation placement: one attempt per {@code rarity} chunks, on the terrain top. */
     private static PlacementModifier[] surfacePatch(int rarity) {

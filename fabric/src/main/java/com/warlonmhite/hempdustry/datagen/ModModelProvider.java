@@ -123,6 +123,8 @@ public class ModModelProvider extends FabricModelProvider {
         blockStateModelGenerator.createPlantWithDefaultItem(ModBlocks.CHERRY_WINE_FLOWER, ModBlocks.POTTED_CHERRY_WINE_FLOWER, BlockModelGenerators.PlantType.TINTED);
         registerTallFlowerPotPlant(blockStateModelGenerator, ModBlocks.SATIVA_FLOWER, ModBlocks.POTTED_SATIVA_FLOWER);
         registerTallFlowerPotPlant(blockStateModelGenerator, ModBlocks.DITCHWEED, ModBlocks.POTTED_DITCHWEED);
+        // Wild Maui Wowie: one cross, untinted (the land's grass colour means nothing under the sea), and no pot.
+        blockStateModelGenerator.createCrossBlockWithDefaultItem(ModBlocks.MAUI_WOWIE_FLOWER, BlockModelGenerators.PlantType.NOT_TINTED);
 
         // Wild White Widow and its pot are hand-written under resources/: two looks each, open at
         // night and closed by day, and untinted, its colour baked in as pale oak leaves' is.
@@ -188,6 +190,8 @@ public class ModModelProvider extends FabricModelProvider {
         itemModelGenerator.generateFlatItem(ModItems.DUD_WEED_BUDS, ModelTemplates.FLAT_ITEM);
         itemModelGenerator.generateFlatItem(ModItems.ECHO_OG_SEEDS, ModelTemplates.FLAT_ITEM);
         itemModelGenerator.generateFlatItem(ModItems.ECHO_OG_BUDS, ModelTemplates.FLAT_ITEM);
+        itemModelGenerator.generateFlatItem(ModItems.MAUI_WOWIE_SEEDS, ModelTemplates.FLAT_ITEM);
+        itemModelGenerator.generateFlatItem(ModItems.MAUI_WOWIE_BUDS, ModelTemplates.FLAT_ITEM);
         itemModelGenerator.generateFlatItem(ModItems.RUDERALIS_SEEDS, ModelTemplates.FLAT_ITEM);
         itemModelGenerator.generateFlatItem(ModItems.RUDERALIS_BUDS, ModelTemplates.FLAT_ITEM);
         // Smoking gear. One item per device carries every strain in a component, so the visual

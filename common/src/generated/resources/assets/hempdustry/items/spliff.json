@@ -99,6 +99,13 @@
       {
         "model": {
           "type": "minecraft:model",
+          "model": "hempdustry:item/spliff_maui_wowie"
+        },
+        "threshold": 16.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
           "model": "hempdustry:item/spliff_tinted",
           "tints": [
             {
@@ -111,7 +118,7 @@
             }
           ]
         },
-        "threshold": 16.0
+        "threshold": 17.0
       }
     ],
     "fallback": {

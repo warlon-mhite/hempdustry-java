@@ -165,6 +165,16 @@ public final class HempdustryGameTests {
         register("a_warden_smells_the_smoke", EchoOgGameTest::aWardenSmellsTheSmoke);
         register("echo_og_stays_in_the_city", EchoOgGameTest::echoOgStaysInTheCity);
         register("wild_echo_og_needs_a_city", EchoOgGameTest::wildEchoOgNeedsACity);
+        register("maui_wowie_grows_under_water", MauiWowieGameTest::mauiWowieGrowsUnderWater);
+        register("a_sponge_takes_maui_wowie", MauiWowieGameTest::aSpongeTakesMauiWowie);
+        register("a_meadow_is_its_farmland", MauiWowieGameTest::aMeadowIsItsFarmland);
+        register("the_sea_is_no_roof", MauiWowieGameTest::theSeaIsNoRoof);
+        register("maui_wowie_harvest_is_lemon_hazes", MauiWowieGameTest::mauiWowieHarvestIsLemonHazes);
+        register("maui_wowie_smokes_for_the_dive", MauiWowieGameTest::mauiWowieSmokesForTheDive);
+        register("smoke_on_the_water", MauiWowieGameTest::smokeOnTheWater);
+        register("maui_wowie_stays_in_the_warm_sea", MauiWowieGameTest::mauiWowieStaysInTheWarmSea);
+        register("wild_maui_wowie_in_the_shallows", MauiWowieGameTest::wildMauiWowieInTheShallows);
+        register("drowned_are_drawn_to_a_ripe_patch", MauiWowieGameTest::drownedAreDrawnToARipePatch);
         register("crop_loot_tables_validate_clean", SchwagGameTest::cropLootTablesValidateClean);
         register("healthy_plants_spoil_one_bud_in_fifty", SchwagGameTest::healthyPlantsSpoilOneBudInFifty);
         register("stressed_buds_spoil_one_by_one", SchwagGameTest::stressedBudsSpoilOneByOne);

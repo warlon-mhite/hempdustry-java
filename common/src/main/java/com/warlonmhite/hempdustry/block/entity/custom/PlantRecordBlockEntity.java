@@ -18,6 +18,7 @@ import com.mojang.serialization.Codec;
 import java.lang.ref.WeakReference;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
@@ -283,17 +284,44 @@ public class PlantRecordBlockEntity extends BlockEntity {
      * on its first step, and the weaker of before and now after. Called from the one step every growth
      * route takes ({@code PlantStress#afterStep}); a root with no record (a plant that keeps none) is left
      * alone.
+     *
+     * <p>A plant that holds water (Maui Wowie) reads its sky through the water above its top ({@link
+     * #seesSkyThroughWater}): under water no block sees sky light 15, so {@code canSeeSky} would call every plant
+     * of the sea roofed.
      */
     public static void recordSky(Level level, BlockPos root, int fromAge, int height) {
         if (level.isClientSide() || !(level.getBlockEntity(root) instanceof PlantRecordBlockEntity record)) {
             return;
         }
-        boolean now = level.canSeeSky(root.above(Math.max(0, height - 1)));
+        BlockPos top = root.above(Math.max(0, height - 1));
+        boolean now = level.getFluidState(root).isEmpty() ? level.canSeeSky(top) : seesSkyThroughWater(level, top);
         boolean next = fromAge == 0 || record.openSky == null ? now : record.openSky && now;
         if (record.openSky == null || record.openSky != next) {
             record.openSky = next;
             record.setChanged();
         }
+    }
+
+    /**
+     * Whether the sky reaches {@code top} through the water over it: the first block above that holds no fluid
+     * sees the sky, and nothing on the way up dims the light but the water itself. That is vanilla's {@code
+     * canSeeSkyFromBelowWater} (a drowned's spawn) at any height: vanilla walks down from sea level, and at or
+     * above sea level asks plain {@code canSeeSky}, which no block inside water passes, so a tank or a mountain
+     * lake would read roofed.
+     */
+    public static boolean seesSkyThroughWater(Level level, BlockPos top) {
+        BlockPos.MutableBlockPos pos = top.mutable();
+        while (pos.getY() < level.getMaxY()) {
+            pos.move(Direction.UP);
+            BlockState state = level.getBlockState(pos);
+            if (state.getFluidState().isEmpty()) {
+                return level.canSeeSky(pos);
+            }
+            if (state.getLightBlock() > 0 && !state.liquid()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

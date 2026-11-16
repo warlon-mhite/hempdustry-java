@@ -107,6 +107,7 @@ public class Hempdustry {
 		registration.compostable(ModItems.WHITE_WIDOW_SEEDS, 0.3f);
 		registration.compostable(ModItems.DUD_WEED_SEEDS, 0.3f);
 		registration.compostable(ModItems.ECHO_OG_SEEDS, 0.3f);
+		registration.compostable(ModItems.MAUI_WOWIE_SEEDS, 0.3f);
 		registration.compostable(ModItems.HEMP_FIBER, 0.3f);
 		// Woven cloth, so it sits with the armour at 0.5 rather than with the loose fibre at 0.3.
 		registration.compostable(ModItems.HEMP_CANVAS, 0.5f);
@@ -125,6 +126,7 @@ public class Hempdustry {
 		registration.compostable(ModItems.WHITE_WIDOW_BUDS, 0.5f);
 		registration.compostable(ModItems.DUD_WEED_BUDS, 0.5f);
 		registration.compostable(ModItems.ECHO_OG_BUDS, 0.5f);
+		registration.compostable(ModItems.MAUI_WOWIE_BUDS, 0.5f);
 		// The two cannabutter-chain intermediates. Composting them is a ridiculous use of a fuelled
 		// oven, which is exactly why it should be allowed: everything else organic in the mod goes in
 		// the composter, and a lone pair of items that bounce off it reads as an oversight. They sit
@@ -147,6 +149,7 @@ public class Hempdustry {
 		registration.compostable(ModBlocks.INDICA_FLOWER, 0.65f);
 		registration.compostable(ModBlocks.CHERRY_WINE_FLOWER, 0.65f);
 		registration.compostable(ModBlocks.WHITE_WIDOW_FLOWER, 0.65f);
+		registration.compostable(ModBlocks.MAUI_WOWIE_FLOWER, 0.65f);
 		registration.compostable(ModBlocks.SATIVA_FLOWER, 0.65f);
 		registration.compostable(ModBlocks.DITCHWEED, 0.65f);
 		registration.compostable(ModBlocks.HEMPCRETE_POWDER_BLOCK, 0.85f);

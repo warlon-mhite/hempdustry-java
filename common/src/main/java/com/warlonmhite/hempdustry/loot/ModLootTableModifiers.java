@@ -8,6 +8,8 @@ import com.warlonmhite.hempdustry.block.custom.RuderalisCropBlock;
 import com.warlonmhite.hempdustry.block.custom.WarpedKushCropBlock;
 import com.warlonmhite.hempdustry.block.custom.CrimsonWeedCropBlock;
 import com.warlonmhite.hempdustry.block.custom.EchoOgCropBlock;
+import com.warlonmhite.hempdustry.block.custom.MauiWowieCropBlock;
+import com.warlonmhite.hempdustry.util.ModTags;
 import com.warlonmhite.hempdustry.block.custom.EnderHazeCropBlock;
 import net.minecraft.advancements.criterion.BlockPredicate;
 import net.minecraft.advancements.criterion.ItemPredicate;
@@ -254,6 +256,31 @@ public class ModLootTableModifiers {
     private static final float ICE_BOX_SEED_CHANCE = 0.50f;
 
     /**
+     * Chance an ocean ruin's chest holds 1-3 Maui Wowie seeds, beside vanilla's wheat (weight 10 there): the old
+     * island farmers' stock. Warm and cold ruins share these two tables ({@code OceanRuinPiece}), so the roll
+     * carries a biome check of its own, {@code #hempdustry:maui_wowie_gen}: only a warm ruin has them.
+     */
+    private static final float OCEAN_RUIN_SEED_CHANCE = 0.25f;
+
+    /**
+     * Weight of Maui Wowie seeds inside the one pool of the warm ocean ruin's brushing table, which holds 15
+     * in weights with wheat at 2 among them: 2 in 17, about 12% a brushed block. A weight, so
+     * {@code loot.chanceMultiplier} leaves it alone, and inside vanilla's pool, as a brushed block keeps one item.
+     */
+    private static final int WARM_RUIN_ARCHAEOLOGY_SEED_WEIGHT = 2;
+
+    /**
+     * Chance a buried treasure holds 1-3 Maui Wowie buds, beside vanilla's Heart of the Sea and its potions of
+     * Water Breathing: the chain runs ruin chest, treasure map, treasure, buds. A roll of its own.
+     */
+    private static final float BURIED_TREASURE_BUD_CHANCE = 0.25f;
+
+    /** The two chest tables of the ocean ruins, warm and cold alike. */
+    private static final Set<ResourceKey<LootTable>> OCEAN_RUIN_SOURCES = Set.of(
+            BuiltInLootTables.UNDERWATER_RUIN_SMALL,
+            BuiltInLootTables.UNDERWATER_RUIN_BIG);
+
+    /**
      * Vanilla's own "player didn't use shears" gate — same one wheat seeds use on grass.
      *
      * <p>A method rather than a constant since 1.21.5: an item predicate names items through a
@@ -402,6 +429,11 @@ public class ModLootTableModifiers {
         return plants(seeds) instanceof EchoOgCropBlock;
     }
 
+    /** Whether these seeds plant Maui Wowie, kept in the warm ocean ruins and grown in the warm shallows. */
+    private static boolean isOceanSeed(Item seeds) {
+        return plants(seeds) instanceof MauiWowieCropBlock;
+    }
+
     /**
      * Whether these seeds belong to one place, and so stay out of the tall grass and the generic
      * chests that every other strain shares. Each such strain is found where it belongs, and leaving
@@ -409,7 +441,8 @@ public class ModLootTableModifiers {
      */
     private static boolean isRegionBound(Item seeds) {
         return isDesertSeed(seeds) || isNetherSeed(seeds) || isBuriedSeed(seeds) || isStableSeed(seeds)
-                || isEndSeed(seeds) || isPaleSeed(seeds) || isSportSeed(seeds) || isCitySeed(seeds);
+                || isEndSeed(seeds) || isPaleSeed(seeds) || isSportSeed(seeds) || isCitySeed(seeds)
+                || isOceanSeed(seeds);
     }
 
     /** The block these seeds plant, or null for an item that plants nothing. */
@@ -423,7 +456,8 @@ public class ModLootTableModifiers {
      * and which you get is a coin flip. A region-bound plant is found only where it belongs -- Beldía
      * in the desert, Warped Kush in the Nether, Ruderalis underground, Crimson Weed in the hoglin
      * stables, Ender Haze in the end cities, White Widow in the pale garden's mansions, Dud
-     * Weed in a hemp field and a shipwreck's stores, Echo OG in the Ancient City's ice box -- and every other strain everywhere else. Driven off the loaded strain registry, so a
+     * Weed in a hemp field and a shipwreck's stores, Echo OG in the Ancient City's ice box, Maui Wowie in the warm
+     * ocean ruins -- and every other strain everywhere else. Driven off the loaded strain registry, so a
      * datapack strain appears here without touching this file.
      */
     private static LootPool.Builder seedStash(HolderLookup.Provider registries, float base, Predicate<Item> found) {
@@ -546,6 +580,30 @@ public class ModLootTableModifiers {
                     strain.value().seedItem().filter(ModLootTableModifiers::isCitySeed)
                             .ifPresent(seeds -> pool.add(LootItem.lootTableItem(seeds)
                                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(2, 4)))));
+                }
+                table.addPool(pool);
+            } else if (OCEAN_RUIN_SOURCES.contains(key)) {
+                table.addPool(seedStash(registries, OCEAN_RUIN_SEED_CHANCE, ModLootTableModifiers::isOceanSeed)
+                        .when(LocationCheck.checkLocation(LocationPredicate.Builder.location().setBiomes(
+                                registries.lookupOrThrow(Registries.BIOME).getOrThrow(ModTags.Biomes.MAUI_WOWIE_GEN)))));
+            } else if (key.equals(BuiltInLootTables.OCEAN_RUIN_WARM_ARCHAEOLOGY)) {
+                // Into vanilla's one brushing pool, beside its wheat.
+                for (Holder.Reference<Strain> strain : Strain.all(registries)) {
+                    strain.value().seedItem().filter(ModLootTableModifiers::isOceanSeed)
+                            .ifPresent(seeds -> table.addToEveryPool(LootItem.lootTableItem(seeds)
+                                    .setWeight(WARM_RUIN_ARCHAEOLOGY_SEED_WEIGHT)));
+                }
+            } else if (key.equals(BuiltInLootTables.BURIED_TREASURE)) {
+                // Buds, never seeds: the ruins keep the seed, the treasure the smoke.
+                LootPool.Builder pool = LootPool.lootPool()
+                        .setRolls(ConstantValue.exactly(1))
+                        .when(LootItemRandomChanceCondition.randomChance(chance(BURIED_TREASURE_BUD_CHANCE)));
+                for (Holder.Reference<Strain> strain : Strain.all(registries)) {
+                    Strain value = strain.value();
+                    if (value.seedItem().filter(ModLootTableModifiers::isOceanSeed).isPresent()) {
+                        pool.add(LootItem.lootTableItem(value.buds())
+                                .apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 3))));
+                    }
                 }
                 table.addPool(pool);
             } else if (key.equals(BuiltInLootTables.BASTION_TREASURE)) {

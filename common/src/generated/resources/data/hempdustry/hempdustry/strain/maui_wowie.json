@@ -1,0 +1,49 @@
+{
+  "buds": "hempdustry:maui_wowie_buds",
+  "color": 16740175,
+  "effects": [
+    {
+      "dose_buys_time": true,
+      "effect": "minecraft:water_breathing",
+      "label": "strain",
+      "scales": false
+    },
+    {
+      "dose_buys_time": true,
+      "effect": "minecraft:dolphins_grace",
+      "label": "strain",
+      "scales": false
+    },
+    {
+      "duration_factor": 0.25,
+      "effect": "minecraft:mining_fatigue",
+      "label": "strain",
+      "on_exhale": true,
+      "scales": false
+    },
+    {
+      "effect": "minecraft:hunger",
+      "label": "thc"
+    }
+  ],
+  "flower": "hempdustry:maui_wowie_flower",
+  "model_index": 16,
+  "plant": {
+    "resin": {
+      "average": 45,
+      "low": 35,
+      "rich": 15,
+      "texture": "sticky",
+      "very_low": 5
+    },
+    "resistances": {
+      "dry_ground": "weak",
+      "light": "neutral",
+      "mildew": "very_resistant",
+      "overwatering": "very_resistant"
+    }
+  },
+  "seeds": "hempdustry:maui_wowie_seeds",
+  "terpene": "hempdustry:ocimene",
+  "translation_key": "hempdustry.strain.maui_wowie"
+}

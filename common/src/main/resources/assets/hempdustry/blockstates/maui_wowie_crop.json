@@ -1,0 +1,385 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "segment": "lower",
+        "age": "0"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage0"
+      }
+    },
+    {
+      "when": {
+        "segment": "middle",
+        "age": "0"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage6_middle"
+      }
+    },
+    {
+      "when": {
+        "segment": "upper",
+        "age": "0"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage4_top"
+      }
+    },
+    {
+      "when": {
+        "segment": "lower",
+        "age": "1"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage1"
+      }
+    },
+    {
+      "when": {
+        "segment": "middle",
+        "age": "1"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage6_middle"
+      }
+    },
+    {
+      "when": {
+        "segment": "upper",
+        "age": "1"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage4_top"
+      }
+    },
+    {
+      "when": {
+        "segment": "lower",
+        "age": "2"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage2"
+      }
+    },
+    {
+      "when": {
+        "segment": "middle",
+        "age": "2"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage6_middle"
+      }
+    },
+    {
+      "when": {
+        "segment": "upper",
+        "age": "2"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage4_top"
+      }
+    },
+    {
+      "when": {
+        "segment": "lower",
+        "age": "3",
+        "condition": "!stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage3"
+      }
+    },
+    {
+      "when": {
+        "segment": "lower",
+        "age": "3",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage3_stressed"
+      }
+    },
+    {
+      "when": {
+        "segment": "middle",
+        "age": "3",
+        "condition": "!stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage6_middle"
+      }
+    },
+    {
+      "when": {
+        "segment": "middle",
+        "age": "3",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage6_middle_stressed"
+      }
+    },
+    {
+      "when": {
+        "segment": "upper",
+        "age": "3",
+        "condition": "!stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage4_top"
+      }
+    },
+    {
+      "when": {
+        "segment": "upper",
+        "age": "3",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage4_top_stressed"
+      }
+    },
+    {
+      "when": {
+        "segment": "lower",
+        "age": "4",
+        "condition": "!stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage4_bottom"
+      }
+    },
+    {
+      "when": {
+        "segment": "lower",
+        "age": "4",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage4_bottom_stressed"
+      }
+    },
+    {
+      "when": {
+        "segment": "middle",
+        "age": "4",
+        "condition": "!stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage6_middle"
+      }
+    },
+    {
+      "when": {
+        "segment": "middle",
+        "age": "4",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage6_middle_stressed"
+      }
+    },
+    {
+      "when": {
+        "segment": "upper",
+        "age": "4",
+        "condition": "!stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage4_top"
+      }
+    },
+    {
+      "when": {
+        "segment": "upper",
+        "age": "4",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage4_top_stressed"
+      }
+    },
+    {
+      "when": {
+        "segment": "lower",
+        "age": "5",
+        "condition": "!stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage5_bottom"
+      }
+    },
+    {
+      "when": {
+        "segment": "lower",
+        "age": "5",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage5_bottom_stressed"
+      }
+    },
+    {
+      "when": {
+        "segment": "middle",
+        "age": "5",
+        "condition": "!stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage6_middle"
+      }
+    },
+    {
+      "when": {
+        "segment": "middle",
+        "age": "5",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage6_middle_stressed"
+      }
+    },
+    {
+      "when": {
+        "segment": "upper",
+        "age": "5",
+        "condition": "!stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage5_top"
+      }
+    },
+    {
+      "when": {
+        "segment": "upper",
+        "age": "5",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage5_top_stressed"
+      }
+    },
+    {
+      "when": {
+        "segment": "lower",
+        "age": "6",
+        "condition": "!stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage6_bottom"
+      }
+    },
+    {
+      "when": {
+        "segment": "lower",
+        "age": "6",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage6_bottom_stressed"
+      }
+    },
+    {
+      "when": {
+        "segment": "middle",
+        "age": "6",
+        "condition": "!stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage6_middle"
+      }
+    },
+    {
+      "when": {
+        "segment": "middle",
+        "age": "6",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage6_middle_stressed"
+      }
+    },
+    {
+      "when": {
+        "segment": "upper",
+        "age": "6",
+        "condition": "!stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage6_top"
+      }
+    },
+    {
+      "when": {
+        "segment": "upper",
+        "age": "6",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage6_top_stressed"
+      }
+    },
+    {
+      "when": {
+        "segment": "lower",
+        "age": "7",
+        "condition": "!stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage7_bottom"
+      }
+    },
+    {
+      "when": {
+        "segment": "lower",
+        "age": "7",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage7_bottom_stressed"
+      }
+    },
+    {
+      "when": {
+        "segment": "middle",
+        "age": "7",
+        "condition": "!stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage7_middle"
+      }
+    },
+    {
+      "when": {
+        "segment": "middle",
+        "age": "7",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage7_middle_stressed"
+      }
+    },
+    {
+      "when": {
+        "segment": "upper",
+        "age": "7",
+        "condition": "!stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage7_top"
+      }
+    },
+    {
+      "when": {
+        "segment": "upper",
+        "age": "7",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/maui_wowie_crop_stage7_top_stressed"
+      }
+    }
+  ]
+}

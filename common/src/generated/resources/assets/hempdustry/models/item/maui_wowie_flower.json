@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "hempdustry:block/maui_wowie_flower"
+  }
+}

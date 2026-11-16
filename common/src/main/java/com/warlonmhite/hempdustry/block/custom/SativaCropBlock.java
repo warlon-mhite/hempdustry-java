@@ -442,7 +442,7 @@ public class SativaCropBlock extends CropBlock implements RecordOnTheRoot {
             BlockPos segmentPos = pos.above(offset);
             BlockState segment = world.getBlockState(segmentPos);
             if (segment.is(this) && !isLower(segment)) {
-                TallHemp.ownWrite(() -> world.setBlock(segmentPos, Blocks.AIR.defaultBlockState(),
+                TallHemp.ownWrite(() -> world.setBlock(segmentPos, leftBehind(world, segmentPos),
                         Block.UPDATE_ALL | Block.UPDATE_SUPPRESS_DROPS));
             }
         }
@@ -540,7 +540,20 @@ public class SativaCropBlock extends CropBlock implements RecordOnTheRoot {
 
     /** As above, for a state already in hand — {@link #isShapeSettled} reads each block once. */
     private boolean canOccupy(BlockState state) {
-        return state.isAir() || (state.is(this) && !isLower(state));
+        return this.isRoomToGrow(state) || (state.is(this) && !isLower(state));
+    }
+
+    /** Empty space the plant may grow a segment into: air, for a plant of the land. */
+    protected boolean isRoomToGrow(BlockState state) {
+        return state.isAir();
+    }
+
+    /**
+     * What a block of the plant leaves when the plant itself takes it away: the fluid it held, which is air for a
+     * plant of the land, as vanilla's own removal leaves ({@code Level#removeBlock}).
+     */
+    protected static BlockState leftBehind(LevelReader world, BlockPos pos) {
+        return world.getFluidState(pos).createLegacyBlock();
     }
 
     // ----- defoliation -----
@@ -618,7 +631,7 @@ public class SativaCropBlock extends CropBlock implements RecordOnTheRoot {
                 BlockPos segmentPos = lowerPos.above(offset);
                 BlockState segment = world.getBlockState(segmentPos);
                 if (!segmentPos.equals(pos) && segment.is(this) && !isLower(segment)) {
-                    world.setBlock(segmentPos, Blocks.AIR.defaultBlockState(),
+                    world.setBlock(segmentPos, leftBehind(world, segmentPos),
                             Block.UPDATE_ALL | Block.UPDATE_SUPPRESS_DROPS);
                 }
             }
@@ -628,7 +641,7 @@ public class SativaCropBlock extends CropBlock implements RecordOnTheRoot {
                     dropResources(lower, world, lowerPos, world.getBlockEntity(lowerPos), player,
                             player.getMainHandItem());
                 }
-                world.setBlock(lowerPos, Blocks.AIR.defaultBlockState(),
+                world.setBlock(lowerPos, leftBehind(world, lowerPos),
                         Block.UPDATE_ALL | Block.UPDATE_SUPPRESS_DROPS);
             }
         }

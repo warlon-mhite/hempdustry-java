@@ -571,6 +571,10 @@ public record SmokeContents(List<Entry> entries) {
      * never in THC, so a band never lengthens Beldía's Invisibility. Counted per entry, so a
      * two-and-one mix, each strain at its own count, has nothing past the cap.
      *
+     * <p><b>An effect whose dose buys time</b> ({@code SmokeEffect#doseBuysTime}) takes half the device's
+     * duration for every bud past the first instead, counted in buds as above: a bong of three lasts twice
+     * the bong.
+     *
      * <p><b>CBD-labelled effects</b> run at level I for {@link #cbdTicks} of the entry's CBD, whatever
      * the device and the tier.
      *
@@ -597,7 +601,8 @@ public record SmokeContents(List<Entry> entries) {
             Strain.Burn burn = new Strain.Burn(entry.count(), entry.thcDose(), entry.chemotype(),
                     thcTicks(lasting, entry.thcUnits(), entry.thcDose(), cap),
                     lasting + lasting * past / 2,
-                    cbdTicks(entry.cbdUnits()));
+                    cbdTicks(entry.cbdUnits()),
+                    lasting + lasting * Math.max(0, entry.count() - 1) / 2);
             for (MobEffectInstance effect : entry.strain().value().effects(burn, onExhale, bonus, random)) {
                 out.add(new MobEffectInstance(effect.getEffect(), effect.getDuration(),
                         EffectPolicy.amplifier(effect.getEffect(), effect.getAmplifier(), bonus)));

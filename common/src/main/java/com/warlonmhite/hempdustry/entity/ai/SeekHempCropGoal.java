@@ -1,5 +1,7 @@
 package com.warlonmhite.hempdustry.entity.ai;
 
+import com.warlonmhite.hempdustry.block.ModBlocks;
+import com.warlonmhite.hempdustry.block.custom.SativaCropBlock;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.util.ModTags;
 import net.minecraft.core.BlockPos;
@@ -94,6 +96,14 @@ import java.util.function.Predicate;
  * standing in an overworld hemp field is the wrong joke. Every rule above holds for it unchanged —
  * the half that care, the glance, the prowl and lurk, the rest, one mob to a field, the off switch —
  * at the enderman's own wandering pace.
+ *
+ * <h2>Drowned, and the sea floor</h2>
+ *
+ * Drowned are drawn the same way to a ripe patch of Maui Wowie, and only to a ripe one, in the warm shallows it
+ * grows in; a lit farm spawns none of them, and a conduit attacks them. Under water no plant is the top of its
+ * column, so a drowned reads the sea floor instead ({@code OCEAN_FLOOR}, where the motion-blocking ground ends)
+ * and counts the plant up from there; and it swims, so a root is in reach {@link #SWIMMER_Y_DIFFERENCE} above or
+ * below it. It never breaks a block: drowned already hunt turtle eggs, this only sends them wandering.
  */
 public class SeekHempCropGoal extends RandomStrollGoal {
 
@@ -121,9 +131,15 @@ public class SeekHempCropGoal extends RandomStrollGoal {
     private static final double TAKEN_RADIUS = 8.0;
     /** A plant's roots this far above or below the creeper's feet are out of reach. */
     private static final int MAX_Y_DIFFERENCE = 3;
+    /** As far for a mob that swims to the plant, across the 3 to 6 blocks of water a sea plant grows in. */
+    private static final int SWIMMER_Y_DIFFERENCE = 8;
+    /** {@code RandomStrollGoal}'s speed on a drowned. */
+    private static final double DROWNED_SPEED = 1.0;
 
     /** What counts as a plant to stand in. */
     private final Predicate<BlockState> cover;
+    /** Whether the plant is looked for on the sea floor rather than at the open-sky top of its column. */
+    private final boolean seaFloor;
 
     private int prowlsLeft;
     private long restingUntil;
@@ -140,8 +156,23 @@ public class SeekHempCropGoal extends RandomStrollGoal {
      * so nothing gives the walk away.
      */
     public SeekHempCropGoal(PathfinderMob mob, double speed, Predicate<BlockState> cover) {
+        this(mob, speed, cover, false);
+    }
+
+    private SeekHempCropGoal(PathfinderMob mob, double speed, Predicate<BlockState> cover, boolean seaFloor) {
         super(mob, speed, NOTICE_CHANCE);
         this.cover = cover;
+        this.seaFloor = seaFloor;
+    }
+
+    /** A drowned's: a ripe Maui Wowie on the sea floor, at its wandering pace. */
+    public static SeekHempCropGoal drowned(PathfinderMob drowned) {
+        return new SeekHempCropGoal(drowned, DROWNED_SPEED, SeekHempCropGoal::ripeMauiWowie, true);
+    }
+
+    /** Any block of a ripe Maui Wowie: every segment mirrors its root's age. */
+    public static boolean ripeMauiWowie(BlockState state) {
+        return state.is(ModBlocks.MAUI_WOWIE_CROP) && state.getValue(SativaCropBlock.AGE) == SativaCropBlock.MAX_AGE;
     }
 
     /**
@@ -196,8 +227,8 @@ public class SeekHempCropGoal extends RandomStrollGoal {
     protected @Nullable Vec3 getPosition() {
         boolean prowling = prowlsLeft > 0;
         BlockPos plant = prowling
-                ? findCover(mob, PROWL_RANGE, PROWL_SAMPLES, cover)
-                : findCover(mob, NOTICE_RANGE, NOTICE_SAMPLES, cover);
+                ? findCover(mob, PROWL_RANGE, PROWL_SAMPLES, cover, seaFloor)
+                : findCover(mob, NOTICE_RANGE, NOTICE_SAMPLES, cover, seaFloor);
         if (plant == null) {
             // A prowl that finds no more field has walked out of it, or been led out; either way
             // the visit is over.
@@ -237,6 +268,15 @@ public class SeekHempCropGoal extends RandomStrollGoal {
      */
     public static @Nullable BlockPos findCover(PathfinderMob creeper, int range, int samples,
                                              Predicate<BlockState> cover) {
+        return findCover(creeper, range, samples, cover, false);
+    }
+
+    /**
+     * As above; with {@code seaFloor}, the plant is the one standing on the sea floor of each column
+     * ({@code OCEAN_FLOOR}), counted upwards, and in a swimmer's reach.
+     */
+    public static @Nullable BlockPos findCover(PathfinderMob creeper, int range, int samples,
+                                             Predicate<BlockState> cover, boolean seaFloor) {
         Level world = creeper.level();
         RandomSource random = creeper.getRandom();
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
@@ -247,17 +287,26 @@ public class SeekHempCropGoal extends RandomStrollGoal {
             if (!world.isLoaded(pos.set(x, creeper.getBlockY(), z))) {
                 continue;
             }
-            pos.setY(world.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
             int height = 0;
-            while (cover.test(world.getBlockState(pos))) {
-                pos.move(0, -1, 0);
-                height++;
+            BlockPos root;
+            if (seaFloor) {
+                root = pos.setY(world.getHeight(Heightmap.Types.OCEAN_FLOOR, x, z)).immutable();
+                while (cover.test(world.getBlockState(pos))) {
+                    pos.move(0, 1, 0);
+                    height++;
+                }
+            } else {
+                pos.setY(world.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) - 1);
+                while (cover.test(world.getBlockState(pos))) {
+                    pos.move(0, -1, 0);
+                    height++;
+                }
+                root = pos.above();
             }
             if (height < 2) {
                 continue;
             }
-            BlockPos root = pos.above();
-            if (Math.abs(root.getY() - creeper.getBlockY()) > MAX_Y_DIFFERENCE
+            if (Math.abs(root.getY() - creeper.getBlockY()) > (seaFloor ? SWIMMER_Y_DIFFERENCE : MAX_Y_DIFFERENCE)
                     || isTaken(world, root, creeper)) {
                 continue;
             }

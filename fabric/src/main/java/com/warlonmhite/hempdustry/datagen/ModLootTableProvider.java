@@ -289,6 +289,11 @@ public class ModLootTableProvider extends FabricBlockLootTableProvider {
                 .apply(SetPotencyFunction.setPotency())
                 .apply(SetTierFunction.setTier())
                 .apply(SetResinFunction.setResin()));
+        add(ModBlocks.MAUI_WOWIE_FLOWER, wildFlowerDrops(ModBlocks.MAUI_WOWIE_FLOWER, ModItems.MAUI_WOWIE_SEEDS));
+        add(ModBlocks.MAUI_WOWIE_CROP, mauiWowieCropDrops().apply(SetChemotypeFunction.ofStrain(ModStrains.MAUI_WOWIE))
+                .apply(SetPotencyFunction.setPotency())
+                .apply(SetTierFunction.setTier())
+                .apply(SetResinFunction.setResin()));
 
         add(ModBlocks.SATIVA_CROP, sativaCropDrops().apply(SetChemotypeFunction.ofStrain(ModStrains.SATIVA))
                 .apply(SetPotencyFunction.setPotency())
@@ -907,6 +912,15 @@ public class ModLootTableProvider extends FabricBlockLootTableProvider {
                 () -> StatePropertiesPredicate.Builder.properties().hasProperty(SativaCropBlock.SEGMENT, TriplePlantSegment.LOWER),
                 SativaCropBlock.AGE, SativaCropBlock.MAX_AGE,
                 ModItems.SATIVA_BUDS, ModItems.SATIVA_SEEDS,
+                3, 4);
+    }
+
+    /** Lemon Haze's harvest, rolled from the root of Lemon Haze's three-block body. */
+    private LootTable.Builder mauiWowieCropDrops() {
+        return this.hempCropDrops(ModBlocks.MAUI_WOWIE_CROP,
+                () -> StatePropertiesPredicate.Builder.properties().hasProperty(SativaCropBlock.SEGMENT, TriplePlantSegment.LOWER),
+                SativaCropBlock.AGE, SativaCropBlock.MAX_AGE,
+                ModItems.MAUI_WOWIE_BUDS, ModItems.MAUI_WOWIE_SEEDS,
                 3, 4);
     }
 }

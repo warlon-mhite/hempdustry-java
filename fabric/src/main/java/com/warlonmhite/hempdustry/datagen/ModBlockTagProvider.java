@@ -65,7 +65,8 @@ public class ModBlockTagProvider extends FabricTagProvider.BlockTagProvider {
                 .add(ModBlocks.CHERRY_WINE_CROP)
                 .add(ModBlocks.WHITE_WIDOW_CROP)
                 .add(ModBlocks.DUD_WEED_CROP)
-                .add(ModBlocks.ECHO_OG_CROP);
+                .add(ModBlocks.ECHO_OG_CROP)
+                .add(ModBlocks.MAUI_WOWIE_CROP);
 
         // Hoglins keep about eight blocks from anything in here (HoglinSpecificSensor), and vanilla's
         // only plant in it is warped fungus. Warped Kush grows beside it and joins it: a field of it
@@ -100,6 +101,28 @@ public class ModBlockTagProvider extends FabricTagProvider.BlockTagProvider {
         valueLookupBuilder(ModTags.Blocks.ECHO_OG_SOIL)
                 .add(Blocks.SCULK);
 
+        // Maui Wowie's ground, the sea floor by name: sand, red sand, gravel, clay and mud. Never #minecraft:sand,
+        // which carries suspicious sand. Deliberately NOT #minecraft:crops: no bee flies under water.
+        valueLookupBuilder(ModTags.Blocks.MAUI_WOWIE_SOIL)
+                .add(Blocks.SAND)
+                .add(Blocks.RED_SAND)
+                .add(Blocks.GRAVEL)
+                .add(Blocks.CLAY)
+                .add(Blocks.MUD);
+
+        // The seagrass meadow that is its farmland: seagrass, tall seagrass and kelp, both kelp blocks.
+        valueLookupBuilder(ModTags.Blocks.MAUI_WOWIE_MEADOW)
+                .add(Blocks.SEAGRASS)
+                .add(Blocks.TALL_SEAGRASS)
+                .add(Blocks.KELP)
+                .add(Blocks.KELP_PLANT);
+
+        // What a sponge takes with its drops, beside vanilla's kelp and seagrass: our blocks that hold their
+        // own water. Never a block that merely stands waterlogged -- a sponge drains that and leaves the block.
+        valueLookupBuilder(ModTags.Blocks.SPONGE_CLEARS)
+                .add(ModBlocks.MAUI_WOWIE_CROP)
+                .add(ModBlocks.MAUI_WOWIE_FLOWER);
+
         // The wild flowers were in no tag at all, so a sword took as long over one as a fist did and
         // an enderman walked past them. Both of these are joined DIRECTLY rather than by way of
         // #minecraft:small_flowers, and that is the whole point of the entry:
@@ -124,13 +147,15 @@ public class ModBlockTagProvider extends FabricTagProvider.BlockTagProvider {
                 .add(ModBlocks.INDICA_FLOWER)
                 .add(ModBlocks.CHERRY_WINE_FLOWER)
                 .add(ModBlocks.WHITE_WIDOW_FLOWER)
+                .add(ModBlocks.MAUI_WOWIE_FLOWER)
                 .add(ModBlocks.SATIVA_FLOWER)
                 .add(ModBlocks.DITCHWEED);
         // SATIVA_FLOWER is deliberately absent: it is two blocks tall, and an enderman lifts ONE
         // block. Taking either half orphans the other, which pops off and rolls the loot table --
         // so the mob destroys the plant instead of relocating it, and the block it carries can only
         // ever be put back down as a lone half that immediately breaks again. Vanilla has no double
-        // plant in this tag for the same reason.
+        // plant in this tag for the same reason. MAUI_WOWIE_FLOWER is absent too: it holds its own water, and
+        // set down on land it would be a block of sea there. Vanilla's seagrass is not holdable either.
         valueLookupBuilder(BlockTags.ENDERMAN_HOLDABLE)
                 .add(ModBlocks.INDICA_FLOWER)
                 .add(ModBlocks.CHERRY_WINE_FLOWER)

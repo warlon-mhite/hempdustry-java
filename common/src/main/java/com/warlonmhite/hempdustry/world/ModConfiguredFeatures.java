@@ -63,6 +63,7 @@ public class ModConfiguredFeatures {
     public static final ResourceKey<ConfiguredFeature<?, ?>> ECHO_OG_KEY = registerKey("echo_og");
     public static final ResourceKey<ConfiguredFeature<?, ?>> CHERRY_WINE_KEY = registerKey("cherry_wine");
     public static final ResourceKey<ConfiguredFeature<?, ?>> WHITE_WIDOW_KEY = registerKey("white_widow");
+    public static final ResourceKey<ConfiguredFeature<?, ?>> MAUI_WOWIE_KEY = registerKey("maui_wowie");
 
     /** A handful of plants on one stretch of an island: tries within three blocks, on the centre's level or one off. */
     private static final int ENDER_HAZE_TRIES = 8;
@@ -152,6 +153,10 @@ public class ModConfiguredFeatures {
         // Wild White Widow: a flower of its own, as Wild Purple Kush is. It generates closed and
         // opens at its first night's random tick, as a flower set down by day would.
         register(context, WHITE_WIDOW_KEY, wildPatch(ModBlocks.WHITE_WIDOW_FLOWER));
+
+        // Wild Maui Wowie: a flower of its own, set into the sea; the block holds the water it replaces.
+        // Purple Kush's wild patch, but each plant stands in the shallows rather than in air.
+        register(context, MAUI_WOWIE_KEY, wildPatch(ModBlocks.MAUI_WOWIE_FLOWER, ModPlacedFeatures.shallows()));
 
         // Ditchweed — feral Industrial Hemp — grows where escaped fibre crops do, along water. So it
         // is placed exactly as sugar cane is: each plant must stand on its ground with water beside
@@ -272,6 +277,23 @@ public class ModConfiguredFeatures {
         return new ConfiguredFeature<>(Feature.RANDOM_PATCH, new RandomPatchConfiguration(tries, 6, 2,
                 PlacementUtils.onlyWhenEmpty(Feature.SIMPLE_BLOCK,
                         new SimpleBlockConfiguration(BlockStateProvider.simple(flower)))));
+    }
+
+    /**
+     * {@link #wildPatch(Block)}, but each plant stands only where {@code where} holds instead of in air: a wild
+     * plant of the sea is set into water, which {@code onlyWhenEmpty} would refuse.
+     */
+    private static ConfiguredFeature<?, ?> wildPatch(Block flower, BlockPredicate where) {
+        return new ConfiguredFeature<>(Feature.RANDOM_SELECTOR, new RandomFeatureConfiguration(
+                List.of(new WeightedPlacedFeature(inline(patch(flower, BIG_TRIES, where)), BIG_CHANCE)),
+                inline(patch(flower, SMALL_TRIES, where))));
+    }
+
+    private static ConfiguredFeature<?, ?> patch(Block flower, int tries, BlockPredicate where) {
+        return new ConfiguredFeature<>(Feature.RANDOM_PATCH, new RandomPatchConfiguration(tries, 6, 2,
+                PlacementUtils.inlinePlaced(Feature.SIMPLE_BLOCK,
+                        new SimpleBlockConfiguration(BlockStateProvider.simple(flower)),
+                        BlockPredicateFilter.forPredicate(where))));
     }
 
     /**

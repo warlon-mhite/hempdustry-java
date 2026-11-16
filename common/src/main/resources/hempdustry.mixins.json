@@ -6,6 +6,7 @@
 		"AbstractContainerMenuMixin",
 		"BeeGrowCropsGoalMixin",
 		"CreeperEntityMixin",
+		"DrownedMixin",
 		"EnderManMixin",
 		"ExperienceOrbAccessor",
 		"ItemComponentsSchemaMixin",
@@ -15,6 +16,7 @@
 		"Schema1460Mixin",
 		"SculkBlockMixin",
 		"SniffingMixin",
+		"SpongeBlockMixin",
 		"VibrationListenerMixin",
 		"WorldGenRegionMixin"
 	],
