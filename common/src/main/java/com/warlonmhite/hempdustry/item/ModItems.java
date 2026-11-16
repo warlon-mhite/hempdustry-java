@@ -93,6 +93,8 @@ public class ModItems {
     public static final Item WHITE_WIDOW_BUDS = registerItem("white_widow_buds", StrainPlantItem.Buds::new);
     public static final Item DUD_WEED_SEEDS = registerItem("dud_weed_seeds", settings -> new StrainPlantItem.Seeds(ModBlocks.DUD_WEED_CROP, settings));
     public static final Item DUD_WEED_BUDS = registerItem("dud_weed_buds", StrainPlantItem.Buds::new);
+    public static final Item ECHO_OG_SEEDS = registerItem("echo_og_seeds", settings -> new StrainPlantItem.Seeds(ModBlocks.ECHO_OG_CROP, settings));
+    public static final Item ECHO_OG_BUDS = registerItem("echo_og_buds", StrainPlantItem.Buds::new);
     public static final Item HEMP_STEM = registerItem("hemp_stem", settings -> new Item(settings));
     /**
      * A stalk that has been soaked until the pectin gluing its bast fibre to the woody core has

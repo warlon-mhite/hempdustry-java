@@ -41,7 +41,8 @@ LAYERS = {
 # (with open air above, without).
 POWDER_FOR = {"white_widow_crop": (GREY_POWDER, 0.75, 0.30)}
 
-CROPS = ("indica_crop", "sativa_crop", "beldia_crop", "cherry_wine_crop", "white_widow_crop", "dud_weed_crop")
+CROPS = ("indica_crop", "sativa_crop", "beldia_crop", "cherry_wine_crop", "white_widow_crop", "dud_weed_crop",
+         "echo_og_crop")
 STAGE = re.compile(r"^(?:%s)_stage\d+(?:_(?:bottom|middle|top))?$" % "|".join(CROPS))
 
 
@@ -94,6 +95,8 @@ def main(assets):
         plant = [p for p in blockstate["multipart"] if "mildew" not in p.get("when", {})]
         layers = []
         for part in plant:
+            if part["apply"]["model"].endswith("_glow"):
+                continue  # a ripe plant's glowing pistils (Echo OG) are an overlay already, not a stage
             model = part["apply"]["model"].removesuffix("_stressed")
             when = {k: v for k, v in part["when"].items() if k != "condition"}
             for suffix, (_, _, _, value) in LAYERS.items():

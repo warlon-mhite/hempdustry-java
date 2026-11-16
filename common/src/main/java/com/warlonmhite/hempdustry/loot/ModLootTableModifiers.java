@@ -11,6 +11,7 @@ import net.minecraft.advancements.predicates.StatePropertiesPredicate;
 import com.warlonmhite.hempdustry.block.custom.RuderalisCropBlock;
 import com.warlonmhite.hempdustry.block.custom.WarpedKushCropBlock;
 import com.warlonmhite.hempdustry.block.custom.CrimsonWeedCropBlock;
+import com.warlonmhite.hempdustry.block.custom.EchoOgCropBlock;
 import com.warlonmhite.hempdustry.block.custom.EnderHazeCropBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -245,6 +246,21 @@ public class ModLootTableModifiers {
     private static final float PALE_CAMP_SEED_CHANCE = CHEST_SEED_CHANCE;
 
     /**
+     * Chance an Ancient City chest holds a few Echo OG buds: the first chest of a raid gives the smoke that
+     * makes the rest of it quieter. Vanilla's main pool there rolls 5-10 times over 84 in weights, so a
+     * weight-3 entry (the Bottle o' Enchanting beside it) turns up in about 24% of chests and a weight-2 in
+     * about 16%; the table has a second pool (the trims), so this is a roll of its own, at the chance
+     * between the two.
+     */
+    private static final float ANCIENT_CITY_BUD_CHANCE = 0.20f;
+
+    /**
+     * Chance the Ancient City's ice box holds Echo OG seeds, the city's cold store: real seed is kept alive
+     * dry and cold. One chest in a city, so about half of them, and nowhere else.
+     */
+    private static final float ICE_BOX_SEED_CHANCE = 0.50f;
+
+    /**
      * Vanilla's own "player didn't use shears" gate — same one wheat seeds use on grass.
      *
      * <p>A method rather than a constant since 1.21.5: an item predicate names items through a
@@ -388,6 +404,11 @@ public class ModLootTableModifiers {
         return plants(seeds) instanceof DudWeedCropBlock;
     }
 
+    /** Whether these seeds plant Echo OG, kept in the Ancient City's ice box and nowhere else. */
+    private static boolean isCitySeed(Item seeds) {
+        return plants(seeds) instanceof EchoOgCropBlock;
+    }
+
     /**
      * Whether these seeds belong to one place, and so stay out of the tall grass and the generic
      * chests that every other strain shares. Each such strain is found where it belongs, and leaving
@@ -395,7 +416,7 @@ public class ModLootTableModifiers {
      */
     private static boolean isRegionBound(Item seeds) {
         return isDesertSeed(seeds) || isNetherSeed(seeds) || isBuriedSeed(seeds) || isStableSeed(seeds)
-                || isEndSeed(seeds) || isPaleSeed(seeds) || isSportSeed(seeds);
+                || isEndSeed(seeds) || isPaleSeed(seeds) || isSportSeed(seeds) || isCitySeed(seeds);
     }
 
     /** The block these seeds plant, or null for an item that plants nothing. */
@@ -409,7 +430,7 @@ public class ModLootTableModifiers {
      * and which you get is a coin flip. A region-bound plant is found only where it belongs -- Beldía
      * in the desert, Warped Kush in the Nether, Ruderalis underground, Crimson Weed in the hoglin
      * stables, Ender Haze in the end cities, White Widow in the pale garden's mansions and camps, Dud
-     * Weed in a hemp field and a shipwreck's stores -- and every other strain everywhere else. Driven off the loaded strain registry, so a
+     * Weed in a hemp field and a shipwreck's stores, Echo OG in the Ancient City's ice box -- and every other strain everywhere else. Driven off the loaded strain registry, so a
      * datapack strain appears here without touching this file.
      */
     private static LootPool.Builder seedStash(HolderGetter.Provider registries, float base, Predicate<Item> found) {
@@ -515,6 +536,29 @@ public class ModLootTableModifiers {
                 table.addPool(seedStash(registries, HOGLIN_STABLE_SEED_CHANCE, ModLootTableModifiers::isStableSeed));
             } else if (key.equals(BuiltInLootTables.END_CITY_TREASURE)) {
                 table.addPool(seedStash(registries, END_CITY_SEED_CHANCE, ModLootTableModifiers::isEndSeed));
+            } else if (key.equals(BuiltInLootTables.ANCIENT_CITY)) {
+                // Buds, never seeds: a city's chests hold its smoke, its ice box its seed.
+                LootPool.Builder pool = LootPool.lootPool()
+                        .setRolls(ContextIntProviders.exactly(1))
+                        .when(LootItemRandomChanceCondition.randomChance(chance(ANCIENT_CITY_BUD_CHANCE)));
+                for (Holder.Reference<Strain> strain : Strain.all(registries)) {
+                    Strain value = strain.value();
+                    if (value.seedItem().filter(ModLootTableModifiers::isCitySeed).isPresent()) {
+                        pool.add(LootItem.lootTableItem(value.buds())
+                                .apply(SetItemCountFunction.setCount(ContextIntProviders.between(1, 3))));
+                    }
+                }
+                table.addPool(pool);
+            } else if (key.equals(BuiltInLootTables.ANCIENT_CITY_ICE_BOX)) {
+                LootPool.Builder pool = LootPool.lootPool()
+                        .setRolls(ContextIntProviders.exactly(1))
+                        .when(LootItemRandomChanceCondition.randomChance(chance(ICE_BOX_SEED_CHANCE)));
+                for (Holder.Reference<Strain> strain : Strain.all(registries)) {
+                    strain.value().seedItem().filter(ModLootTableModifiers::isCitySeed)
+                            .ifPresent(seeds -> pool.add(LootItem.lootTableItem(seeds)
+                                    .apply(SetItemCountFunction.setCount(ContextIntProviders.between(2, 4)))));
+                }
+                table.addPool(pool);
             } else if (key.equals(BuiltInLootTables.BASTION_TREASURE)) {
                 LootPool.Builder pool = LootPool.lootPool()
                         .setRolls(ContextIntProviders.exactly(1))

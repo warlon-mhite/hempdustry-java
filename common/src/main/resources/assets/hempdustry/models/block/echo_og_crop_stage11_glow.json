@@ -1,0 +1,6 @@
+{
+  "parent": "hempdustry:block/crop_glow",
+  "textures": {
+    "overlay": "hempdustry:block/echo_og_crop_stage11_glow"
+  }
+}

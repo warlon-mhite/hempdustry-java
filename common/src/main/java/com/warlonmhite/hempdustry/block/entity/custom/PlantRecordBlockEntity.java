@@ -79,6 +79,12 @@ import org.jetbrains.annotations.Nullable;
  * stresses a plant. A plant that keeps no light record never steps it, and a wild plant generated ripe
  * never took a step: both read shade.
  *
+ * <h2>Experience</h2>
+ *
+ * A plant fed by experience (Echo OG) keeps what it has eaten short of a growth step ({@link #feed}): ten
+ * points a step, so an orb worth three waits for the rest. It goes with the plant: a replanting or a harvest
+ * takes it. Nothing else keeps any.
+ *
  * <h2>The harvest's tier</h2>
  *
  * {@link #harvestTier} rolls the {@link BudTier} every bud of one harvest carries, Fortune's extras
@@ -92,12 +98,14 @@ public class PlantRecordBlockEntity extends BlockEntity {
     private static final String OPEN_SKY_KEY = "open_sky";
     private static final String RESISTANCES_KEY = "resistances";
     private static final String RESIN_KEY = "resin";
+    private static final String EXPERIENCE_KEY = "experience";
 
     private @Nullable PotencyBand band;
     private @Nullable QualityGene gene;
     private @Nullable Boolean openSky;
     private @Nullable ResistanceGenes resistances;
     private @Nullable ResinStep resin;
+    private int experience;
     private WeakReference<Object> harvest = new WeakReference<>(null);
     private @Nullable BudTier harvestTier;
 
@@ -167,9 +175,27 @@ public class PlantRecordBlockEntity extends BlockEntity {
         resistances = resistancesOf(level, getBlockState()).roll(RandomSource.create());
         resin = resinOf(level, getBlockState()).roll(RandomSource.create());
         openSky = null;
+        experience = 0;
         harvestTier = null;
         harvest = new WeakReference<>(null);
         setChanged();
+    }
+
+    /**
+     * Feeds the plant {@code points} of experience and answers how many growth steps of {@code cost} each they
+     * buy with what it already kept, keeping the rest for the next.
+     */
+    public int feed(int points, int cost) {
+        experience += Math.max(0, points);
+        int steps = experience / cost;
+        experience %= cost;
+        setChanged();
+        return steps;
+    }
+
+    /** The experience this plant keeps short of a growth step. */
+    public int storedExperience() {
+        return experience;
     }
 
     /** The gene, if this plant has rolled it yet. */
@@ -395,6 +421,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
         openSky = view.read(OPEN_SKY_KEY, Codec.BOOL).orElse(null);
         resistances = view.read(RESISTANCES_KEY, ResistanceGenes.CODEC).orElse(null);
         resin = view.read(RESIN_KEY, ResinStep.CODEC).orElse(null);
+        experience = view.getIntOr(EXPERIENCE_KEY, 0);
     }
 
     @Override
@@ -414,6 +441,9 @@ public class PlantRecordBlockEntity extends BlockEntity {
         }
         if (resin != null) {
             view.store(RESIN_KEY, ResinStep.CODEC, resin);
+        }
+        if (experience > 0) {
+            view.putInt(EXPERIENCE_KEY, experience);
         }
     }
 }

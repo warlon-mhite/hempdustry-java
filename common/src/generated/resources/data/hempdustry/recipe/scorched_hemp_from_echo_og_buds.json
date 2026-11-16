@@ -1,0 +1,12 @@
+{
+  "type": "hempdustry:stamped_smelting",
+  "cookingtime": 200,
+  "experience": 0.1,
+  "ingredient": "hempdustry:echo_og_buds",
+  "result": {
+    "components": {
+      "hempdustry:chemotype": "cbg_dominant"
+    },
+    "id": "hempdustry:scorched_hemp"
+  }
+}

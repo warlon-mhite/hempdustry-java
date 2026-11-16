@@ -292,6 +292,10 @@ public class ModLootTableProvider extends FabricBlockLootSubProvider {
                 .apply(SetPotencyFunction.setPotency())
                 .apply(SetTierFunction.setTier())
                 .apply(SetResinFunction.setResin()));
+        add(ModBlocks.ECHO_OG_CROP, echoOgCropDrops().apply(SetChemotypeFunction.ofStrain(ModStrains.ECHO_OG))
+                .apply(SetPotencyFunction.setPotency())
+                .apply(SetTierFunction.setTier())
+                .apply(SetResinFunction.setResin()));
 
         add(ModBlocks.SATIVA_CROP, sativaCropDrops().apply(SetChemotypeFunction.ofStrain(ModStrains.SATIVA))
                 .apply(SetPotencyFunction.setPotency())
@@ -871,6 +875,20 @@ public class ModLootTableProvider extends FabricBlockLootSubProvider {
                 IndicaCropBlock.AGE, IndicaCropBlock.MAX_AGE,
                 ModItems.DUD_WEED_BUDS, ModItems.DUD_WEED_SEEDS,
                 BUDS_AT_ZERO_CUTS, DUD_WEED_SEEDS_AT_HARVEST, 3, 2);
+    }
+
+    /**
+     * Echo OG: Warped Kush's off-world harvest, eleven items -- 2 buds, 3 seeds, 2 stems, 4 leaves -- on
+     * Purple Kush's body. Its experience is no loot: the crop drops it when broken, as sculk does
+     * ({@code EchoOgCropBlock#spawnAfterBreak}). It is also its own wild plant, so a ripe one found in an
+     * Ancient City pays exactly this.
+     */
+    private LootTable.Builder echoOgCropDrops() {
+        return this.hempCropDrops(ModBlocks.ECHO_OG_CROP,
+                () -> StatePropertiesPredicate.Builder.properties().hasProperty(IndicaCropBlock.HALF, DoubleBlockHalf.LOWER),
+                IndicaCropBlock.AGE, IndicaCropBlock.MAX_AGE,
+                ModItems.ECHO_OG_BUDS, ModItems.ECHO_OG_SEEDS,
+                4, 2);
     }
 
     private LootTable.Builder whiteWidowCropDrops() {

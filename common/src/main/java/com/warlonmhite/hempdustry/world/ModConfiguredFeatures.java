@@ -46,6 +46,7 @@ public class ModConfiguredFeatures {
     public static final ResourceKey<Feature> RUDERALIS_KEY = registerKey("ruderalis");
     public static final ResourceKey<Feature> CRIMSON_KEY = registerKey("crimson");
     public static final ResourceKey<Feature> ENDER_HAZE_KEY = registerKey("ender_haze");
+    public static final ResourceKey<Feature> ECHO_OG_KEY = registerKey("echo_og");
     public static final ResourceKey<Feature> CHERRY_WINE_KEY = registerKey("cherry_wine");
     public static final ResourceKey<Feature> WHITE_WIDOW_KEY = registerKey("white_widow");
 
@@ -137,6 +138,17 @@ public class ModConfiguredFeatures {
                     BlockStateProvider.of(ripeEnderHaze.setValue(EnderHazeCropBlock.SEGMENT, segment))));
         }
         register(context, ENDER_HAZE_KEY, new BlockColumnFeature(enderHazeLayers, Direction.UP, BlockPredicate.ONLY_IN_AIR_PREDICATE, false));
+
+        // Echo OG grows wild as its own crop, RIPE, on the Ancient Cities' sculk: Warped Kush's two-layer
+        // block column. Where it may stand -- sculk under it, air for both halves, inside a city -- is the
+        // placed feature's to say.
+        BlockState ripeEcho = ModBlocks.ECHO_OG_CROP.defaultBlockState().setValue(IndicaCropBlock.AGE, IndicaCropBlock.MAX_AGE);
+        register(context, ECHO_OG_KEY, new BlockColumnFeature(List.of(
+                BlockColumnFeature.layer(ConstantInt.of(1),
+                        BlockStateProvider.of(ripeEcho.setValue(IndicaCropBlock.HALF, DoubleBlockHalf.LOWER))),
+                BlockColumnFeature.layer(ConstantInt.of(1),
+                        BlockStateProvider.of(ripeEcho.setValue(IndicaCropBlock.HALF, DoubleBlockHalf.UPPER)))),
+                Direction.UP, BlockPredicate.ONLY_IN_AIR_PREDICATE, false));
 
         register(context, RUDERALIS_KEY, new SimpleBlockFeature(BlockStateProvider.of(
                 ModBlocks.RUDERALIS_CROP.defaultBlockState().setValue(CropBlock.AGE, CropBlock.MAX_AGE))));

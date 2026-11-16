@@ -19,6 +19,12 @@ public class ModEffects {
      */
     public static final Holder<MobEffect> AVERTED_GAZE = register("averted_gaze", new AvertedGazeEffect(0xE580FF));
 
+    /**
+     * Echo OG's signature: your own body makes no vibrations. Sculk's own glowing cyan, the colour of a
+     * sensor's tendrils when it hears something — the colour of what it does not hear now.
+     */
+    public static final Holder<MobEffect> HUSH = register("hush", new HushEffect(0x29DFEB));
+
     private static Holder<MobEffect> register(String name, MobEffect effect) {
         return Registry.registerForHolder(BuiltInRegistries.MOB_EFFECT,
                 Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name), effect);

@@ -94,6 +94,13 @@ public class ModFlowerGeneration {
                 ModPlacedFeatures.WHITE_WIDOW_PLACED_KEY
         );
 
+        // Echo OG, ripe and wild, on the sculk floors of Ancient Cities -- never the open deep dark.
+        Services.REGISTRATION.addFeature(
+                ModTags.Biomes.ECHO_OG_GEN,
+                GenerationStep.Decoration.VEGETAL_DECORATION,
+                ModPlacedFeatures.ECHO_OG_PLACED_KEY
+        );
+
         // Ender Haze, ripe and wild, on the outer End islands -- never the dragon's.
         Services.REGISTRATION.addFeature(
                 ModTags.Biomes.ENDER_HAZE_GEN,

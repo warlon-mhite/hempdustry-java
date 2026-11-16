@@ -1,0 +1,25 @@
+{
+  "type": "hempdustry:stamped_shaped",
+  "group": "spliff",
+  "key": {
+    "B": "hempdustry:echo_og_buds",
+    "P": "minecraft:paper"
+  },
+  "pattern": [
+    "BBB",
+    "PPP"
+  ],
+  "result": {
+    "components": {
+      "hempdustry:smoke_contents": {
+        "entries": [
+          {
+            "count": 3,
+            "strain": "hempdustry:echo_og"
+          }
+        ]
+      }
+    },
+    "id": "hempdustry:spliff"
+  }
+}

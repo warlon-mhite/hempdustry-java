@@ -57,14 +57,15 @@ public final class TerpeneGameTest {
         COLOURS.put(Terpene.GERANIOL, 0xF592B8);
         COLOURS.put(Terpene.HUMULENE, 0xB3AE5C);
         COLOURS.put(Terpene.NEROLIDOL, 0xB0835A);
+        COLOURS.put(Terpene.BORNEOL, 0x009295);
     }
 
-    /** The ten load with their colours; each plant strain names its own; schwag and hash do not. */
+    /** The eleven load with their colours; each plant strain names its own; schwag and hash do not. */
     public static void everyPlantStrainSmellsOfItsOwnTerpene(GameTestHelper context) {
         ServerLevel world = context.getLevel();
         HolderLookup.Provider registries = world.registryAccess();
 
-        context.assertValueEqual(registries.lookupOrThrow(Terpene.REGISTRY_KEY).listElements().count(), 10L,
+        context.assertValueEqual(registries.lookupOrThrow(Terpene.REGISTRY_KEY).listElements().count(), 11L,
                 "the terpenes loaded");
         COLOURS.forEach((key, colour) -> {
             Optional<Terpene> terpene = Terpene.resolve(registries, key);

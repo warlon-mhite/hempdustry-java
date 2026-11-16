@@ -364,7 +364,8 @@ public final class ViewerRecipes {
      * packed bong sets down only while sneaking, because a plain right-click is how it is smoked,
      * and no crafting row can say so. The indoor-growing blocks can only be shown being crafted:
      * what each one does is a paragraph, not a row of slots.
-     * And Dud Weed has no wild plant and no recipe: its seeds say where they come from.
+     * And Dud Weed has no wild plant and no recipe: its seeds say where they come from. Echo OG's say how
+     * it grows, since nothing it eats (experience, a catalyst's charge) is an item a row could show.
      */
     public static Map<Item, Component> info() {
         Map<Item, Component> out = new LinkedHashMap<>();
@@ -375,6 +376,7 @@ public final class ViewerRecipes {
         out.put(ModBlocks.HYDRO_TRAY.asItem(), Component.translatable("hempdustry.info.hydro_tray"));
         out.put(ModBlocks.GROW_LAMP.asItem(), Component.translatable("hempdustry.info.grow_lamp"));
         out.put(ModItems.DUD_WEED_SEEDS, Component.translatable("hempdustry.info.dud_weed_seeds"));
+        out.put(ModItems.ECHO_OG_SEEDS, Component.translatable("hempdustry.info.echo_og_seeds"));
         return out;
     }
 

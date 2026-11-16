@@ -1,0 +1,50 @@
+{
+  "buds": "hempdustry:echo_og_buds",
+  "chemotype": "cbg_dominant",
+  "color": 2744299,
+  "effects": [
+    {
+      "effect": "hempdustry:hush",
+      "label": "strain",
+      "scales": false
+    },
+    {
+      "duration_factor": 0.25,
+      "effect": "minecraft:darkness",
+      "label": "strain",
+      "on_exhale": true,
+      "scales": false
+    }
+  ],
+  "flower": "hempdustry:echo_og_crop",
+  "green_out_factor": 0.0,
+  "model_index": 15,
+  "plant": {
+    "quality": {
+      "average": 46,
+      "base_luck": 2,
+      "elite": 10,
+      "good": 32,
+      "poor": 12
+    },
+    "resin": {
+      "average": 35,
+      "low": 40,
+      "rich": 10,
+      "very_low": 15
+    },
+    "resistances": {
+      "dry_ground": "neutral",
+      "light": "very_weak",
+      "mildew": "weak",
+      "overwatering": "neutral"
+    }
+  },
+  "potency": {
+    "extra_high": 5,
+    "low": 20
+  },
+  "seeds": "hempdustry:echo_og_seeds",
+  "terpene": "hempdustry:borneol",
+  "translation_key": "hempdustry.strain.echo_og"
+}

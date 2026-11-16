@@ -10,9 +10,13 @@
 		"ItemComponentsSchemaMixin",
 		"ItemStackComponentizationFixMixin",
 		"EnderManMixin",
+		"ExperienceOrbAccessor",
 		"PointOfInterestTypesAccessor",
 		"ReloadableServerRegistriesMixin",
 		"Schema1460Mixin",
+		"SculkBlockMixin",
+		"SniffingMixin",
+		"VibrationListenerMixin",
 		"WorldGenRegionMixin"
 	],
 	"injectors": {

@@ -94,6 +94,11 @@ public class ModStrains {
      */
     public static final ResourceKey<Strain> DUD_WEED = key("dud_weed");
     /**
+     * The Ancient City's plant, Purple Kush's body on sculk, fed by experience and shunning light. Its wild
+     * flower is its own crop, generated ripe inside Ancient Cities.
+     */
+    public static final ResourceKey<Strain> ECHO_OG = key("echo_og");
+    /**
      * Not a plant and not resin: spent hemp, smoked for what little is left in it. <b>Deliberately
      * outside {@link #BUILT_IN}</b> — it has no art and no recipes of its own, so it takes
      * {@code model_index} 0 and the shared tinted look, and none of the per-strain datagen loops
@@ -118,7 +123,7 @@ public class ModStrains {
      */
     public static final List<ResourceKey<Strain>> BUILT_IN =
             List.of(INDICA, SATIVA, HASHISH, CHARAS, FILTERED_HASHISH, ROSIN, BELDIA, WARPED_KUSH, RUDERALIS,
-                    CRIMSON, ENDER_HAZE, CHERRY_WINE, WHITE_WIDOW, DUD_WEED);
+                    CRIMSON, ENDER_HAZE, CHERRY_WINE, WHITE_WIDOW, DUD_WEED, ECHO_OG);
 
     /** First {@code model_index} this mod claims for its own art. */
     public static final int RESERVED_MODEL_INDEX_MIN = 1;
@@ -133,6 +138,13 @@ public class ModStrains {
      * carries you off an island.
      */
     static final float LEVITATION_DURATION_FACTOR = 0.1F;
+
+    /**
+     * Echo OG's Darkness lasts a quarter of the hit, as Beldía's Blindness does: about nine seconds off a
+     * pipe, against a Warden's own pulse of thirteen. Long enough to cost a raid its sight, short enough not
+     * to cancel the Hush it comes with.
+     */
+    static final float ECHO_DARKNESS_DURATION_FACTOR = 0.25F;
 
     /**
      * The registry itself is registered with the other datapack registries, before anything else
@@ -476,6 +488,43 @@ public class ModStrains {
                 .withQuality(new GrowQuality(0, 30, 50, 18, 2))
                 .withResistances(Resistances.of(Resistance.VERY_RESISTANT, Resistance.VERY_RESISTANT, Resistance.RESISTANT, Resistance.VERY_RESISTANT))
                 .withResin(new ResinSheet(80, 12, 8, 0, 0, ResinTexture.EVEN)));
+
+        // Echo OG -- the Ancient City's plant, and the first CBG-dominant strain: its chemistry stops at the
+        // precursor the THC and CBD synthases work on (de Meijer & Hammond 2005; the French hemp cultivar
+        // Santhica 27), so it is smoked as a tool, not for a high. OG, one of weed's oldest naming families,
+        // read here as "original": the oldest chemistry, in a city from before.
+        //
+        // HUSH is the signature, flat because a level buys nothing: your own body makes no vibrations --
+        // steps, eating, drinking, armour, gliding -- while everything you do to the world is still heard.
+        // It is the plant's own, so it stays on whatever this strain is ever crossed with.
+        //
+        // DARKNESS is the tax, the Warden's own effect, landing on the exhale for a quarter of the hit, and
+        // the smoke has a second one no data can say: a Warden smells a Hushed player from twice as far
+        // (HushEffect#SNIFF_DISTANCE). Both are the plant's, and Darkness is harmful to vanilla, so
+        // debuffs=false takes it and leaves the signature.
+        //
+        // NO HUNGER, and no rule needed for it: the munchies are THC-labelled, and a CBG-dominant bud carries
+        // neither THC nor CBD, so its THC dose is 0 -- no high, no Hunger, nothing to green you out with.
+        // green_out_factor 0 says the same in the codec's own words. The oven and the Infuser turn its
+        // flowers away (Chemotype#infusable).
+        //
+        // Base luck +2, as the Nether pair's: it can take no lamp and no tray. Gene odds 12 / 46 / 32 / 10,
+        // the best of any strain, for the hardest to obtain. Resin low and even: a plant that never sees the
+        // sun makes less of the resin that is first of all its shield against it.
+        //
+        // Sculk's own glowing cyan, the colour of a sensor's tendrils when it hears something.
+        context.register(ECHO_OG, new Strain("hempdustry.strain.echo_og", 0x29DFEB, modelIndex(ECHO_OG),
+                Optional.of(ModItems.ECHO_OG_SEEDS), ModItems.ECHO_OG_BUDS,
+                Optional.of(ModBlocks.ECHO_OG_CROP), 0.0F, 1,
+                List.of(
+                        new SmokeEffect(ModEffects.HUSH, 0, EffectLabel.STRAIN, 1.0F, false, 1.0F, SmokeEffect.NO_CAP),
+                        new SmokeEffect(MobEffects.DARKNESS, 0, EffectLabel.STRAIN, ECHO_DARKNESS_DURATION_FACTOR, true,
+                                1.0F, SmokeEffect.NO_CAP)),
+                1.0F, Chemotype.CBG_DOMINANT).withTerpene(Terpene.BORNEOL)
+                .withPotency(Potency.odds(20, 50, 25, 5))
+                .withQuality(new GrowQuality(2, 12, 46, 32, 10))
+                .withResistances(Resistances.of(Resistance.NEUTRAL, Resistance.NEUTRAL, Resistance.VERY_WEAK, Resistance.WEAK))
+                .withResin(new ResinSheet(15, 40, 35, 10, 0, ResinTexture.EVEN)));
 
         // Hashish -- strainless by construction. Sifting keeps the trichome heads and throws the
         // plant away, and a trichome head is a trichome head whichever plant grew it. Its identity

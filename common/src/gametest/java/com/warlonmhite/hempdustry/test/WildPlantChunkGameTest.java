@@ -95,30 +95,8 @@ public final class WildPlantChunkGameTest {
     /** Places {@code feature} in a fresh proto-chunk at {@code at} as chunk generation does, then makes it live. */
     private static void generateAndLoad(GameTestHelper context, ServerLevel level,
             net.minecraft.world.level.levelgen.feature.Feature feature, String name, ChunkPos at) {
-        ProtoChunk proto = new ProtoChunk(at, UpgradeData.EMPTY, level, level.palettedContainerFactory(), null);
-        proto.setPersistedStatus(ChunkStatus.FEATURES.getParent());
-        GenerationChunkHolder holder = new GenerationChunkHolder(at) {
-            @Override
-            public ChunkAccess getChunkIfPresentUnchecked(ChunkStatus status) {
-                return proto;
-            }
-
-            @Override
-            protected void addSaveDependency(CompletableFuture<?> sync) {
-            }
-
-            @Override
-            public int getTicketLevel() {
-                return 0;
-            }
-
-            @Override
-            public int getQueueLevel() {
-                return 0;
-            }
-        };
-        WorldGenRegion region = new WorldGenRegion(level, StaticCache2D.create(at.x(), at.z(), 0, (x, z) -> holder),
-                ChunkPyramid.GENERATION_PYRAMID.getStepTo(ChunkStatus.FEATURES), proto);
+        ProtoChunk proto = protoChunk(level, at);
+        WorldGenRegion region = regionOf(level, proto);
         BlockPos origin = at.getMiddleBlockPosition(100);
         context.assertTrue(feature.place(region, level.getChunkSource().getGenerator(), region.getRandom(), origin),
                 "the wild " + name + " feature placed nothing in an empty chunk");
@@ -146,5 +124,42 @@ public final class WildPlantChunkGameTest {
                     "the wild " + name + "'s " + (isRoot ? "root has no record" : "block at " + pos + " has " + entity)
                             + " once its chunk is live");
         }
+    }
+
+    /** A fresh proto-chunk at {@code at}, one step short of its features, as chunk generation hands it over. */
+    static ProtoChunk protoChunk(ServerLevel level, ChunkPos at) {
+        ProtoChunk proto = new ProtoChunk(at, UpgradeData.EMPTY, level, level.palettedContainerFactory(), null);
+        proto.setPersistedStatus(ChunkStatus.FEATURES.getParent());
+        return proto;
+    }
+
+    /**
+     * Vanilla's {@link WorldGenRegion} for the features step of {@code proto} alone: what a feature and its
+     * placement see while that chunk generates. Its neighbours are out of reach.
+     */
+    static WorldGenRegion regionOf(ServerLevel level, ProtoChunk proto) {
+        ChunkPos at = proto.getPos();
+        GenerationChunkHolder holder = new GenerationChunkHolder(at) {
+            @Override
+            public ChunkAccess getChunkIfPresentUnchecked(ChunkStatus status) {
+                return proto;
+            }
+
+            @Override
+            protected void addSaveDependency(CompletableFuture<?> sync) {
+            }
+
+            @Override
+            public int getTicketLevel() {
+                return 0;
+            }
+
+            @Override
+            public int getQueueLevel() {
+                return 0;
+            }
+        };
+        return new WorldGenRegion(level, StaticCache2D.create(at.x(), at.z(), 0, (x, z) -> holder),
+                ChunkPyramid.GENERATION_PYRAMID.getStepTo(ChunkStatus.FEATURES), proto);
     }
 }

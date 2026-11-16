@@ -1,0 +1,26 @@
+{
+  "parent": "hempdustry:first_contact",
+  "criteria": {
+    "hush_avoided_vibration": {
+      "trigger": "hempdustry:hush_avoided_vibration"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.hempdustry.sneak_420.description"
+    },
+    "hidden": true,
+    "icon": {
+      "id": "hempdustry:echo_og_buds"
+    },
+    "title": {
+      "translate": "advancements.hempdustry.sneak_420.title"
+    }
+  },
+  "requirements": [
+    [
+      "hush_avoided_vibration"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
