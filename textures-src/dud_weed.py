@@ -28,7 +28,7 @@ import sys
 
 from PIL import Image
 
-# (Dud Weed texture, Lemon Haze texture) for the twelve stages, then the stressed ones from age 4.
+# (Dud Weed texture, Lemon Haze texture) for the twelve stages, then the stressed ones from age 3.
 STAGES = [("dud_weed_crop_stage%d" % age, "sativa_crop_stage%d" % age) for age in range(4)] + [
     ("dud_weed_crop_stage4", "sativa_crop_stage4_bottom"),
     ("dud_weed_crop_stage5", "sativa_crop_stage5_bottom"),
@@ -39,7 +39,8 @@ STAGES = [("dud_weed_crop_stage%d" % age, "sativa_crop_stage%d" % age) for age i
     ("dud_weed_crop_stage10", "sativa_crop_stage7_top"),
     ("dud_weed_crop_stage11", "sativa_crop_stage7_top"),
 ]
-STRESSED = [(dud + "_stressed", haze + "_stressed") for dud, haze in STAGES[4:]]
+# Stressed from age 3 too (#265): Lemon Haze's one-block stage 3 has a stressed texture of its own.
+STRESSED = [(dud + "_stressed", haze + "_stressed") for dud, haze in STAGES[3:]]
 
 # Industrial Hemp's own colours (industrial_hemp_crop_stage7_top): leaf #6FA24F / #93C06A, hue 91-96
 # at saturation 0.45-0.52; ripe tops #D8CF9A (cream, hue 51, s 0.29) and #B9B764 (khaki, hue 58, s 0.46).

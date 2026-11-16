@@ -138,7 +138,8 @@
     {
       "when": {
         "age": "3",
-        "segment": "0"
+        "segment": "0",
+        "condition": "!stressed"
       },
       "apply": {
         "model": "hempdustry:block/ender_haze_crop_stage3_bottom"
@@ -147,7 +148,18 @@
     {
       "when": {
         "age": "3",
-        "segment": "1"
+        "segment": "0",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/ender_haze_crop_stage3_bottom_stressed"
+      }
+    },
+    {
+      "when": {
+        "age": "3",
+        "segment": "1",
+        "condition": "!stressed"
       },
       "apply": {
         "model": "hempdustry:block/ender_haze_crop_stage3_top"
@@ -156,7 +168,18 @@
     {
       "when": {
         "age": "3",
-        "segment": "2"
+        "segment": "1",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/ender_haze_crop_stage3_top_stressed"
+      }
+    },
+    {
+      "when": {
+        "age": "3",
+        "segment": "2",
+        "condition": "!stressed"
       },
       "apply": {
         "model": "hempdustry:block/ender_haze_crop_stage3_top"
@@ -165,7 +188,18 @@
     {
       "when": {
         "age": "3",
-        "segment": "3"
+        "segment": "2",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/ender_haze_crop_stage3_top_stressed"
+      }
+    },
+    {
+      "when": {
+        "age": "3",
+        "segment": "3",
+        "condition": "!stressed"
       },
       "apply": {
         "model": "hempdustry:block/ender_haze_crop_stage3_top"
@@ -174,10 +208,31 @@
     {
       "when": {
         "age": "3",
-        "segment": "4"
+        "segment": "3",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/ender_haze_crop_stage3_top_stressed"
+      }
+    },
+    {
+      "when": {
+        "age": "3",
+        "segment": "4",
+        "condition": "!stressed"
       },
       "apply": {
         "model": "hempdustry:block/ender_haze_crop_stage3_top"
+      }
+    },
+    {
+      "when": {
+        "age": "3",
+        "segment": "4",
+        "condition": "stressed"
+      },
+      "apply": {
+        "model": "hempdustry:block/ender_haze_crop_stage3_top_stressed"
       }
     },
     {
