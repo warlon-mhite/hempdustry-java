@@ -48,11 +48,19 @@ public class ModConfiguredFeatures {
 
     /** Vanilla sugar cane's patch shape: 20 tries within 4 blocks, all on the centre's level. */
     private static final int BELDIA_TRIES = 20;
+    /** A wild Echo OG patch round one city floor: tries within 2 blocks, on its level. */
+    private static final int ECHO_OG_TRIES = 3;
+    /** Where a wild Echo OG may stand: air for both halves, sculk under the root. */
+    static final BlockPredicate ECHO_OG_ROOM = BlockPredicate.allOf(
+            BlockPredicate.ONLY_IN_AIR_PREDICATE,
+            BlockPredicate.matchesBlocks(new Vec3i(0, 1, 0), Blocks.AIR),
+            BlockPredicate.matchesTag(new Vec3i(0, -1, 0), ModTags.Blocks.ECHO_OG_SOIL));
     public static final ResourceKey<ConfiguredFeature<?, ?>> DITCHWEED_KEY = registerKey("ditchweed");
     public static final ResourceKey<ConfiguredFeature<?, ?>> WARPED_KUSH_KEY = registerKey("warped_kush");
     public static final ResourceKey<ConfiguredFeature<?, ?>> RUDERALIS_KEY = registerKey("ruderalis");
     public static final ResourceKey<ConfiguredFeature<?, ?>> CRIMSON_KEY = registerKey("crimson");
     public static final ResourceKey<ConfiguredFeature<?, ?>> ENDER_HAZE_KEY = registerKey("ender_haze");
+    public static final ResourceKey<ConfiguredFeature<?, ?>> ECHO_OG_KEY = registerKey("echo_og");
     public static final ResourceKey<ConfiguredFeature<?, ?>> CHERRY_WINE_KEY = registerKey("cherry_wine");
     public static final ResourceKey<ConfiguredFeature<?, ?>> WHITE_WIDOW_KEY = registerKey("white_widow");
 
@@ -230,6 +238,22 @@ public class ModConfiguredFeatures {
                 PlacementUtils.inlinePlaced(Feature.BLOCK_COLUMN,
                         new BlockColumnConfiguration(enderHazeLayers, Direction.UP, BlockPredicate.ONLY_IN_AIR_PREDICATE, false),
                         BlockPredicateFilter.forPredicate(BlockPredicate.allOf(enderHazeRoom)))));
+
+        // Echo OG grows wild as its own crop, RIPE, on the Ancient Cities' sculk: Warped Kush's two-layer
+        // block column, in a patch round the floor the placed feature finds -- a few tries within 2 blocks,
+        // on its level. Each try wants sculk under the root and air for both halves, and stands inside a
+        // piece of the city, so the sculk that spreads round a city in the open deep dark grows none.
+        BlockState ripeEcho = ModBlocks.ECHO_OG_CROP.defaultBlockState().setValue(IndicaCropBlock.AGE, IndicaCropBlock.MAX_AGE);
+        register(context, ECHO_OG_KEY, Feature.RANDOM_PATCH, new RandomPatchConfiguration(ECHO_OG_TRIES, 2, 0,
+                PlacementUtils.inlinePlaced(Feature.BLOCK_COLUMN,
+                        new BlockColumnConfiguration(List.of(
+                                BlockColumnConfiguration.layer(ConstantInt.of(1),
+                                        BlockStateProvider.simple(ripeEcho.setValue(IndicaCropBlock.HALF, DoubleBlockHalf.LOWER))),
+                                BlockColumnConfiguration.layer(ConstantInt.of(1),
+                                        BlockStateProvider.simple(ripeEcho.setValue(IndicaCropBlock.HALF, DoubleBlockHalf.UPPER)))),
+                                Direction.UP, BlockPredicate.ONLY_IN_AIR_PREDICATE, false),
+                        BlockPredicateFilter.forPredicate(ECHO_OG_ROOM),
+                        ModPlacementModifiers.InStructurePlacementFilter.of(ModTags.Structures.ECHO_OG_STRUCTURES))));
     }
 
     private static ConfiguredFeature<?, ?> wildPatch(Block flower) {

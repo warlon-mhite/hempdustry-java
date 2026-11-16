@@ -155,6 +155,16 @@ public final class HempdustryGameTests {
         register("industrial_hemp_sports_dud_weed", DudWeedGameTest::industrialHempSportsDudWeed);
         register("dud_weed_seeds_come_from_wrecks", DudWeedGameTest::dudWeedSeedsComeFromWrecks);
         register("damp_squib", DudWeedGameTest::dampSquib);
+        register("echo_og_grows_on_sculk_in_the_dark", EchoOgGameTest::echoOgGrowsOnSculkInTheDark);
+        register("light_stresses_echo_og", EchoOgGameTest::lightStressesEchoOg);
+        register("experience_feeds_echo_og", EchoOgGameTest::experienceFeedsEchoOg);
+        register("a_catalyst_charge_feeds_echo_og", EchoOgGameTest::aCatalystChargeFeedsEchoOg);
+        register("echo_og_harvest_and_glow", EchoOgGameTest::echoOgHarvestAndGlow);
+        register("echo_og_smokes_quiet", EchoOgGameTest::echoOgSmokesQuiet);
+        register("hush_silences_your_body", EchoOgGameTest::hushSilencesYourBody);
+        register("a_warden_smells_the_smoke", EchoOgGameTest::aWardenSmellsTheSmoke);
+        register("echo_og_stays_in_the_city", EchoOgGameTest::echoOgStaysInTheCity);
+        register("wild_echo_og_needs_a_city", EchoOgGameTest::wildEchoOgNeedsACity);
         register("crop_loot_tables_validate_clean", SchwagGameTest::cropLootTablesValidateClean);
         register("healthy_plants_spoil_one_bud_in_fifty", SchwagGameTest::healthyPlantsSpoilOneBudInFifty);
         register("stressed_buds_spoil_one_by_one", SchwagGameTest::stressedBudsSpoilOneByOne);

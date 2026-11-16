@@ -1,6 +1,7 @@
 package com.warlonmhite.hempdustry.advancement;
 
 import com.warlonmhite.hempdustry.Hempdustry;
+import net.minecraft.advancements.criterion.PlayerTrigger;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
@@ -25,6 +26,17 @@ public class ModCriteria {
             BuiltInRegistries.TRIGGER_TYPES,
             Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "edible_kicks_in"),
             new EdibleKicksInCriterion());
+
+    /**
+     * A sculk sensor or a Warden let a vibration of yours go because of Hush: vanilla's
+     * {@code avoid_vibration} (Sneak 100) in the same shape, for the smoke instead of the sneak. Fired
+     * where vanilla fires that one, by a listener that can, so a vibration only a shrieker or an allay
+     * would have heard does not count.
+     */
+    public static final PlayerTrigger HUSH_AVOIDED_VIBRATION = Registry.register(
+            BuiltInRegistries.TRIGGER_TYPES,
+            Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "hush_avoided_vibration"),
+            new PlayerTrigger());
 
     public static void registerCriteria() {
         Hempdustry.LOGGER.info("Registering Advancement Criteria for " + Hempdustry.MOD_ID);

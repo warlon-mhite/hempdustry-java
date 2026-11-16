@@ -17,6 +17,7 @@ import com.warlonmhite.hempdustry.block.custom.DudWeedCropBlock;
 import com.warlonmhite.hempdustry.block.custom.WhiteWidowCropBlock;
 import com.warlonmhite.hempdustry.block.custom.WhiteWidowFlowerBlock;
 import com.warlonmhite.hempdustry.block.custom.WhiteWidowPotBlock;
+import com.warlonmhite.hempdustry.block.custom.EchoOgCropBlock;
 import com.warlonmhite.hempdustry.block.custom.EnderHazeCropBlock;
 import com.warlonmhite.hempdustry.block.custom.CustomConcreteBlock;
 import com.warlonmhite.hempdustry.block.custom.DecarboxylatorBlock;
@@ -430,6 +431,13 @@ public class ModBlocks {
     // in a field of Industrial Hemp, never growing wild.
     public static final Block DUD_WEED_CROP = registerBlockWithoutItem("dud_weed_crop", DudWeedCropBlock::new,
             BlockBehaviour.Properties.ofFullCopy(Blocks.WHEAT));
+
+    // No block item, for the reason on INDICA_CROP above. It is also Echo OG's wild plant, ripe on the
+    // sculk floors of Ancient Cities. It sounds like the sculk it grows on, and a ripe one gives off a
+    // sculk sensor's faint light, 1, on both halves (the tip mirrors the root's age).
+    public static final Block ECHO_OG_CROP = registerBlockWithoutItem("echo_og_crop", EchoOgCropBlock::new,
+            BlockBehaviour.Properties.ofFullCopy(Blocks.WHEAT).sound(SoundType.SCULK)
+                    .lightLevel(state -> state.getValue(BlockStateProperties.AGE_7) == IndicaCropBlock.MAX_AGE ? 1 : 0));
 
 
     /**

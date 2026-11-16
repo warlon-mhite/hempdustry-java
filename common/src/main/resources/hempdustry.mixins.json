@@ -7,11 +7,15 @@
 		"BeeGrowCropsGoalMixin",
 		"CreeperEntityMixin",
 		"EnderManMixin",
+		"ExperienceOrbAccessor",
 		"ItemComponentsSchemaMixin",
 		"ItemStackComponentizationFixMixin",
 		"PointOfInterestTypesAccessor",
 		"ReloadableServerRegistriesMixin",
 		"Schema1460Mixin",
+		"SculkBlockMixin",
+		"SniffingMixin",
+		"VibrationListenerMixin",
 		"WorldGenRegionMixin"
 	],
 	"injectors": {

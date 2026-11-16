@@ -81,6 +81,7 @@ public class HempdustryClient {
         client.blockLayer(ModBlocks.WHITE_WIDOW_FLOWER, ChunkSectionLayer.CUTOUT);
         client.blockLayer(ModBlocks.POTTED_WHITE_WIDOW_FLOWER, ChunkSectionLayer.CUTOUT);
         client.blockLayer(ModBlocks.DUD_WEED_CROP, ChunkSectionLayer.CUTOUT);
+        client.blockLayer(ModBlocks.ECHO_OG_CROP, ChunkSectionLayer.CUTOUT);
         // The Stash Jars' glass is clear between its streaks.
         client.blockLayer(ModBlocks.STASH_JAR, ChunkSectionLayer.CUTOUT);
         client.blockLayer(ModBlocks.GILDED_STASH_JAR, ChunkSectionLayer.CUTOUT);

@@ -92,6 +92,13 @@
       {
         "model": {
           "type": "minecraft:model",
+          "model": "hempdustry:item/spliff_echo_og"
+        },
+        "threshold": 15.0
+      },
+      {
+        "model": {
+          "type": "minecraft:model",
           "model": "hempdustry:item/spliff_tinted",
           "tints": [
             {
@@ -104,7 +111,7 @@
             }
           ]
         },
-        "threshold": 15.0
+        "threshold": 16.0
       }
     ],
     "fallback": {

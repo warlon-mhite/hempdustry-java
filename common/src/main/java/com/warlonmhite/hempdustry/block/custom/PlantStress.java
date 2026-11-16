@@ -103,10 +103,21 @@ public final class PlantStress {
     public static GrowLight afterStep(Level world, BlockPos lower, GrowLight record, int fromAge, int toAge,
                                       int height, StressCause extra, RandomSource random, boolean stressable,
                                       boolean touchy) {
+        return afterStep(world, lower, record, fromAge, toAge, height, extra, random, stressable, touchy, false);
+    }
+
+    /**
+     * As above; a {@code shy} plant (Echo OG) reads its light by {@link #shyStep}: stressed by light itself,
+     * the light stress turned round, and never helped by a lamp.
+     */
+    public static GrowLight afterStep(Level world, BlockPos lower, GrowLight record, int fromAge, int toAge,
+                                      int height, StressCause extra, RandomSource random, boolean stressable,
+                                      boolean touchy, boolean shy) {
         // The open-sky record rides the same step as the light record, on every growth route.
         PlantRecordBlockEntity.recordSky(world, lower, fromAge, height);
         ResistanceGenes genes = PlantRecordBlockEntity.resistancesAt(world, lower);
-        GrowLight next = touchy ? touchyStep(world, lower, record, fromAge, toAge, height, genes.light(), random)
+        GrowLight next = shy ? shyStep(world, lower, record, toAge, genes.light(), random)
+                : touchy ? touchyStep(world, lower, record, fromAge, toAge, height, genes.light(), random)
                 : lightStep(record, fromAge, GrowLight.over(world, lower, height), genes.light(), random);
         if (!stressable) {
             return next == GrowLight.STRESSED ? GrowLight.NATURAL : next;
@@ -161,6 +172,24 @@ public final class PlantStress {
         }
         GrowLight fixture = GrowLight.fixtureOver(world, lower, height);
         return fixture == GrowLight.NATURAL ? record : record.afterStep(fromAge, fixture, light.lightLossAge());
+    }
+
+    /**
+     * The light record after one growth step of a plant that shuns light (Echo OG): <b>light is its lost
+     * light</b>. A step taken where the light at the plant's top is above {@link EchoOgCropBlock#MAX_LIGHT}
+     * stresses it from its light step's {@link Resistance#lightLossAge} (age 3 for a weak or very weak plant,
+     * the strain's most likely, 4 for the rest), and a resistant plant shrugs it off now and then, as it does
+     * a lost lamp. Otherwise the record stays as it was: no lamp ever counts for it, so it never climbs the
+     * ladder. Its own growth in the dark needs that dark anyway, so only a step it is fed (experience) can
+     * fall in the light.
+     */
+    static GrowLight shyStep(Level world, BlockPos lower, GrowLight record, int toAge, Resistance light,
+                             RandomSource random) {
+        if (record == GrowLight.STRESSED || toAge < light.lightLossAge()
+                || EchoOgCropBlock.lightAtTop(world, lower) <= EchoOgCropBlock.MAX_LIGHT) {
+            return record;
+        }
+        return light.ignoresLostLight(random) ? record : GrowLight.STRESSED;
     }
 
     /** Day, night, or the twilight around the switch between them, as a plant touchy about its light keeps them. */
@@ -278,8 +307,9 @@ public final class PlantStress {
         int height = crop instanceof EnderHazeCropBlock ? EnderHazeCropBlock.HEIGHT : crop instanceof SativaCropBlock ? 3 : 2;
         boolean stressable = !(crop instanceof SativaCropBlock sativa) || sativa.canBeStressed();
         boolean touchy = crop instanceof IndicaCropBlock indica && indica.leaksAtNight();
+        boolean shy = crop instanceof IndicaCropBlock indica && indica.shunsLight();
         return next.setValue(GrowLight.PROPERTY, afterStep(world, pos, current.getValue(GrowLight.PROPERTY),
-                crop.getAge(current), crop.getAge(next), height, StressCause.NONE, random, stressable, touchy));
+                crop.getAge(current), crop.getAge(next), height, StressCause.NONE, random, stressable, touchy, shy));
     }
 
     /** A hemp plant at or past {@link GrowLight#FLOWERING_AGE}, with a record to lose. */

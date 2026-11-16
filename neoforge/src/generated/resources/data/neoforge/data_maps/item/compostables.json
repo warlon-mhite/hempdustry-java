@@ -33,6 +33,12 @@
     "hempdustry:dud_weed_seeds": {
       "chance": 0.3
     },
+    "hempdustry:echo_og_buds": {
+      "chance": 0.5
+    },
+    "hempdustry:echo_og_seeds": {
+      "chance": 0.3
+    },
     "hempdustry:ender_haze_buds": {
       "chance": 0.5
     },

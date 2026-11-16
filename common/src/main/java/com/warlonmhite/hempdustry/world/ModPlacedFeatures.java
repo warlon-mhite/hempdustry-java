@@ -21,7 +21,9 @@ import net.minecraft.world.level.levelgen.placement.CountOnEveryLayerPlacement;
 import net.minecraft.world.level.levelgen.placement.CountPlacement;
 import net.minecraft.world.level.levelgen.placement.EnvironmentScanPlacement;
 import net.minecraft.world.level.levelgen.placement.InSquarePlacement;
+import net.minecraft.world.level.levelgen.placement.HeightRangePlacement;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import net.minecraft.world.level.levelgen.VerticalAnchor;
 import net.minecraft.world.level.levelgen.placement.PlacementModifier;
 import net.minecraft.world.level.levelgen.placement.RandomOffsetPlacement;
 import net.minecraft.world.level.levelgen.placement.RarityFilter;
@@ -48,6 +50,21 @@ public class ModPlacedFeatures {
     public static final ResourceKey<PlacedFeature> ENDER_HAZE_PLACED_KEY = registerKey("ender_haze_placed");
     public static final ResourceKey<PlacedFeature> CHERRY_WINE_PLACED_KEY = registerKey("cherry_wine_placed");
     public static final ResourceKey<PlacedFeature> WHITE_WIDOW_PLACED_KEY = registerKey("white_widow_placed");
+    public static final ResourceKey<PlacedFeature> ECHO_OG_PLACED_KEY = registerKey("echo_og_placed");
+
+    /**
+     * One attempt per this many deep-dark chunks for a wild Echo OG patch; only an attempt that lands on a
+     * sculk floor inside an Ancient City places anything. Measured in 21 generated cities: sixteen on Fabric over
+     * four worlds at rarities 4, 6 and 8 give, taken to a rarity of 4, 8.3 plants a city, from 0 to 23 as the
+     * sculk on a city's floors falls, so about 4.7 at 7, inside the sheet's 3 to 6; five on NeoForge at 7 gave
+     * 6.0. A single city can still have none.
+     */
+    static final int ECHO_OG_RARITY = 7;
+    /** Scans for a city floor from a random height in each chosen chunk. */
+    private static final int ECHO_OG_SCANS = 4;
+    /** The heights a city's floors stand at: its start piece is at y −27, its lowest halls near −51. */
+    private static final int ECHO_OG_BOTTOM = -56;
+    private static final int ECHO_OG_TOP = -10;
 
     /**
      * One attempt per this many outer-island chunks for a wild Ender Haze patch, on the island's top.
@@ -186,6 +203,23 @@ public class ModPlacedFeatures {
         // Ender Haze: the islands' top is an ordinary surface, so an ordinary surface patch.
         register(context, ENDER_HAZE_PLACED_KEY,
                 configured.getOrThrow(ModConfiguredFeatures.ENDER_HAZE_KEY), surfacePatch(ENDER_HAZE_RARITY));
+
+        // Echo OG: the Ancient City's floors are inside the deep dark, under everything, so no heightmap
+        // reaches them. A few scans per chosen chunk drop from a random height inside the city's range to
+        // the first sculk floor with air on it, the way vanilla's cave plants find a floor; then the
+        // patch (the configured feature), each try wanting sculk under the root and air for both halves.
+        // Every point is held to the inside of an Ancient City's pieces, twice -- once here for the scan,
+        // once in the patch for each try -- so the sculk that spreads round a city in the open deep dark
+        // grows none.
+        register(context, ECHO_OG_PLACED_KEY,
+                configured.getOrThrow(ModConfiguredFeatures.ECHO_OG_KEY),
+                RarityFilter.onAverageOnceEvery(ECHO_OG_RARITY),
+                CountPlacement.of(ECHO_OG_SCANS),
+                InSquarePlacement.spread(),
+                HeightRangePlacement.uniform(VerticalAnchor.absolute(ECHO_OG_BOTTOM), VerticalAnchor.absolute(ECHO_OG_TOP)),
+                EnvironmentScanPlacement.scanningFor(Direction.DOWN, ModConfiguredFeatures.ECHO_OG_ROOM, 16),
+                BiomeFilter.biome(),
+                ModPlacementModifiers.InStructurePlacementFilter.of(ModTags.Structures.ECHO_OG_STRUCTURES));
 
         // Ruderalis: a relict stand in the cold north, where the plant is actually from and where
         // vanilla already puts the trail ruins that hold its seeds.

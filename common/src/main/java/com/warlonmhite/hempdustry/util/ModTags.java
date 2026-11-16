@@ -9,6 +9,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BannerPattern;
+import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.level.levelgen.structure.Structure;
 
 public class ModTags {
 
@@ -45,6 +47,12 @@ public class ModTags {
          * Where White Widow grows wild: the pale garden. A modded pale biome joins by name.
          */
         public static final TagKey<Biome> WHITE_WIDOW_GEN = createTag("white_widow_gen");
+        /**
+         * Where wild Echo OG may stand: the deep dark, the only biome vanilla builds an Ancient City in.
+         * The plant is placed only inside a structure of {@link Structures#ECHO_OG_STRUCTURES} as well, so a
+         * modded deep-dark biome joins by name and still grows it only inside a city.
+         */
+        public static final TagKey<Biome> ECHO_OG_GEN = createTag("echo_og_gen");
         private static TagKey<Biome> createTag(String name) {
             return TagKey.create(Registries.BIOME, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name));
         }
@@ -276,8 +284,41 @@ public class ModTags {
          * modded End's own end stones join wherever that tag exists. Never farmland.
          */
         public static final TagKey<Block> ENDER_HAZE_SOIL = createTag("ender_haze_soil");
+
+        /** What Echo OG grows on: sculk by name, and nothing else. Never farmland, a pot or a tray. */
+        public static final TagKey<Block> ECHO_OG_SOIL = createTag("echo_og_soil");
+
         private static TagKey<Block> createTag(String name) {
             return TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name));
+        }
+    }
+
+    public static class Structures {
+
+        /**
+         * The structures wild Echo OG grows inside: the Ancient City. A pack adds its own deep-dark ruin
+         * here, and its biome to {@link Biomes#ECHO_OG_GEN}.
+         */
+        public static final TagKey<Structure> ECHO_OG_STRUCTURES = createTag("echo_og_structures");
+
+        private static TagKey<Structure> createTag(String name) {
+            return TagKey.create(Registries.STRUCTURE, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name));
+        }
+    }
+
+    public static class GameEvents {
+
+        /**
+         * The vibrations Hush silences: those a body makes by itself — steps, swimming, flapping, landing,
+         * splashing, eating, drinking, putting armour on and off, gliding, using an item, a bow's shot.
+         * Vanilla's {@code #ignore_vibrations_sneaking} in the same grammar, so a pack can tune it.
+         * Whatever a body does to the world (a block broken or placed, a chest opened, a projectile
+         * landing, a hit taken) is not in it, and is still heard.
+         */
+        public static final TagKey<GameEvent> HUSH_SILENCES = createTag("hush_silences");
+
+        private static TagKey<GameEvent> createTag(String name) {
+            return TagKey.create(Registries.GAME_EVENT, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name));
         }
     }
 

@@ -257,6 +257,22 @@ public class IndicaCropBlock extends CropBlock implements RecordOnTheRoot {
         return false;
     }
 
+    /**
+     * Whether light itself stresses the plant and no lamp ever counts for it ({@link PlantStress#shyStep}):
+     * Echo OG only, the plant of the deep dark.
+     */
+    protected boolean shunsLight() {
+        return false;
+    }
+
+    /**
+     * Whether the light at the root at {@code pos} lets a natural growth step happen: vanilla's 9 for a plant
+     * that needs light, any light for one that does not.
+     */
+    protected boolean lightLetsItGrow(LevelReader world, BlockPos pos) {
+        return !this.needsLight() || world.getRawBrightness(pos, 0) >= 9;
+    }
+
     // ----- growth -----
     // Only the root random-ticks; it drives the whole plant, and bone meal on either half feeds it.
     @Override
@@ -318,7 +334,7 @@ public class IndicaCropBlock extends CropBlock implements RecordOnTheRoot {
         }
         int age = this.getAge(state);
         int grown = age;
-        if (age < this.getMaxAge() && (!this.needsLight() || world.getRawBrightness(pos, 0) >= 9)) {
+        if (age < this.getMaxAge() && this.lightLetsItGrow(world, pos)) {
             // The ground answers for itself when it is a bed of ours (a pot or a tray): its own
             // moisture, and no crowding penalty, because the plant has soil or solution to itself.
             BlockState floor = world.getBlockState(this.anchorOf(pos));
@@ -409,6 +425,34 @@ public class IndicaCropBlock extends CropBlock implements RecordOnTheRoot {
     }
 
     /**
+     * One growth step for the plant whose root is at {@code rootPos}, from something other than its own
+     * random tick or bone meal (Echo OG's experience): the step every route takes, with its light and its
+     * ground read, held back by a block in the plant's way. Answers whether the plant grew; a ripe plant, or
+     * one its headroom holds where it is, does not.
+     */
+    protected boolean growOneStep(Level world, BlockPos rootPos, RandomSource random) {
+        BlockState root = world.getBlockState(rootPos);
+        if (!root.is(this) || !this.isRoot(root) || this.getAge(root) >= this.maxAgeFor(world, rootPos)) {
+            return false;
+        }
+        this.setAge(world, rootPos, root, this.getAge(root) + 1, StressCause.NONE, random);
+        return true;
+    }
+
+    /** Whether the plant whose root is {@code root} at {@code rootPos} still has a growth step to take. */
+    protected boolean canGrowFurther(LevelReader world, BlockPos rootPos, BlockState root) {
+        return this.stepsLeft(world, rootPos, root) > 0;
+    }
+
+    /**
+     * How many growth steps the plant whose root is {@code root} at {@code rootPos} has left before it is ripe,
+     * or before its headroom holds it: each one a {@link #growOneStep} that takes.
+     */
+    protected int stepsLeft(LevelReader world, BlockPos rootPos, BlockState root) {
+        return root.is(this) && this.isRoot(root) ? Math.max(0, this.maxAgeFor(world, rootPos) - this.getAge(root)) : 0;
+    }
+
+    /**
      * How many stages a single successful bonemeal advances the plant. Vanilla crops
      * use 2-5 (maturing in ~2 applications); indica advances a flat 1 stage. Keeping
      * it at exactly 1 (never 2+) sets a hard floor of {@code MAX_AGE} lucky bonemeals
@@ -471,7 +515,7 @@ public class IndicaCropBlock extends CropBlock implements RecordOnTheRoot {
             if (this.recordsLight()) {
                 lower = lower.setValue(GrowLight.PROPERTY, PlantStress.afterStep(world, pos,
                         current.getValue(GrowLight.PROPERTY), currentAge, newAge, 2, extraStress, random, true,
-                        this.leaksAtNight()));
+                        this.leaksAtNight(), this.shunsLight()));
             }
             if (newAge == this.getMaxAge()) {
                 BlockPos floorPos = this.anchorOf(pos);

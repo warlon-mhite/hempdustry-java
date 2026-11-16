@@ -1,0 +1,19 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:step",
+    "minecraft:swim",
+    "minecraft:flap",
+    "minecraft:hit_ground",
+    "minecraft:splash",
+    "minecraft:eat",
+    "minecraft:drink",
+    "minecraft:equip",
+    "minecraft:unequip",
+    "minecraft:elytra_glide",
+    "minecraft:item_interact_start",
+    "minecraft:item_interact_finish",
+    "minecraft:entity_action",
+    "minecraft:projectile_shoot"
+  ]
+}

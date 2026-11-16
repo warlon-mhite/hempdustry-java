@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_echo_og_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": "hempdustry:echo_og_buds"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "hempdustry:spliff_echo_og_1"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_echo_og_buds"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "hempdustry:spliff_echo_og_1"
+    ]
+  }
+}

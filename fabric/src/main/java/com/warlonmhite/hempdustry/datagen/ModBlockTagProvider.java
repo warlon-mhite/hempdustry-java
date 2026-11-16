@@ -64,7 +64,8 @@ public class ModBlockTagProvider extends FabricTagProvider.BlockTagProvider {
                 .add(ModBlocks.ENDER_HAZE_CROP)
                 .add(ModBlocks.CHERRY_WINE_CROP)
                 .add(ModBlocks.WHITE_WIDOW_CROP)
-                .add(ModBlocks.DUD_WEED_CROP);
+                .add(ModBlocks.DUD_WEED_CROP)
+                .add(ModBlocks.ECHO_OG_CROP);
 
         // Hoglins keep about eight blocks from anything in here (HoglinSpecificSensor), and vanilla's
         // only plant in it is warped fungus. Warped Kush grows beside it and joins it: a field of it
@@ -92,6 +93,12 @@ public class ModBlockTagProvider extends FabricTagProvider.BlockTagProvider {
         valueLookupBuilder(ModTags.Blocks.ENDER_HAZE_SOIL)
                 .add(Blocks.END_STONE)
                 .addOptionalTag(ConventionalBlockTags.END_STONES);
+
+        // Echo OG's ground: sculk by name, and nothing else -- not the sensors, shriekers, catalysts or veins
+        // that grow on it, which are no floor. Deliberately NOT #minecraft:crops: bone meal is refused and no
+        // bee hurries this plant, which grows on experience.
+        valueLookupBuilder(ModTags.Blocks.ECHO_OG_SOIL)
+                .add(Blocks.SCULK);
 
         // The wild flowers were in no tag at all, so a sword took as long over one as a fist did and
         // an enderman walked past them. Both of these are joined DIRECTLY rather than by way of

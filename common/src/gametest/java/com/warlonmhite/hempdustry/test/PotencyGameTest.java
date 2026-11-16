@@ -107,6 +107,7 @@ public final class PotencyGameTest {
         roots.put(ModBlocks.WHITE_WIDOW_CROP, lower);
         roots.put(ModBlocks.DUD_WEED_CROP, lower);
         roots.put(ModBlocks.WARPED_KUSH_CROP, lower);
+        roots.put(ModBlocks.ECHO_OG_CROP, lower);
         roots.put(ModBlocks.CRIMSON_CROP, state -> state.getValue(IndicaCropBlock.HALF) == DoubleBlockHalf.UPPER);
         roots.put(ModBlocks.SATIVA_CROP, state -> state.getValue(SativaCropBlock.SEGMENT) == TriplePlantSegment.LOWER);
         roots.put(ModBlocks.ENDER_HAZE_CROP, state -> state.getValue(EnderHazeCropBlock.SEGMENT) == 0);

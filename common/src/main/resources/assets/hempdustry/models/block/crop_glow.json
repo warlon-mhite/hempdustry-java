@@ -1,0 +1,148 @@
+{
+  "ambientocclusion": false,
+  "textures": {
+    "particle": "#overlay"
+  },
+  "elements": [
+    {
+      "from": [
+        0.8,
+        -1,
+        7.94
+      ],
+      "to": [
+        15.2,
+        15,
+        7.94
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "y",
+        "angle": 45,
+        "rescale": true
+      },
+      "shade": false,
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#overlay"
+        }
+      },
+      "light_emission": 15
+    },
+    {
+      "from": [
+        0.8,
+        -1,
+        8.06
+      ],
+      "to": [
+        15.2,
+        15,
+        8.06
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "y",
+        "angle": 45,
+        "rescale": true
+      },
+      "shade": false,
+      "faces": {
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#overlay"
+        }
+      },
+      "light_emission": 15
+    },
+    {
+      "from": [
+        7.94,
+        -1,
+        0.8
+      ],
+      "to": [
+        7.94,
+        15,
+        15.2
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "y",
+        "angle": 45,
+        "rescale": true
+      },
+      "shade": false,
+      "faces": {
+        "west": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#overlay"
+        }
+      },
+      "light_emission": 15
+    },
+    {
+      "from": [
+        8.06,
+        -1,
+        0.8
+      ],
+      "to": [
+        8.06,
+        15,
+        15.2
+      ],
+      "rotation": {
+        "origin": [
+          8,
+          8,
+          8
+        ],
+        "axis": "y",
+        "angle": 45,
+        "rescale": true
+      },
+      "shade": false,
+      "faces": {
+        "east": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#overlay"
+        }
+      },
+      "light_emission": 15
+    }
+  ]
+}

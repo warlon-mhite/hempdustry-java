@@ -61,16 +61,22 @@ public record Terpene(String translationKey, int color) {
     public static final ResourceKey<Terpene> HUMULENE = key("humulene");
     /** A spare, woody and floral, for a strain to come. No 2.2 strain names it. */
     public static final ResourceKey<Terpene> NEROLIDOL = key("nerolidol");
+    /**
+     * Camphor's terpene, cold, earthy and a little minty: the Ancient City's ice box. Echo OG's, and the
+     * eleventh.
+     */
+    public static final ResourceKey<Terpene> BORNEOL = key("borneol");
 
     /** The share of a terpene's colour that goes into smoke, and into vapour. */
     public static final float SMOKE_SHARE = 0.33F;
     public static final float VAPOUR_SHARE = 0.25F;
 
     /**
-     * The ten, each coloured from its smell: limonene the lemon, linalool lavender, myrcene ripe mango,
+     * The eleven, each coloured from its smell: limonene the lemon, linalool lavender, myrcene ripe mango,
      * caryophyllene black pepper's warm red, pinene the pine needle, eucalyptol the cool blue of
      * eucalyptus, terpinolene green apple and lilac's fresh green, geraniol rose pink, humulene the
-     * dried hop, nerolidol bark.
+     * dried hop, nerolidol bark, borneol the cold of an ice box: vanilla sculk's own deep teal, darker
+     * than eucalyptol's blue.
      */
     public static void bootstrap(BootstrapContext<Terpene> context) {
         register(context, LIMONENE, 0xF5D547);
@@ -83,6 +89,7 @@ public record Terpene(String translationKey, int color) {
         register(context, GERANIOL, 0xF592B8);
         register(context, HUMULENE, 0xB3AE5C);
         register(context, NEROLIDOL, 0xB0835A);
+        register(context, BORNEOL, 0x009295);
     }
 
     private static void register(BootstrapContext<Terpene> context, ResourceKey<Terpene> key, int color) {

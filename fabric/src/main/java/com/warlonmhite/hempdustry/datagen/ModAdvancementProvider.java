@@ -34,6 +34,7 @@ import net.minecraft.advancements.criterion.ItemUsedOnLocationTrigger;
 import net.minecraft.advancements.criterion.LocationPredicate;
 import net.minecraft.advancements.criterion.MinMaxBounds;
 import net.minecraft.advancements.criterion.PlayerInteractTrigger;
+import net.minecraft.advancements.criterion.PlayerTrigger;
 import net.minecraft.advancements.criterion.StatePropertiesPredicate;
 import net.minecraft.advancements.criterion.TameAnimalTrigger;
 import net.minecraft.core.ClientAsset;
@@ -318,6 +319,18 @@ public class ModAdvancementProvider extends FabricAdvancementProvider {
                 .addCriterion("smoked_dud_weed", SmokeCriterion.Conditions.of(ModStrains.DUD_WEED, 0))
                 .parent(firstContact)
                 .save(consumer, Hempdustry.MOD_ID + ":damp_squib");
+
+        // Hidden: vanilla's Sneak 100 is a sculk sensor or a Warden letting a vibration go because you were
+        // sneaking; this is the same, because you were Hushed. Echo OG is a smoke, so it hangs under First
+        // Contact. It never fires vanilla's own: Sneak 100 is about sneaking. A Hushed player who sneaks earns
+        // vanilla's for what sneaking already muffles (a step, say), which is let go before Hush is asked, and
+        // this one for what only Hush muffles (eating, say).
+        Advancement.Builder.advancement()
+                .display(display(ModItems.ECHO_OG_BUDS, "sneak_420", AdvancementType.TASK, true))
+                .addCriterion("hush_avoided_vibration", ModCriteria.HUSH_AVOIDED_VIBRATION.createCriterion(
+                        new PlayerTrigger.TriggerInstance(Optional.empty())))
+                .parent(firstContact)
+                .save(consumer, Hempdustry.MOD_ID + ":sneak_420");
 
         // Hidden easter-egg: take a hit while the in-game clock reads ~4:20 PM. Vanilla day = 24000
         // ticks, tick 0 = 6:00 AM, 1000 ticks/hour → 4:20 PM = 10333. Window ±210 ticks (10123–10543,
