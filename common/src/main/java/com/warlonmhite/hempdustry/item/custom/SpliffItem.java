@@ -88,6 +88,11 @@ public class SpliffItem extends Item {
         if (contents.isEmpty() || player.getCooldowns().isOnCooldown(stack)) {
             return InteractionResult.PASS;
         }
+        // Under water it goes out before it is lit, and nothing is spent. The try is still this hand's: the other
+        // hand's item is not used in its place.
+        if (Smoking.putOut(world, player)) {
+            return InteractionResult.CONSUME;
+        }
         if (!world.isClientSide()) {
             // See SmokingDeviceItem: a vetoed hit must not burn the spliff.
             if (!Smoking.allowed(player, stack, contents)) {

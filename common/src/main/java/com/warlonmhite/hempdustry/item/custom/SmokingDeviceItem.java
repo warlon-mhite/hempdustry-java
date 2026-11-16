@@ -177,6 +177,11 @@ public class SmokingDeviceItem extends Item {
         if (contents.isEmpty() || player.getCooldowns().isOnCooldown(stack)) {
             return InteractionResult.PASS;
         }
+        // Under water the bowl goes out before it is lit, and nothing is spent: not a draw, not a charge. The try is
+        // still this hand's: the other hand's item is not used in its place.
+        if (Smoking.putOut(world, player)) {
+            return InteractionResult.CONSUME;
+        }
         if (device.drawTicks() > 0) {
             // Hold to rip: the hit lands in finishUsingItem once the draw is complete, and letting go
             // first spends nothing -- not even the bubbling, which onUseTick starts on each client.
@@ -204,7 +209,7 @@ public class SmokingDeviceItem extends Item {
     public ItemStack finishUsingItem(ItemStack stack, Level world, LivingEntity user) {
         SmokeContents contents = contentsOf(stack);
         if (!world.isClientSide() && user instanceof Player player && !contents.isEmpty()
-                && Smoking.allowed(player, stack, contents)) {
+                && !Smoking.putOut(world, player) && Smoking.allowed(player, stack, contents)) {
             // The bubbling began with the draw, drawTicks ago, and the inhale's delay counts from there.
             hit(world, player, stack, contents, user.getUsedItemHand(),
                     Math.max(0, device.soundDelayTicks() - device.drawTicks()));

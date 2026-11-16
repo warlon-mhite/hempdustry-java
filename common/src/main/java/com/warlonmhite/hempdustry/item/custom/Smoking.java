@@ -14,7 +14,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import net.minecraft.core.Holder;
 import com.warlonmhite.hempdustry.particle.ModParticles;
@@ -27,7 +29,11 @@ import net.minecraft.util.ARGB;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -120,6 +126,46 @@ public final class Smoking {
      */
     public static boolean allowed(Player player, ItemStack stack, SmokeContents contents) {
         return Services.ADDON_EVENTS.allowSmoke(player, contents, stack);
+    }
+
+    /**
+     * Whether a hit goes out before it is lit: nothing burns with the smoker's head under water, as water puts out
+     * a campfire. When it does, the server hisses as a doused fire does, and the hit costs nothing -- no effect, no
+     * charge, no cooldown -- so it is asked before anything is spent, on both sides, and before a draw begins.
+     *
+     * <p>The head is read where vanilla reads it for the player's own breath ({@code Entity#updateFluidOnEyes}: the
+     * eyes a ninth of a block down, under the water's surface), but read now rather than off the last tick, so a
+     * hit taken the tick the head went under goes out too.
+     *
+     * <p>It hisses once a press ({@link #hisses}): a held use key tries again every 4 ticks while nothing is in use,
+     * and a hiss on each would sound five times a second.
+     */
+    public static boolean putOut(Level world, Player player) {
+        double eyes = player.getEyeY() - 0.11111111F;
+        BlockPos at = BlockPos.containing(player.getX(), eyes, player.getZ());
+        FluidState fluid = world.getFluidState(at);
+        if (!fluid.is(FluidTags.WATER) || eyes >= at.getY() + fluid.getHeight(world, at)) {
+            return false;
+        }
+        if (!world.isClientSide() && hisses(player, world.getGameTime())) {
+            world.playSound(null, player.getX(), player.getEyeY(), player.getZ(), SoundEvents.GENERIC_EXTINGUISH_FIRE,
+                    SoundSource.PLAYERS, 0.5F, 2.6F + (world.getRandom().nextFloat() - world.getRandom().nextFloat()) * 0.8F);
+        }
+        return true;
+    }
+
+    /** Each smoker's last try that went out, by game time. Server side only. */
+    private static final Map<Player, Long> LAST_PUT_OUT = new WeakHashMap<>();
+    /** More than the 4 ticks between a held use key's tries: a gap this long is a new press. */
+    private static final int HISS_GAP_TICKS = 6;
+
+    /**
+     * Whether a try that went out at {@code gameTime} hisses: the first of a press does, and the tries a held use
+     * key repeats do not, each one pushing the press on.
+     */
+    public static boolean hisses(Player player, long gameTime) {
+        Long last = LAST_PUT_OUT.put(player, gameTime);
+        return last == null || gameTime - last > HISS_GAP_TICKS || gameTime < last;
     }
 
     /** Ticks after the hit before the smoke puffs, to line up with the exhale in the sound (38 ticks, about 1.9 s). */

@@ -175,6 +175,7 @@ public final class HempdustryGameTests {
         register("maui_wowie_stays_in_the_warm_sea", MauiWowieGameTest::mauiWowieStaysInTheWarmSea);
         register("wild_maui_wowie_in_the_shallows", MauiWowieGameTest::wildMauiWowieInTheShallows);
         register("drowned_are_drawn_to_a_ripe_patch", MauiWowieGameTest::drownedAreDrawnToARipePatch);
+        register("every_smoke_goes_out_under_water", SmokeUnderWaterGameTest::everySmokeGoesOutUnderWater);
         register("crop_loot_tables_validate_clean", SchwagGameTest::cropLootTablesValidateClean);
         register("healthy_plants_spoil_one_bud_in_fifty", SchwagGameTest::healthyPlantsSpoilOneBudInFifty);
         register("stressed_buds_spoil_one_by_one", SchwagGameTest::stressedBudsSpoilOneByOne);
