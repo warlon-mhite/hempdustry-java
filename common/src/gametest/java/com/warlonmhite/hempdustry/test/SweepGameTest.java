@@ -590,6 +590,26 @@ public final class SweepGameTest {
         Sweep.atLeast(context, "solid blocks", checked, 20);
         Sweep.report(context, "Every solid block of ours is a roof", findings, Map.of(
                 "hempdustry:grow_lamp", "a light hung over a plant, not a ceiling: the plant under it keeps its sky"));
+
+        // And the other way: a block of ours in the roof tags is solid, or a torch or a crop would roof a plant.
+        Map<String, String> loose = new TreeMap<>();
+        int roofs = 0;
+        for (Block block : BuiltInRegistries.BLOCK) {
+            Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+            BlockState state = block.defaultBlockState();
+            if (!Sweep.ours(id) || !state.is(BlockTags.BLOCKS_MOTION) && !state.is(BlockTags.BLOCKS_MOTION_NO_LEAVES)) {
+                continue;
+            }
+            roofs++;
+            if (block.getStateDefinition().getPossibleStates().stream().noneMatch(BlockState::isSolid)) {
+                loose.put(id.toString(), "a roof, and solid in no state");
+            }
+        }
+        Sweep.atLeast(context, "roof blocks", roofs, 20);
+        String hanging = "a hanging sign: vanilla's own tag takes in #minecraft:all_hanging_signs, so every hanging sign is a roof";
+        Sweep.report(context, "Every roof block of ours is solid", loose, Map.of(
+                "hempdustry:hemp_planks_hanging_sign", hanging,
+                "hempdustry:hemp_planks_wall_hanging_sign", hanging));
         context.succeed();
     }
 

@@ -113,9 +113,11 @@ public enum Mildew implements StringRepresentable {
             }
             return;
         }
-        // The gas changes only a mildewed plant and a clean one in flower; the search for it walks every
-        // block entity around, and every plant of a field carries one, so it is not made for the rest.
-        boolean gasActs = now == MILDEWED || now == CLEAN && flowering(plant) && !ripe(plant);
+        // The gas changes only a mildewed plant and a clean one in flower, of a strain that catches mildew at
+        // all: one that never does is never sulfured either, a schwag chance its blockstates could not show.
+        // The search for it walks every block entity around, and every plant of a field carries one, so it is
+        // not made for the rest.
+        boolean gasActs = takesMildew(plant) && (now == MILDEWED || now == CLEAN && flowering(plant) && !ripe(plant));
         if (gasActs && gassed(world, lower)) {
             Mildew next = now;
             if (now == MILDEWED) {
@@ -197,9 +199,13 @@ public enum Mildew implements StringRepresentable {
 
     /** Mildew may take hold of this plant at all: switched on, a crop that takes it and does not resist it, unripe. */
     private static boolean canCatch(Level world, BlockPos lower, BlockState plant) {
-        return HempdustryConfig.get().world().mildew() && plant.hasProperty(PROPERTY)
-                && plant.getBlock() instanceof Host host && host.catchesMildew()
-                && !plant.is(ModTags.Blocks.MILDEW_RESISTANT) && !ripe(plant);
+        return HempdustryConfig.get().world().mildew() && takesMildew(plant) && !ripe(plant);
+    }
+
+    /** A crop that takes mildew, and so the gas: one of its hosts, not of {@code #hempdustry:mildew_resistant}. */
+    private static boolean takesMildew(BlockState plant) {
+        return plant.hasProperty(PROPERTY) && plant.getBlock() instanceof Host host && host.catchesMildew()
+                && !plant.is(ModTags.Blocks.MILDEW_RESISTANT);
     }
 
     /**

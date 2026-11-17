@@ -31,7 +31,8 @@ import net.minecraft.world.level.levelgen.SingleThreadedRandomSource;
 import net.minecraft.world.phys.AABB;
 
 /**
- * Powdery mildew ({@link Mildew}): where it starts, how it spreads, what clears it. Every roll is
+ * Powdery mildew ({@link Mildew}): where it starts, how it spreads, what clears it, and which strains it and the
+ * sulfur gas leave alone. Every roll is
  * decided ({@link #HIT} lands under any odds above zero, {@link #MISS} under none), so each probe
  * either certainly catches or certainly does not, and what is asserted is the wiring and the
  * agreed numbers, never a measured rate.
@@ -112,8 +113,8 @@ public final class MildewGameTest {
      * The strains that never catch it: Industrial Hemp (no bud for it to spoil, no shears to clear it)
      * and the two Nether plants (too hot and dry, and under a ceiling that would roof every one), by
      * {@link Mildew.Host}; Ruderalis and Ender Haze carry no mildew record at all. The step's own roll,
-     * under a glass roof, on a hit -- Purple Kush the control -- and the spread asks the same thing of
-     * the neighbour it picks.
+     * under a glass roof and under open sky, on a hit -- Purple Kush the control -- and the spread asks the
+     * same thing of the neighbour it picks.
      */
     public static void strainsWithoutMildewNeverCatchIt(GameTestHelper context) {
         context.setBlock(ROOF, Blocks.GLASS);
@@ -126,6 +127,26 @@ public final class MildewGameTest {
             expect(context, Mildew.afterStep(world, lower, crop.defaultBlockState(), Mildew.CLEAN, HIT), Mildew.CLEAN,
                     crop.getDescriptionId() + " under a glass roof");
         }
+
+        // Nor under open sky, at a field's odds.
+        context.setBlock(ROOF, Blocks.AIR);
+        openSky(context, CROP);
+        expect(context, Mildew.afterStep(world, lower, ModBlocks.INDICA_CROP.defaultBlockState(), Mildew.CLEAN, HIT),
+                Mildew.MILDEWED, "the control, a Purple Kush seedling under open sky,");
+        for (Block crop : List.of(ModBlocks.INDUSTRIAL_HEMP_CROP, ModBlocks.WARPED_KUSH_CROP, ModBlocks.CRIMSON_CROP,
+                ModBlocks.RUDERALIS_CROP, ModBlocks.ENDER_HAZE_CROP)) {
+            expect(context, Mildew.afterStep(world, lower, crop.defaultBlockState(), Mildew.CLEAN, HIT), Mildew.CLEAN,
+                    crop.getDescriptionId() + " under open sky");
+        }
+
+        // Nor from a mildewed neighbour: the spread asks the plant it reaches.
+        sow(context, CROP, ModBlocks.INDICA_CROP, 4, Mildew.MILDEWED);
+        BlockPos beside = CROP.east();
+        openSky(context, beside);
+        sow(context, beside, ModBlocks.INDUSTRIAL_HEMP_CROP, 4, Mildew.CLEAN);
+        Mildew.randomTick(world, lower, decided(0.0F, EAST));
+        expect(context, context.getBlockState(beside).getValue(Mildew.PROPERTY), Mildew.CLEAN,
+                "Industrial Hemp beside a mildewed plant, picked and hit,");
         context.succeed();
     }
 
@@ -310,6 +331,22 @@ public final class MildewGameTest {
         sow(context, near, ModBlocks.INDICA_CROP, 2, Mildew.CLEAN);
         ((CropBlock) ModBlocks.INDICA_CROP).performBonemeal(world, HIT, lower, world.getBlockState(lower), BonemealSource.INTERACTION);
         expect(context, context.getBlockState(near).getValue(Mildew.PROPERTY), Mildew.CLEAN, "a field plant's growth step in the gas");
+
+        // A strain that never catches mildew is never sulfured either: it could not show it, and its buds would pay.
+        // Each on its own soil, set straight in: a random tick would take a Warped Kush off farmland.
+        for (Block crop : List.of(ModBlocks.WARPED_KUSH_CROP, ModBlocks.INDUSTRIAL_HEMP_CROP)) {
+            for (int y = 2; y >= 0; y--) {
+                context.setBlock(near.above(y), Blocks.AIR);
+            }
+            context.setBlock(near.below(), crop == ModBlocks.WARPED_KUSH_CROP ? Blocks.SOUL_SAND.defaultBlockState()
+                    : Blocks.FARMLAND.defaultBlockState().setValue(FarmlandBlock.MOISTURE, FarmlandBlock.MAX_MOISTURE));
+            context.setBlock(near, Defoliation.unworked(crop.defaultBlockState()).setValue(BlockStateProperties.AGE_7, 5));
+            context.assertTrue(context.getBlockState(near).getValue(Mildew.PROPERTY) == Mildew.CLEAN,
+                    "test setup: " + crop.getDescriptionId() + " came up mildewed");
+            Mildew.randomTick(world, lower, HIT);
+            expect(context, context.getBlockState(near).getValue(Mildew.PROPERTY), Mildew.CLEAN,
+                    crop.getDescriptionId() + ", flowering in the gas in the open,");
+        }
 
         // A wall between the pool and the plant keeps the gas off it.
         BlockPos walled = new BlockPos(1, 2, 2);
