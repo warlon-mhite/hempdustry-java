@@ -1,6 +1,8 @@
 package com.warlonmhite.hempdustry.test;
 
 import com.warlonmhite.hempdustry.Hempdustry;
+import com.warlonmhite.hempdustry.block.ModBlocks;
+import com.warlonmhite.hempdustry.block.custom.IndicaCropBlock;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -11,9 +13,11 @@ import net.minecraft.server.level.WorldGenRegion;
 import net.minecraft.util.StaticCache2D;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.ProtoChunk;
@@ -40,6 +44,9 @@ import java.util.concurrent.CompletableFuture;
  * placeholder ({@code "DUMMY"}) for every block that can hold a block entity, to be made when the chunk
  * goes live. A plant keeps its record on its root alone, so a placeholder on any other of its blocks finds
  * no block entity to make and vanilla warns, once per block, when the chunk loads.
+ *
+ * <p>Two writes on one block (overlapping features) must not leave a root's placeholder under another block of a
+ * plant either: vanilla clears an older one only under a block that says it keeps none.
  *
  * <p>So this test generates the real thing, as far as a test can: a fresh nether proto-chunk, the mod's own
  * configured {@code block_column} features placed into it through vanilla's {@link WorldGenRegion}, then the
@@ -81,6 +88,7 @@ public final class WildPlantChunkGameTest {
                 checked.add(name);
                 generateAndLoad(context, nether, feature.value(), name, new ChunkPos(20000 + 2 * chunk++, 20000));
             }
+            overwriteARoot(context, nether, new ChunkPos(20000 + 2 * chunk, 20000));
         } finally {
             root.removeAppender(appender);
             appender.stop();
@@ -124,6 +132,23 @@ public final class WildPlantChunkGameTest {
                     "the wild " + name + "'s " + (isRoot ? "root has no record" : "block at " + pos + " has " + entity)
                             + " once its chunk is live");
         }
+    }
+
+    /**
+     * Two generation writes on one block, as overlapping features make them: a plant's root, then another block
+     * of a plant. The root's placeholder goes with it, as vanilla takes one away under a block that keeps none.
+     */
+    private static void overwriteARoot(GameTestHelper context, ServerLevel level, ChunkPos at) {
+        ProtoChunk proto = protoChunk(level, at);
+        WorldGenRegion region = regionOf(level, proto);
+        BlockPos pos = at.getMiddleBlockPosition(100);
+        BlockState root = ModBlocks.INDICA_CROP.defaultBlockState();
+        region.setBlock(pos, root, Block.UPDATE_ALL);
+        context.assertTrue(proto.getBlockEntityNbt(pos) != null, "test setup: a plant's root left no placeholder in its proto-chunk");
+        region.setBlock(pos, root.setValue(IndicaCropBlock.HALF, DoubleBlockHalf.UPPER), Block.UPDATE_ALL);
+        context.assertTrue(proto.getBlockEntityNbt(pos) == null,
+                "a plant's tip written over its root in generation kept the root's placeholder");
+        new LevelChunk(level, proto, null);
     }
 
     /** A fresh proto-chunk at {@code at}, one step short of its features, as chunk generation hands it over. */
