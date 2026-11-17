@@ -2,6 +2,7 @@ package com.warlonmhite.hempdustry.strain;
 
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.Optional;
 import net.minecraft.util.RandomSource;
@@ -25,20 +26,21 @@ import net.minecraft.util.RandomSource;
  *
  * <p>Written in a strain's file either as that step, {@code "light": "resistant"}, or as five weights,
  * {@code "light": {"very_weak": 0, "weak": 5, "neutral": 20, "resistant": 60, "very_resistant": 15}} (a weight
- * left out is 0). Odds equal to a step's spread are written as the step.
+ * left out is 0, and at least one must be more). Odds equal to a step's spread are written as the step.
  */
 public record ResistanceOdds(int veryWeak, int weak, int neutral, int resistant, int veryResistant) {
 
     /** The shared spread's shares: on the step, one step away, two steps away. */
     private static final int[] SPREAD = {60, 25, 15};
 
-    private static final Codec<ResistanceOdds> WEIGHTS_CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    private static final Codec<ResistanceOdds> WEIGHTS_CODEC = RecordCodecBuilder.<ResistanceOdds>create(instance -> instance.group(
             Codec.intRange(0, 1000).optionalFieldOf("very_weak", 0).forGetter(ResistanceOdds::veryWeak),
             Codec.intRange(0, 1000).optionalFieldOf("weak", 0).forGetter(ResistanceOdds::weak),
             Codec.intRange(0, 1000).optionalFieldOf("neutral", 0).forGetter(ResistanceOdds::neutral),
             Codec.intRange(0, 1000).optionalFieldOf("resistant", 0).forGetter(ResistanceOdds::resistant),
             Codec.intRange(0, 1000).optionalFieldOf("very_resistant", 0).forGetter(ResistanceOdds::veryResistant)
-    ).apply(instance, ResistanceOdds::new));
+    ).apply(instance, ResistanceOdds::new)).validate(odds -> odds.total() > 0 ? DataResult.success(odds)
+            : DataResult.error(() -> "resistance weights that add up to 0 roll nothing: give a step some weight, or leave the phenomenon out for the shared spread"));
 
     public static final Codec<ResistanceOdds> CODEC = Codec.either(Resistance.CODEC, WEIGHTS_CODEC).xmap(
             either -> either.map(ResistanceOdds::spread, odds -> odds),
@@ -93,9 +95,17 @@ public record ResistanceOdds(int veryWeak, int weak, int neutral, int resistant,
         return Optional.empty();
     }
 
-    /** One plant's step, drawn from the odds. Odds that are all zero are always neutral, and take no draw. */
+    /** The five weights together. */
+    public int total() {
+        return veryWeak + weak + neutral + resistant + veryResistant;
+    }
+
+    /**
+     * One plant's step, drawn from the odds. Odds that are all zero, which no strain file can hold, are always
+     * neutral, and take no draw.
+     */
     public Resistance roll(RandomSource random) {
-        int total = veryWeak + weak + neutral + resistant + veryResistant;
+        int total = total();
         if (total <= 0) {
             return Resistance.NEUTRAL;
         }
