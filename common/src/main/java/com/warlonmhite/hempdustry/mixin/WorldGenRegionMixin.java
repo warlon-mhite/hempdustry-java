@@ -40,7 +40,13 @@ public abstract class WorldGenRegionMixin {
             at = @At(value = "INVOKE",
                     target = "Lnet/minecraft/world/level/chunk/ChunkAccess;setBlockEntityNbt(Lnet/minecraft/nbt/CompoundTag;)V"))
     private boolean hempdustry$onlyWhereARecordIsHeld(ChunkAccess chunk, CompoundTag placeholder,
-            @Local(argsOnly = true) BlockState state) {
-        return !(state.getBlock() instanceof RecordOnTheRoot plant) || plant.holdsRecord(state);
+            @Local(argsOnly = true) BlockPos pos, @Local(argsOnly = true) BlockState state) {
+        if (!(state.getBlock() instanceof RecordOnTheRoot plant) || plant.holdsRecord(state)) {
+            return true;
+        }
+        // Vanilla takes away an older block entity only for a state that has none, and this one still says it
+        // has: a root another write left here first would leave its placeholder under this block.
+        chunk.removeBlockEntity(pos);
+        return false;
     }
 }
