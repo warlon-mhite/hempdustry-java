@@ -167,6 +167,14 @@ public final class ResistanceGameTest {
         context.assertValueEqual(written.toString(),
                 "{\"dry_ground\":\"neutral\",\"overwatering\":\"resistant\",\"light\":\"neutral\",\"mildew\":\"weak\"}",
                 "a sheet written back");
+        // And a plant's sheet that is neutral on all four is still written, though it is the default.
+        JsonElement plantWritten = encode(Strain.Plant.CODEC, new Strain.Plant(GrowQuality.DEFAULT, unnamed,
+                touchy.resin()));
+        context.assertTrue(plantWritten.getAsJsonObject().has("resistances"),
+                "a plant neutral on all four was written with no resistances: " + plantWritten);
+        // Weights that add up to nothing are no odds: an error, not a plant that is always neutral.
+        context.assertTrue(Resistances.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString("{\"mildew\": {}}")).isError(),
+                "a phenomenon written as no weights at all was read");
         context.assertValueEqual(touchy.quality(), GrowQuality.DEFAULT, "a plant object naming no quality");
         context.succeed();
     }

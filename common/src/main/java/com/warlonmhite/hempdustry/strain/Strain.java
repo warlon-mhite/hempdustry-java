@@ -203,12 +203,19 @@ public record Strain(String translationKey, int color, int modelIndex,
      */
     public record Plant(GrowQuality quality, Resistances resistances, ResinSheet resin) {
 
-        /** The default quality sheet, neutral on every phenomenon and always average resin: a strain that names no {@code plant}. */
+        /**
+         * The sheet of a strain that names no {@code plant}: the default quality, the shared spread round neutral on
+         * every phenomenon, and always average resin.
+         */
         public static final Plant DEFAULT = new Plant(GrowQuality.DEFAULT, Resistances.DEFAULT, ResinSheet.DEFAULT);
 
         public static final Codec<Plant> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 GrowQuality.CODEC.optionalFieldOf("quality", GrowQuality.DEFAULT).forGetter(Plant::quality),
-                Resistances.CODEC.optionalFieldOf("resistances", Resistances.DEFAULT).forGetter(Plant::resistances),
+                // Read with a default, but always written: the spread round neutral is also what four "neutral"s
+                // read as, and a default-valued field is left out on encode, so a strain neutral on all four
+                // would lose its sheet from its file.
+                Resistances.CODEC.optionalFieldOf("resistances")
+                        .xmap(named -> named.orElse(Resistances.DEFAULT), Optional::of).forGetter(Plant::resistances),
                 ResinSheet.CODEC.optionalFieldOf("resin", ResinSheet.DEFAULT).forGetter(Plant::resin)
         ).apply(instance, Plant::new));
 
