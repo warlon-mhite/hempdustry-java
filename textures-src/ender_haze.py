@@ -29,7 +29,7 @@ CHARS = '123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 CROP = [
     ('stage0', 'stage0', False), ('stage1', 'stage1', False), ('stage2', 'stage2', False),
     ('stage3_bottom', 'stage4_bottom', False), ('stage3_top', 'stage4_top', False),
-    # stressed from age 3 too, by a lost light (#265): Lemon Haze's stressed stage 4, as above
+    # stressed from age 3 too, by a lost light: Lemon Haze's stressed stage 4, as above
     ('stage3_bottom_stressed', 'stage4_bottom_stressed', False),
     ('stage3_top_stressed', 'stage4_top_stressed', False),
 ]

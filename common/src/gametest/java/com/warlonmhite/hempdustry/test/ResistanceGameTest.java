@@ -42,7 +42,7 @@ public final class ResistanceGameTest {
     private static final BlockPos FLOOR = new BlockPos(1, 1, 1);
     private static final BlockPos ROOT = FLOOR.above();
 
-    /** Dry ground, overwatering, light, mildew: the agreed profiles (cannabinoids.md §5, #189). */
+    /** Dry ground, overwatering, light, mildew: the agreed profiles. */
     private static final Map<ResourceKey<Strain>, Resistance[]> PROFILES = new LinkedHashMap<>();
 
     static {
@@ -67,7 +67,7 @@ public final class ResistanceGameTest {
     }
 
     /**
-     * The steps' factors and light rules, the five rows of the shared spread as agreed (with #190's end-step rule),
+     * The steps' factors and light rules, the five rows of the shared spread as agreed (with its end-step rule),
      * a resistant plant's light roll taking one draw and every other plant's none, the rolls landing on the odds,
      * and the strain file's two ways of writing a phenomenon.
      */
@@ -144,7 +144,7 @@ public final class ResistanceGameTest {
         context.assertTrue(encode(ResistanceOdds.CODEC, new ResistanceOdds(0, 5, 0, 95, 0)).isJsonObject(),
                 "odds of their own written back as a step");
 
-        // A strain file (#266): a phenomenon it leaves out takes the spread around neutral, as naming "neutral" does,
+        // A strain file: a phenomenon it leaves out takes the spread around neutral, as naming "neutral" does,
         // so a file with no plant object, or no resistances, rolls the spread on all four.
         ResistanceOdds neutral = ResistanceOdds.spread(Resistance.NEUTRAL);
         Resistances unnamed = new Resistances(neutral, neutral, neutral, neutral);

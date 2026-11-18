@@ -39,7 +39,7 @@ STAGES = [("dud_weed_crop_stage%d" % age, "sativa_crop_stage%d" % age) for age i
     ("dud_weed_crop_stage10", "sativa_crop_stage7_top"),
     ("dud_weed_crop_stage11", "sativa_crop_stage7_top"),
 ]
-# Stressed from age 3 too (#265): Lemon Haze's one-block stage 3 has a stressed texture of its own.
+# Stressed from age 3 too: Lemon Haze's one-block stage 3 has a stressed texture of its own.
 STRESSED = [(dud + "_stressed", haze + "_stressed") for dud, haze in STAGES[3:]]
 
 # Industrial Hemp's own colours (industrial_hemp_crop_stage7_top): leaf #6FA24F / #93C06A, hue 91-96
