@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.block.ModCrops;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.warlonmhite.hempdustry.Hempdustry;
@@ -422,8 +423,16 @@ public final class OtherModsGameTest {
                 findings.put(id.toString(), "a villager plants it on farmland, where " + planted + " cannot stand");
             }
         }
-        Sweep.atLeast(context, "seeds of ours that villagers plant", seen, 2);
-        Sweep.report(context, "every seed a villager plants stands on farmland", findings, Map.of());
+        Sweep.atLeast(context, "seeds of ours that villagers plant", seen, 6);
+        // And the other way: every crop of ours that stands on farmland is one a farmer plants.
+        for (ModCrops.Crop crop : ModCrops.ALL) {
+            if (crop.farmland() && !crop.seeds().builtInRegistryHolder().is(ItemTags.VILLAGER_PLANTABLE_SEEDS)) {
+                findings.put(BuiltInRegistries.ITEM.getKey(crop.seeds()).toString(),
+                        "its crop stands on farmland, but a farmer villager never plants it");
+            }
+        }
+        Sweep.report(context, "every seed a villager plants stands on farmland, and every farmland seed is planted",
+                findings, Map.of());
         context.succeed();
     }
 }
