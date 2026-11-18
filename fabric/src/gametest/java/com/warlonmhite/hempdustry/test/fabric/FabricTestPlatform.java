@@ -6,8 +6,10 @@ import com.warlonmhite.hempdustry.test.HempdustryGameTests;
 import com.warlonmhite.hempdustry.test.TestPlatform;
 import net.fabricmc.fabric.api.event.registry.DynamicRegistries;
 import net.fabricmc.fabric.api.registry.FlammableBlockRegistry;
+import net.fabricmc.fabric.impl.recipe.sync.RecipeSyncImpl;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.RegistryDataLoader;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ComposterBlock;
@@ -49,6 +51,13 @@ public final class FabricTestPlatform implements TestPlatform {
         // Fabric calls them burn and spread: the odds of catching fire, and of burning away.
         FlammableBlockRegistry.Entry entry = FlammableBlockRegistry.getDefaultInstance().get(block);
         return entry == null ? new Flammability(0, 0) : new Flammability(entry.getIgniteOdds(), entry.getBurnOdds());
+    }
+
+    @Override
+    public boolean reachesAClient(RecipeHolder<?> recipe) {
+        // What Fabric's recipe sync sends: every recipe of a serializer someone opted in, by anyone
+        // (a recipe viewer opts in vanilla's own).
+        return RecipeSyncImpl.isSynced(recipe.value().getSerializer());
     }
 
     @Override
