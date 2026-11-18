@@ -1,6 +1,10 @@
 {
   "values": [
     "hempdustry:indica_seeds",
-    "hempdustry:sativa_seeds"
+    "hempdustry:sativa_seeds",
+    "hempdustry:industrial_hemp_seeds",
+    "hempdustry:cherry_wine_seeds",
+    "hempdustry:white_widow_seeds",
+    "hempdustry:dud_weed_seeds"
   ]
 }

@@ -344,10 +344,10 @@ public class ModItemTagProvider extends FabricTagProvider.ItemTagProvider {
 
         // Farmer villagers plant what is in this vanilla tag and reap it ripe with destroyBlock, which takes a
         // tall plant whole; a village with a hemp seed grows a hemp field, as villages grew it for rope and
-        // cloth. Not Beldía: it stands only on sand, and a villager plants on farmland.
+        // cloth. Every crop that stands on farmland, and only those: a villager plants on farmland without
+        // asking whether the plant survives there (Beldía, a sand plant, would pop off and be planted again).
         valueLookupBuilder(ItemTags.VILLAGER_PLANTABLE_SEEDS)
-                .add(ModItems.INDICA_SEEDS)
-                .add(ModItems.SATIVA_SEEDS);
+                .addAll(ModCrops.ALL.stream().filter(ModCrops.Crop::farmland).map(ModCrops.Crop::seeds));
 
         valueLookupBuilder(ItemTags.PLANKS).add(ModBlocks.HEMP_PLANKS.asItem());
         valueLookupBuilder(ItemTags.WOODEN_SLABS).add(ModBlocks.HEMP_PLANKS_SLAB.asItem());
