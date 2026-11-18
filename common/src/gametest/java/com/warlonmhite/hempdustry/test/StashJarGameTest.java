@@ -285,6 +285,30 @@ public final class StashJarGameTest {
         });
     }
 
+    /**
+     * A storage network that looks a jar up twice inside one transaction and gives up leaves the jar as
+     * it was: every lookup answers the jar's one handler, so there is one snapshot to roll back to. Both
+     * in the root transaction and in a nested one that commits into it.
+     */
+    public static void twoLookupsOfAJarRollBackAsOne(GameTestHelper context) {
+        ServerLevel level = context.getLevel();
+        boolean[] nesting = {false, true};
+        for (int i = 0; i < nesting.length; i++) {
+            String how = nesting[i] ? " (nested)" : " (one transaction)";
+            BlockPos at = context.absolutePos(place(context, new BlockPos(1 + 2 * i, 2, 1), ModBlocks.STASH_JAR,
+                    stash(ModItems.INDICA_BUDS, 2)));
+            int[] took = TestPlatform.INSTANCE.insertThroughTwoLookupsAndAbort(level, at, Direction.UP,
+                    new ItemStack(ModItems.SATIVA_BUDS, 3), new ItemStack(ModItems.INDICA_BUDS, 1), nesting[i]);
+            context.assertTrue(took[0] == 3 && took[1] == 1, "the two lookups took " + Arrays.toString(took) + how
+                    + ", not 3 and 1");
+            StashJarBlockEntity jar = (StashJarBlockEntity) level.getBlockEntity(at);
+            List<ItemStack> parts = jar.contents().parts();
+            context.assertTrue(jar.contents().count() == 2 && parts.size() == 1 && parts.getFirst().is(ModItems.INDICA_BUDS),
+                    "after the rollback" + how + " the jar holds " + parts + ", not the 2 Purple Kush buds it had");
+        }
+        context.succeed();
+    }
+
     /** A jar shows empty, low up to a third, mid up to two thirds, full above; one item is low; the placed block follows its stash. */
     public static void theFillLevelFollowsTheStash(GameTestHelper context) {
         for (int cap : CAPACITY.values()) {

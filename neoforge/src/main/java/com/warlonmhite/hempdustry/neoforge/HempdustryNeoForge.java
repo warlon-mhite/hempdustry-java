@@ -66,7 +66,7 @@ public final class HempdustryNeoForge {
 
     private static <T extends BlockEntity> void expose(RegisterCapabilitiesEvent event, BlockEntityType<T> type) {
         event.registerBlockEntity(Capabilities.Item.BLOCK, type, (blockEntity, side) ->
-                blockEntity instanceof StashJarBlockEntity jar ? new NeoForgeStashJarHandler(jar)
+                blockEntity instanceof StashJarBlockEntity jar ? jar.transferHandler(NeoForgeStashJarHandler::new)
                         : blockEntity instanceof WorldlyContainer sided ? new WorldlyContainerWrapper(sided, side)
                         : blockEntity instanceof Container container ? VanillaContainerWrapper.of(container)
                         : null);

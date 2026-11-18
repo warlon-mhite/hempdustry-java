@@ -1,5 +1,13 @@
 package com.warlonmhite.hempdustry.test.neoforge;
 
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.ResourceHandler;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.api.AfterEatEvent;
 import com.warlonmhite.hempdustry.api.AfterInfuseEvent;
@@ -114,5 +122,30 @@ public final class NeoForgeTestPlatform implements TestPlatform {
 
     private static List<Path> roots(String modId) {
         return List.copyOf(ModList.get().getModFileById(modId).getFile().getContents().getContentRoots());
+    }
+
+    @Override
+    public int[] insertThroughTwoLookupsAndAbort(ServerLevel level, BlockPos pos, Direction side, ItemStack first,
+                                                 ItemStack second, boolean nested) {
+        // Closing the root without a commit rolls it back.
+        try (Transaction root = Transaction.openRoot()) {
+            if (nested) {
+                try (Transaction inner = Transaction.open(root)) {
+                    int[] took = twoLookups(level, pos, side, first, second, inner);
+                    inner.commit();
+                    return took;
+                }
+            }
+            return twoLookups(level, pos, side, first, second, root);
+        }
+    }
+
+    private static int[] twoLookups(ServerLevel level, BlockPos pos, Direction side, ItemStack first, ItemStack second,
+                                    Transaction transaction) {
+        ResourceHandler<ItemResource> a = level.getCapability(Capabilities.Item.BLOCK, pos, side);
+        int tookA = a.insert(ItemResource.of(first), first.getCount(), transaction);
+        ResourceHandler<ItemResource> b = level.getCapability(Capabilities.Item.BLOCK, pos, side);
+        int tookB = b.insert(ItemResource.of(second), second.getCount(), transaction);
+        return new int[]{tookA, tookB};
     }
 }
