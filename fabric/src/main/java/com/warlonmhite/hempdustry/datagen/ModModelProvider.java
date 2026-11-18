@@ -4,6 +4,7 @@ import com.warlonmhite.hempdustry.block.ModCrops;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.BongBlock;
+import com.warlonmhite.hempdustry.block.custom.WhiteWidowFlowerBlock;
 import com.warlonmhite.hempdustry.item.ModItemProperties;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.google.gson.JsonElement;
@@ -138,8 +139,7 @@ public class ModModelProvider extends FabricModelProvider {
         // Wild Maui Wowie: one cross, untinted (the land's grass colour means nothing under the sea), and no pot.
         blockStateModelGenerator.createCrossBlockWithDefaultItem(ModBlocks.MAUI_WOWIE_FLOWER, BlockModelGenerators.PlantType.NOT_TINTED);
 
-        // Wild White Widow and its pot are hand-written under resources/: two looks each, open at
-        // night and closed by day, and untinted, its colour baked in as pale oak leaves' is.
+        registerWhiteWidowFlower(blockStateModelGenerator);
 
         // The crops' blockstates and stage models are hand-written under resources/ — the model
         // generator has no notion of a two- or three-tall crop, so INDICA_CROP and SATIVA_CROP
@@ -551,6 +551,32 @@ public class ModModelProvider extends FabricModelProvider {
      * it rather than its tip. That single difference is why this does not just call the vanilla
      * overload.
      */
+    /**
+     * Wild White Widow and its pot: two looks each, closed by day and open at night (the flower's
+     * {@code open}, which the pot carries too, as the eyeblossom's two blocks do), and untinted, its
+     * colour baked in as pale oak leaves' is. The item is the closed flower.
+     */
+    private static void registerWhiteWidowFlower(BlockModelGenerators generator) {
+        Block flower = ModBlocks.WHITE_WIDOW_FLOWER;
+        Block potted = ModBlocks.POTTED_WHITE_WIDOW_FLOWER;
+        TextureMapping open = TextureMapping.cross(TextureMapping.getBlockTexture(flower, "_open"));
+        generator.blockStateOutput.accept(MultiVariantGenerator.dispatch(flower)
+                .with(PropertyDispatch.initial(WhiteWidowFlowerBlock.OPEN)
+                        .select(false, BlockModelGenerators.plainVariant(
+                                ModelTemplates.CROSS.create(flower, TextureMapping.cross(flower), generator.modelOutput)))
+                        .select(true, BlockModelGenerators.plainVariant(
+                                ModelTemplates.CROSS.createWithSuffix(flower, "_open", open, generator.modelOutput)))));
+        generator.registerSimpleItemModel(flower.asItem(),
+                generator.createFlatItemModelWithBlockTexture(flower.asItem(), flower));
+        generator.blockStateOutput.accept(MultiVariantGenerator.dispatch(potted)
+                .with(PropertyDispatch.initial(WhiteWidowFlowerBlock.OPEN)
+                        .select(false, BlockModelGenerators.plainVariant(ModelTemplates.FLOWER_POT_CROSS.create(potted,
+                                TextureMapping.plant(flower), generator.modelOutput)))
+                        .select(true, BlockModelGenerators.plainVariant(ModelTemplates.FLOWER_POT_CROSS.createWithSuffix(
+                                potted, "_open", TextureMapping.plant(TextureMapping.getBlockTexture(flower, "_open")),
+                                generator.modelOutput)))));
+    }
+
     private static void registerTallFlowerPotPlant(BlockModelGenerators generator, Block flower, Block potted) {
         MultiVariant top = BlockModelGenerators.plainVariant(
                 ModelTemplates.TINTED_CROSS.createWithSuffix(flower, "_top",

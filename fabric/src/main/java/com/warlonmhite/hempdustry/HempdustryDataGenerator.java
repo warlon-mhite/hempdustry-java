@@ -30,6 +30,11 @@ public class HempdustryDataGenerator implements DataGeneratorEntrypoint {
 		pack.addProvider(ModBalanceProvider::new);
 		pack.addProvider(ModAdvancementProvider::new);
 		pack.addProvider(ModCompatProvider::new);
+		// Not every tag comes from here. Hand-written under resources/: the worldgen tags (every *_gen
+		// biome tag and echo_og_structures), and a few short tags of registries none of these providers
+		// writes (game_event/hush_silences, mob_effect/counts_as_harmful, banner_pattern/pattern_item/hemp_leaf,
+		// painting_variant/placeable), plus item/hash_cutters and block/concrete_powders. A provider for one
+		// of those registries would take its tags over.
 	}
 
 	@Override
