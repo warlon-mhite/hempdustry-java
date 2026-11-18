@@ -23,7 +23,7 @@ import net.minecraft.world.level.block.state.BlockState;
  *   <li><b>No light record.</b> The ladder never applies; the record stays {@code natural}.</li>
  * </ul>
  *
- * <p>The wild plant is this block, generated ripe on warped nylium. See {@code crops.md}.
+ * <p>The wild plant is this block, generated ripe on warped nylium.
  */
 public class WarpedKushCropBlock extends IndicaCropBlock {
     /** {@code floor(resistance / 1) + 1}: 1-in-5 where water boils away, 1-in-20 elsewhere. */

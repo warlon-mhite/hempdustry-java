@@ -354,7 +354,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
 
     /**
      * The resistance sheet of the plant {@code state} is: Industrial Hemp's own, else its strain's, else the
-     * spread around neutral, as a strain file naming none (#266).
+     * spread around neutral, as a strain file naming none.
      */
     public static Resistances resistancesOf(@Nullable Level level, BlockState state) {
         if (state.getBlock() instanceof IndustrialHempCropBlock) {

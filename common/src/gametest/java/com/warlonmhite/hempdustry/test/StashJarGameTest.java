@@ -534,7 +534,7 @@ public final class StashJarGameTest {
     }
 
     /**
-     * The jar blends each strain (round 21): tier and band are levelled exactly, nothing made or lost,
+     * The jar blends each strain: tier and band are levelled exactly, nothing made or lost,
      * never past the inputs, order-free, no gain from taking out and putting back, best out first, and
      * the tooltip names what comes out; a chemotype never blends, nor a stack carrying anything else.
      */

@@ -20,7 +20,7 @@ import net.minecraft.util.RandomSource;
 public record Resistances(ResistanceOdds dryGround, ResistanceOdds overwatering, ResistanceOdds light,
                           ResistanceOdds mildew) {
 
-    /** The odds of a phenomenon a file leaves out: the shared spread around neutral (#266). */
+    /** The odds of a phenomenon a file leaves out: the shared spread around neutral. */
     private static final ResistanceOdds UNNAMED = ResistanceOdds.spread(Resistance.NEUTRAL);
 
     /** The spread around neutral on all four: a strain that names no resistances. */

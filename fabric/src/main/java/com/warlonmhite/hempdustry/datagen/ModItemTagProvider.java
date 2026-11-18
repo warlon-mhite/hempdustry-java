@@ -46,7 +46,7 @@ public class ModItemTagProvider extends FabricTagProvider.ItemTagProvider {
         // on the ground, admire it and pocket it (they drop it on death). They never barter for it --
         // bartering is hardcoded to the gold ingot. The lore is placement, not text: a bastion's
         // treasure keeps the buds beside the gold, as a 2,700-year-old grave kept flower beside a
-        // warrior's bow, and piglins barter the seed. See crops.md, Warped Kush.
+        // warrior's bow, and piglins barter the seed.
         valueLookupBuilder(ItemTags.PIGLIN_LOVED)
                 .add(ModItems.WARPED_KUSH_BUDS);
 

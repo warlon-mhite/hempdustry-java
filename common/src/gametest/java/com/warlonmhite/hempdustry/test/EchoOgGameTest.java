@@ -272,7 +272,7 @@ public final class EchoOgGameTest {
         context.setBlock(kushRel, ModBlocks.INDICA_CROP.defaultBlockState());
         ExperienceOrb ignored = orb(world, context.absolutePos(kushRel), 10);
 
-        // One step short of ripe: room for 10 points, so a 37-point orb stays whole for the player (#315).
+        // One step short of ripe: room for 10 points, so a 37-point orb stays whole for the player.
         BlockPos lateRel = new BlockPos(5, 2, 5);
         context.setBlock(lateRel.below(), Blocks.SCULK);
         context.setBlock(lateRel, ripe(ModBlocks.ECHO_OG_CROP, DoubleBlockHalf.LOWER).setValue(IndicaCropBlock.AGE, 6));

@@ -69,7 +69,7 @@ public final class ResinGameTest {
     private static final BlockPos ROOT = FLOOR.above();
     private static final BlockPos BOX = new BlockPos(4, 2, 4);
 
-    /** Very low / low / average / rich / very rich, and the texture: the agreed sheets (cannabinoids.md §5b, #106, #109). */
+    /** Very low / low / average / rich / very rich, and the texture: the agreed sheets. */
     private static final Map<ResourceKey<Strain>, ResinSheet> SHEETS = new LinkedHashMap<>();
 
     static {
