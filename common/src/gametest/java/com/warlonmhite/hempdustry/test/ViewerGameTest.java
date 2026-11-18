@@ -8,11 +8,16 @@ import com.warlonmhite.hempdustry.recipe.PackingRecipe;
 import com.warlonmhite.hempdustry.strain.Strain;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.RecipeHolder;
 
 /**
  * What a recipe viewer shows as packing is what the crafting grid does.
@@ -23,6 +28,32 @@ import net.minecraft.world.item.crafting.CraftingInput;
  * row through the real {@link PackingRecipe}, once for each stack every slot offers.
  */
 public final class ViewerGameTest {
+
+    /**
+     * Every recipe read by a serializer of ours reaches a client. Since 1.21.2 the server keeps
+     * recipes to itself unless asked, and Fabric asks by serializer: a recipe viewer there opts in
+     * vanilla's, so one of ours left out is a recipe that crafts and shows on no page (the edibles,
+     * bhang and hemp milk were). NeoForge asks by type. A server's own list holds every recipe either
+     * way, so the loader is asked what it sends.
+     */
+    public static void everyRecipeOfOursReachesAClient(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        Map<String, String> missing = new TreeMap<>();
+        int seen = 0;
+        for (RecipeHolder<?> holder : world.recipeAccess().getRecipes()) {
+            Identifier serializer = BuiltInRegistries.RECIPE_SERIALIZER.getKey(holder.value().getSerializer());
+            if (serializer == null || !Sweep.ours(serializer)) {
+                continue;
+            }
+            seen++;
+            if (!TestPlatform.INSTANCE.reachesAClient(holder)) {
+                missing.put(holder.id().identifier().toString(), serializer + " is not sent to the client");
+            }
+        }
+        Sweep.atLeast(context, "recipes read by a serializer of ours", seen, 15);
+        Sweep.report(context, "every recipe of ours reaches a client", missing, Map.of());
+        context.succeed();
+    }
 
     public static void everyPackingRowIsARealCraft(GameTestHelper context) {
         ServerLevel world = context.getLevel();
