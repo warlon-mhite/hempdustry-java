@@ -1,6 +1,7 @@
 package com.warlonmhite.hempdustry.block.entity.custom;
 
 import com.warlonmhite.hempdustry.block.custom.GrowLuck;
+import com.warlonmhite.hempdustry.block.custom.HydroTrayBlock;
 import com.warlonmhite.hempdustry.block.custom.IndustrialHempCropBlock;
 import com.warlonmhite.hempdustry.block.entity.ModBlockEntities;
 import com.warlonmhite.hempdustry.strain.BudTier;
@@ -97,6 +98,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
     private static final String POTENCY_KEY = "potency_band";
     private static final String QUALITY_KEY = "quality_gene";
     private static final String OPEN_SKY_KEY = "open_sky";
+    private static final String WORKING_TRAY_KEY = "working_tray";
     private static final String RESISTANCES_KEY = "resistances";
     private static final String RESIN_KEY = "resin";
     private static final String EXPERIENCE_KEY = "experience";
@@ -104,6 +106,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
     private @Nullable PotencyBand band;
     private @Nullable QualityGene gene;
     private @Nullable Boolean openSky;
+    private @Nullable Boolean workingTray;
     private @Nullable ResistanceGenes resistances;
     private @Nullable ResinStep resin;
     private int experience;
@@ -176,6 +179,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
         resistances = resistancesOf(level, getBlockState()).roll(RandomSource.create());
         resin = resinOf(level, getBlockState()).roll(RandomSource.create());
         openSky = null;
+        workingTray = null;
         experience = 0;
         harvestTier = null;
         harvest = new WeakReference<>(null);
@@ -276,6 +280,36 @@ public class PlantRecordBlockEntity extends BlockEntity {
     public void setOpenSky(@Nullable Boolean openSky) {
         this.openSky = openSky;
         setChanged();
+    }
+
+    /** Whether this plant has grown on a working Hydro Tray at every step so far; false before its first step. */
+    public boolean workingTray() {
+        return Boolean.TRUE.equals(workingTray);
+    }
+
+    /** Sets the working-tray record outright: what a test does. */
+    public void setWorkingTray(@Nullable Boolean workingTray) {
+        this.workingTray = workingTray;
+        setChanged();
+    }
+
+    /**
+     * One growth step of the plant whose root is at {@code root}, taken from {@code fromAge}: its working-tray record
+     * becomes whether a Hydro Tray at work ({@link HydroTrayBlock#isWorking}) is under the root now on its first
+     * step, and the weaker of before and now after, as the open sky is kept. So a tray that ran dry, went unfed or
+     * lost its pump on any step gives that harvest nothing, and one set under the plant on its last step neither.
+     * Read before the ripening step drinks the tray. A root with no record is left alone.
+     */
+    public static void recordTray(Level level, BlockPos root, int fromAge) {
+        if (level.isClientSide() || !(level.getBlockEntity(root) instanceof PlantRecordBlockEntity record)) {
+            return;
+        }
+        boolean now = HydroTrayBlock.isWorking(level.getBlockState(root.below()));
+        boolean next = fromAge == 0 || record.workingTray == null ? now : record.workingTray && now;
+        if (record.workingTray == null || record.workingTray != next) {
+            record.workingTray = next;
+            record.setChanged();
+        }
     }
 
     /**
@@ -447,6 +481,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
         band = view.read(POTENCY_KEY, PotencyBand.CODEC).orElse(null);
         gene = view.read(QUALITY_KEY, QualityGene.CODEC).orElse(null);
         openSky = view.read(OPEN_SKY_KEY, Codec.BOOL).orElse(null);
+        workingTray = view.read(WORKING_TRAY_KEY, Codec.BOOL).orElse(null);
         resistances = view.read(RESISTANCES_KEY, ResistanceGenes.CODEC).orElse(null);
         resin = view.read(RESIN_KEY, ResinStep.CODEC).orElse(null);
         experience = view.getIntOr(EXPERIENCE_KEY, 0);
@@ -463,6 +498,9 @@ public class PlantRecordBlockEntity extends BlockEntity {
         }
         if (openSky != null) {
             view.store(OPEN_SKY_KEY, Codec.BOOL, openSky);
+        }
+        if (workingTray != null) {
+            view.store(WORKING_TRAY_KEY, Codec.BOOL, workingTray);
         }
         if (resistances != null) {
             view.store(RESISTANCES_KEY, ResistanceGenes.CODEC, resistances);

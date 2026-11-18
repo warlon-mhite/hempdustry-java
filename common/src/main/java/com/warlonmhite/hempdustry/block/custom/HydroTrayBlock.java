@@ -109,7 +109,16 @@ public class HydroTrayBlock extends Block implements GrowMedium {
 
     @Override
     public float speed(BlockState state) {
-        return state.getValue(LEVEL) > 0 && state.getValue(FED) && state.getValue(POWERED) ? PUMPED_SPEED : 1.0F;
+        return isWorking(state) ? PUMPED_SPEED : 1.0F;
+    }
+
+    /**
+     * Whether {@code state} is a Hydro Tray at work: water in it, fed, and the pump running. Only then does it
+     * beat soil, in growth and in a harvest's luck; anything else, a tray or not, is not.
+     */
+    public static boolean isWorking(BlockState state) {
+        return state.getBlock() instanceof HydroTrayBlock && state.getValue(LEVEL) > 0 && state.getValue(FED)
+                && state.getValue(POWERED);
     }
 
     @Override
