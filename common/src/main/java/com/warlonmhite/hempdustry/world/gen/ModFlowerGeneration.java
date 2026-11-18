@@ -59,11 +59,17 @@ public class ModFlowerGeneration {
         );
 
         // Ruderalis, ripe and wild, in the two taigas: a few stands survive where the plant came
-        // from, at a fraction of any other plant's rate. Digging it up is the route that works.
+        // from, at a fraction of any other plant's rate, about twice as often in the snowy one. Digging
+        // it up is the route that works.
         Services.REGISTRATION.addFeature(
                 ModTags.Biomes.RUDERALIS_GEN,
                 GenerationStep.Decoration.VEGETAL_DECORATION,
                 ModPlacedFeatures.RUDERALIS_PLACED_KEY
+        );
+        Services.REGISTRATION.addFeature(
+                ModTags.Biomes.RUDERALIS_SNOWY_GEN,
+                GenerationStep.Decoration.VEGETAL_DECORATION,
+                ModPlacedFeatures.RUDERALIS_SNOWY_PLACED_KEY
         );
 
         // Warped Kush, ripe and wild, in warped forests.

@@ -152,7 +152,7 @@ public class ModConfiguredFeatures {
 
         // Wild White Widow: a flower of its own, as Wild Purple Kush is. It generates closed and
         // opens at its first night's random tick, as a flower set down by day would.
-        register(context, WHITE_WIDOW_KEY, wildPatch(ModBlocks.WHITE_WIDOW_FLOWER));
+        register(context, WHITE_WIDOW_KEY, wildPatch(ModBlocks.WHITE_WIDOW_FLOWER, 3));
 
         // Wild Maui Wowie: a flower of its own, set into the sea; the block holds the water it replaces.
         // Purple Kush's wild patch, but each plant stands in the shallows rather than in air.
@@ -274,7 +274,22 @@ public class ModConfiguredFeatures {
      * plant, and so free seeds, from a stack of bone meal.
      */
     private static ConfiguredFeature<?, ?> patch(Block flower, int tries) {
-        return new ConfiguredFeature<>(Feature.RANDOM_PATCH, new RandomPatchConfiguration(tries, 6, 2,
+        return patch(flower, tries, 2);
+    }
+
+    /**
+     * {@link #wildPatch(Block)} scattered {@code ySpread} up or down instead of 2: a patch under a canopy, whose
+     * ground rises and falls between the trunks (White Widow's, 3, as vanilla's eyeblossoms in the same
+     * gardens).
+     */
+    private static ConfiguredFeature<?, ?> wildPatch(Block flower, int ySpread) {
+        return new ConfiguredFeature<>(Feature.RANDOM_SELECTOR, new RandomFeatureConfiguration(
+                List.of(new WeightedPlacedFeature(inline(patch(flower, BIG_TRIES, ySpread)), BIG_CHANCE)),
+                inline(patch(flower, SMALL_TRIES, ySpread))));
+    }
+
+    private static ConfiguredFeature<?, ?> patch(Block flower, int tries, int ySpread) {
+        return new ConfiguredFeature<>(Feature.RANDOM_PATCH, new RandomPatchConfiguration(tries, 6, ySpread,
                 PlacementUtils.onlyWhenEmpty(Feature.SIMPLE_BLOCK,
                         new SimpleBlockConfiguration(BlockStateProvider.simple(flower)))));
     }

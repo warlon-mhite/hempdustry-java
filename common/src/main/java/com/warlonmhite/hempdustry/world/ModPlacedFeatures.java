@@ -48,6 +48,7 @@ public class ModPlacedFeatures {
     /** One chunk in this many tries for a wild Warped Kush patch, on every floor of the Nether there. */
     private static final int WARPED_KUSH_RARITY = 8;
     public static final ResourceKey<PlacedFeature> RUDERALIS_PLACED_KEY = registerKey("ruderalis_placed");
+    public static final ResourceKey<PlacedFeature> RUDERALIS_SNOWY_PLACED_KEY = registerKey("ruderalis_snowy_placed");
     public static final ResourceKey<PlacedFeature> CRIMSON_PLACED_KEY = registerKey("crimson_placed");
     public static final ResourceKey<PlacedFeature> ENDER_HAZE_PLACED_KEY = registerKey("ender_haze_placed");
     public static final ResourceKey<PlacedFeature> CHERRY_WINE_PLACED_KEY = registerKey("cherry_wine_placed");
@@ -105,6 +106,11 @@ public class ModPlacedFeatures {
      * crosses five or six taigas looking at the ground.
      */
     private static final int RUDERALIS_RARITY = 384;
+    /**
+     * The same in a snowy taiga, where the plant's cold roots are best placed: about one wild plant per 430
+     * snowy-taiga chunks at the measured 0.47 plants an attempt, still the rarest wild plant of the mod.
+     */
+    private static final int RUDERALIS_SNOWY_RARITY = 200;
 
     public static ResourceKey<PlacedFeature> registerKey(String name) {
         return ResourceKey.create(Registries.PLACED_FEATURE, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name));
@@ -163,11 +169,11 @@ public class ModPlacedFeatures {
         register(context, CHERRY_WINE_PLACED_KEY,
                 configured.getOrThrow(ModConfiguredFeatures.CHERRY_WINE_KEY), surfacePatch(48));
 
-        // Wild White Widow: Purple Kush's surface patch, in pale gardens -- but one per 16 chunks, not
-        // 48, since a pale garden is small and rare and a 48 would leave most of them bare. Vanilla's
-        // own eyeblossom patch there is one in 32.
+        // Wild White Widow: Purple Kush's patch, in pale gardens -- but one per 16 chunks, not 48, since a
+        // pale garden is small and rare and a 48 would leave most of them bare -- and on the ground under
+        // the pale oaks, where vanilla's eyeblossoms grow, never on their canopy.
         register(context, WHITE_WIDOW_PLACED_KEY,
-                configured.getOrThrow(ModConfiguredFeatures.WHITE_WIDOW_KEY), surfacePatch(16));
+                configured.getOrThrow(ModConfiguredFeatures.WHITE_WIDOW_KEY), surfacePatchUnderCanopy(16));
 
         // Wild Maui Wowie: Purple Kush's patch, on the sea floor of warm and lukewarm oceans, each plant only
         // where the water over it is 3 to 6 blocks deep (the patch's own filter, shallows()) -- shelves by the
@@ -240,6 +246,8 @@ public class ModPlacedFeatures {
         // vanilla already puts the trail ruins that hold its seeds.
         register(context, RUDERALIS_PLACED_KEY,
                 configured.getOrThrow(ModConfiguredFeatures.RUDERALIS_KEY), surfacePatch(RUDERALIS_RARITY));
+        register(context, RUDERALIS_SNOWY_PLACED_KEY,
+                configured.getOrThrow(ModConfiguredFeatures.RUDERALIS_KEY), surfacePatch(RUDERALIS_SNOWY_RARITY));
     }
 
     /** One wild Maui Wowie patch in this many warm or lukewarm ocean chunks: Purple Kush's rarity. */
@@ -269,6 +277,20 @@ public class ModPlacedFeatures {
         return BlockPredicate.allOf(column);
     }
 
+
+    /**
+     * {@link #surfacePatch} on the ground under a canopy: the patch starts on the terrain below the leaves, as
+     * vanilla's eyeblossoms do in the same pale gardens ({@code pale_garden_flowers}: {@code
+     * MOTION_BLOCKING_NO_LEAVES}). From the top of the leaves a pale garden's patch would land on its canopy,
+     * where no flower stands. Its plants are scattered 3 up or down, in the configured patch.
+     */
+    private static PlacementModifier[] surfacePatchUnderCanopy(int rarity) {
+        return new PlacementModifier[]{
+                RarityFilter.onAverageOnceEvery(rarity),
+                InSquarePlacement.spread(),
+                PlacementUtils.HEIGHTMAP_NO_LEAVES,
+                BiomeFilter.biome()};
+    }
 
     /** Standard surface-vegetation placement: one attempt per {@code rarity} chunks, on the terrain top. */
     private static PlacementModifier[] surfacePatch(int rarity) {
