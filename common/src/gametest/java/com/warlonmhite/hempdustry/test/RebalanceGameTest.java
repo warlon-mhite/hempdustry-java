@@ -12,6 +12,7 @@ import com.warlonmhite.hempdustry.item.custom.SmokeContents;
 import com.warlonmhite.hempdustry.item.custom.Smoking;
 import com.warlonmhite.hempdustry.strain.ModStrains;
 import com.warlonmhite.hempdustry.strain.Strain;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import net.minecraft.core.Holder;
@@ -243,6 +244,29 @@ public final class RebalanceGameTest {
                         quality + " is no surer or sooner than the quality below it");
             }
             previous = window;
+        }
+        context.succeed();
+    }
+
+    /**
+     * An edible kicks in with the first dose that will land: with debuffs off its earliest dose (Slowness) is
+     * never queued, and the next one carries the onset mark instead, so a green-out's "It Doesn't Work Like
+     * That" can still be earned. One mark, never two, with debuffs on or off.
+     */
+    public static void anEdibleKicksInWithDebuffsOff(GameTestHelper context) {
+        for (boolean debuffs : new boolean[]{true, false}) {
+            ConfigGameTest.withConfig("{ \"effects\": { \"debuffs\": " + debuffs + " } }", () -> {
+                ServerPlayer eater = freshPlayer(context);
+                EdibleEffects.consume(eater, 4, Quality.PERFECT);
+                List<EdibleScheduler.Pending> waiting = EdibleScheduler.pending(eater);
+                long marked = waiting.stream().filter(EdibleScheduler.Pending::onset).count();
+                context.assertTrue(!waiting.isEmpty() && marked == 1, "with debuffs " + (debuffs ? "on" : "off")
+                        + ", " + marked + " of the " + waiting.size() + " doses waiting carry the onset mark, not one");
+                EdibleScheduler.Pending first = waiting.stream().min(Comparator.comparingInt(EdibleScheduler.Pending::ticksLeft))
+                        .orElseThrow();
+                context.assertTrue(first.onset(), "with debuffs " + (debuffs ? "on" : "off")
+                        + ", the first dose to land does not carry the onset mark: " + waiting);
+            });
         }
         context.succeed();
     }
