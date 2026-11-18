@@ -33,7 +33,7 @@
     "resistances": {
       "dry_ground": "resistant",
       "light": "very_resistant",
-      "mildew": "weak",
+      "mildew": "neutral",
       "overwatering": "neutral"
     }
   },

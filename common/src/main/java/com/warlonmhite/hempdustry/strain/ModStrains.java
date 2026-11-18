@@ -388,7 +388,8 @@ public class ModStrains {
                 .withPotency(Potency.odds(20, 50, 25, 5))
                 // As Warped Kush: +2 for the light record and the tray it can never take.
                 .withQuality(new GrowQuality(2, 15, 50, 25, 10))
-                .withResistances(Resistances.of(Resistance.RESISTANT, Resistance.NEUTRAL, Resistance.VERY_RESISTANT, Resistance.WEAK))
+                // Neutral to mildew, as Warped Kush: it never catches it, so its gene says nothing either way.
+                .withResistances(Resistances.of(Resistance.RESISTANT, Resistance.NEUTRAL, Resistance.VERY_RESISTANT, Resistance.NEUTRAL))
                 .withResin(new ResinSheet(0, 0, 20, 50, 30, ResinTexture.STICKY)));
 
         // Ender Haze -- the End's plant, and the second Haze: Speed is the family's, as Hunger is
@@ -468,7 +469,7 @@ public class ModStrains {
                 Optional.of(ModItems.WHITE_WIDOW_SEEDS), ModItems.WHITE_WIDOW_BUDS,
                 Optional.of(ModBlocks.WHITE_WIDOW_FLOWER), 1.0F, 1,
                 List.of(
-                        new SmokeEffect(MobEffects.HEALTH_BOOST, 0, EffectLabel.THC, 1.0F, false, 1.0F, SmokeEffect.NO_CAP),
+                        new SmokeEffect(MobEffects.HEALTH_BOOST, 0, EffectLabel.THC, 1.0F, false, 1.0F, 0),
                         new SmokeEffect(MobEffects.HUNGER, 0, EffectLabel.THC, 1.0F, false, 1.0F, SmokeEffect.NO_CAP),
                         new SmokeEffect(MobEffects.WEAVING, 0, EffectLabel.STRAIN, 1.0F, false, 1.0F, SmokeEffect.NO_CAP),
                         new SmokeEffect(MobEffects.UNLUCK, 0, EffectLabel.STRAIN, 1.0F, false, 1.0F, SmokeEffect.NO_CAP)),
