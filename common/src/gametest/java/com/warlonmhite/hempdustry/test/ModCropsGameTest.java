@@ -1,6 +1,9 @@
 package com.warlonmhite.hempdustry.test;
 
 import com.warlonmhite.hempdustry.block.ModCrops;
+import net.minecraft.world.level.block.state.BlockState;
+import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
+import com.warlonmhite.hempdustry.block.custom.IndustrialHempCropBlock;
 import com.warlonmhite.hempdustry.item.custom.StrainPlantItem;
 import com.warlonmhite.hempdustry.strain.Strain;
 import net.minecraft.core.Holder;
@@ -95,6 +98,49 @@ public final class ModCropsGameTest {
         Sweep.atLeast(context, "strains grown from a listed crop", strains, 12);
 
         Sweep.report(context, "every crop is in the crop list once", findings, Map.of());
+        context.succeed();
+    }
+
+    /**
+     * A planted plant rolls from its own strain's sheets: the record finds every listed crop's strain, so none of
+     * them falls back on the defaults (Purple Kush's numbers), which every roll test would pass with. Industrial
+     * Hemp, no strain, rolls from sheets of its own.
+     */
+    public static void everyCropRollsFromItsOwnSheets(GameTestHelper context) {
+        var level = context.getLevel();
+        Map<String, String> findings = new TreeMap<>();
+        int seen = 0;
+        for (ModCrops.Crop crop : ModCrops.ALL) {
+            BlockState root = crop.crop().defaultBlockState();
+            String id = BuiltInRegistries.BLOCK.getKey(crop.crop()).toString();
+            if (crop.crop() instanceof IndustrialHempCropBlock) {
+                if (!PlantRecordBlockEntity.resistancesOf(level, root).equals(IndustrialHempCropBlock.RESISTANCES)
+                        || !PlantRecordBlockEntity.resinOf(level, root).equals(IndustrialHempCropBlock.RESIN)) {
+                    findings.put(id, "does not roll Industrial Hemp's own sheets");
+                }
+                seen++;
+                continue;
+            }
+            Optional<Strain> strain = Strain.all(level.registryAccess()).stream().map(Holder::value)
+                    .filter(value -> value.seedItem().filter(seeds -> seeds == crop.seeds()).isPresent()).findFirst();
+            if (strain.isEmpty()) {
+                findings.put(id, "no strain is grown from its seeds");
+                continue;
+            }
+            seen++;
+            Strain own = strain.get();
+            if (!PlantRecordBlockEntity.potencyOf(level, root).equals(own.potency())) {
+                findings.put(id, "rolls a potency band from " + PlantRecordBlockEntity.potencyOf(level, root) + ", not " + own.potency());
+            } else if (!PlantRecordBlockEntity.qualityOf(level, root).equals(own.quality())) {
+                findings.put(id, "rolls a quality gene from " + PlantRecordBlockEntity.qualityOf(level, root) + ", not " + own.quality());
+            } else if (!PlantRecordBlockEntity.resistancesOf(level, root).equals(own.resistances())) {
+                findings.put(id, "rolls resistances from another sheet than its strain's");
+            } else if (!PlantRecordBlockEntity.resinOf(level, root).equals(own.resin())) {
+                findings.put(id, "rolls resin from " + PlantRecordBlockEntity.resinOf(level, root) + ", not " + own.resin());
+            }
+        }
+        Sweep.atLeast(context, "crops", seen, 13);
+        Sweep.report(context, "every crop rolls from its own sheets", findings, Map.of());
         context.succeed();
     }
 }

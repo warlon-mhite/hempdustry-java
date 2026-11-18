@@ -241,6 +241,7 @@ public final class HempdustryGameTests {
         register("every_container_spills_when_broken", SweepGameTest::everyContainerSpillsWhenBroken);
         register("every_container_answers_pipes", SweepGameTest::everyContainerAnswersPipes);
         register("every_crop_is_listed_once", ModCropsGameTest::everyCropIsListedOnce);
+        register("every_crop_rolls_from_its_own_sheets", ModCropsGameTest::everyCropRollsFromItsOwnSheets);
         register("a_strain_file_from_an_older_version_is_named", StrainOverridesGameTest::aStrainFileFromAnOlderVersionIsNamed);
         register("the_addon_events_reach_a_listener", AddonEventGameTest::theAddonEventsReachAListener);
         register("the_loader_names_itself_and_the_mods_version",
