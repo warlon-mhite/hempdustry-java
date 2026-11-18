@@ -316,6 +316,19 @@ public final class ResinGameTest {
                     + ResinStep.written(entry.getKey()) + " sieves at " + chance + ", not " + entry.getValue());
         }
 
+        // Written only where nothing written would sieve otherwise: a very rich bud in the resinous tag is left bare
+        // for a dry strain (the tag's double rate is its own), written for any other texture (which a datapack's
+        // tagged strain may have), and an average bud outside the tag is never written.
+        context.assertTrue(ResinStep.written(ResinStep.stamp(new ItemStack(ModItems.BELDIA_BUDS), ResinStep.VERY_RICH,
+                ResinTexture.DRY)).isEmpty(), "a very rich bud of a dry resinous strain was written");
+        for (ResinTexture texture : List.of(ResinTexture.EVEN, ResinTexture.STICKY)) {
+            context.assertTrue(ResinStep.written(ResinStep.stamp(new ItemStack(ModItems.BELDIA_BUDS), ResinStep.VERY_RICH,
+                    texture)).isPresent(), "a very rich bud of an " + texture.getSerializedName()
+                    + " resinous strain was left bare, so it would sieve at the tag's double rate");
+            context.assertTrue(ResinStep.written(ResinStep.stamp(new ItemStack(ModItems.INDICA_BUDS), ResinStep.AVERAGE,
+                    texture)).isEmpty(), "an average bud outside the tag was written");
+        }
+
         // In the box: one average Beldía bud is one level; one with no step is two.
         context.setBlock(BOX, ModBlocks.SIFTING_BOX.defaultBlockState());
         Players.click(context, Players.survival(context), BOX,
