@@ -3,6 +3,7 @@ package com.warlonmhite.hempdustry.test;
 import com.warlonmhite.hempdustry.platform.Services;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.RegistryDataLoader;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 
@@ -45,6 +46,13 @@ public interface TestPlatform {
     /** The odds of catching fire and of burning away, vanilla's {@code igniteOdds} and {@code burnOdds}. */
     record Flammability(int igniteOdds, int burnOdds) {
     }
+
+    /**
+     * Whether the server sends {@code recipe} to a client, which is all a recipe viewer there sees.
+     * Fabric sends by serializer, NeoForge by type; a server's own recipe list holds everything either
+     * way, so only the loader can say.
+     */
+    boolean reachesAClient(RecipeHolder<?> recipe);
 
     /**
      * A listener on the loader's own bus for each of the four addon events -- Fabric's

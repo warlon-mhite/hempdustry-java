@@ -89,6 +89,11 @@ public final class NeoForgeRegistration implements Registration {
         syncedRecipes.add(type);
     }
 
+    /** Whether {@link #syncRecipes} was asked for {@code type}: what the game tests read. */
+    public boolean sendsRecipes(RecipeType<?> type) {
+        return syncedRecipes.contains(type);
+    }
+
     @Override
     public CreativeModeTab.Builder creativeTabBuilder() {
         return CreativeModeTab.builder();

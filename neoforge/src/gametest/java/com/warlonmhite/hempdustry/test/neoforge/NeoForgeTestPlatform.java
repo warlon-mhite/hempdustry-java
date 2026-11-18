@@ -5,8 +5,14 @@ import com.warlonmhite.hempdustry.api.AfterEatEvent;
 import com.warlonmhite.hempdustry.api.AfterInfuseEvent;
 import com.warlonmhite.hempdustry.api.AfterSmokeEvent;
 import com.warlonmhite.hempdustry.api.AllowSmokeEvent;
+import com.warlonmhite.hempdustry.neoforge.NeoForgeRegistration;
+import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.test.TestPlatform;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.RegistryDataLoader;
+import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -58,6 +64,15 @@ public final class NeoForgeTestPlatform implements TestPlatform {
         FireBlock fire = (FireBlock) Blocks.FIRE;
         BlockState state = block.defaultBlockState();
         return new Flammability(fire.getIgniteOdds(state), fire.getBurnOdds(state));
+    }
+
+    @Override
+    public boolean reachesAClient(RecipeHolder<?> recipe) {
+        // NeoForge sends whole types: vanilla's are asked for by every recipe viewer, ours by the mod.
+        RecipeType<?> type = recipe.value().getType();
+        Identifier id = BuiltInRegistries.RECIPE_TYPE.getKey(type);
+        return id != null && id.getNamespace().equals("minecraft")
+                || ((NeoForgeRegistration) Services.REGISTRATION).sendsRecipes(type);
     }
 
     @Override

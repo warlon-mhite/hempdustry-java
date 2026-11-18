@@ -128,6 +128,14 @@ public class ModRecipes {
         Services.REGISTRATION.syncRecipes(DECARBOXYLATING_TYPE, DECARBOXYLATING);
         Services.REGISTRATION.syncRecipes(INFUSING_TYPE, INFUSING);
         Services.REGISTRATION.syncRecipes(PRESSING_TYPE, PRESSING);
+        // Our crafting recipes too. Fabric asks by serializer, and a viewer there opts in only
+        // vanilla's own, so without these the edibles, bhang and hemp milk craft but show on no
+        // page. Packing is sent as NeoForge sends it, with the rest of the crafting type: a special
+        // recipe the viewers skip, drawing its rows from ViewerRecipes#packing instead.
+        Services.REGISTRATION.syncRecipes(RecipeType.CRAFTING, INFUSED_SHAPED);
+        Services.REGISTRATION.syncRecipes(RecipeType.CRAFTING, INFUSED_SHAPELESS);
+        Services.REGISTRATION.syncRecipes(RecipeType.CRAFTING, CONTAINER_CARRIED);
+        Services.REGISTRATION.syncRecipes(RecipeType.CRAFTING, PACKING);
         PackingRecipe.trackServerRegistries();
     }
 }
