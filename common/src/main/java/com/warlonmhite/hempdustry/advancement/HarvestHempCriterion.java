@@ -4,6 +4,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
 import com.warlonmhite.hempdustry.block.custom.GrowLight;
+import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
 import java.util.Optional;
 import net.minecraft.advancements.triggers.Criterion;
 import net.minecraft.advancements.predicates.BlockPredicate;
@@ -44,7 +45,9 @@ import net.minecraft.world.level.block.state.BlockState;
  * block under the LOWER segment — so a datapack can ask for a Hydro Tray, a Grow Pot, or a tray that
  * was fed, in the same vocabulary as {@code minecraft:location}; and the {@code strain} the plant is,
  * a key in the datapack strain registry, read off the plant's block ({@link Strain#ofPlant}) so a
- * strain a pack adds can be asked for exactly as the mod's own are.
+ * strain a pack adds can be asked for exactly as the mod's own are; and {@code saw_night}, whether the plant stood
+ * through a dark night while flowering, read off its plant record ({@link PlantRecordBlockEntity#sawNight}), so a
+ * harvest can ask that a lamp went out at night and not that the plant was rushed through one day.
  */
 public class HarvestHempCriterion extends SimpleCriterionTrigger<HarvestHempCriterion.Conditions> {
 
@@ -65,8 +68,9 @@ public class HarvestHempCriterion extends SimpleCriterionTrigger<HarvestHempCrit
         Optional<GrowLight> light = lowerState.getOptionalValue(GrowLight.PROPERTY);
         BlockPos bedPos = lowerPos.below();
         Block plant = lowerState.getBlock();
+        boolean sawNight = world.getBlockEntity(lowerPos) instanceof PlantRecordBlockEntity record && record.sawNight();
         ModCriteria.HARVEST_HEMP.trigger(serverPlayer,
-                conditions -> conditions.matches(cuts, light, world, bedPos, plant));
+                conditions -> conditions.matches(cuts, light, world, bedPos, plant, sawNight));
     }
 
     @Override
@@ -78,25 +82,32 @@ public class HarvestHempCriterion extends SimpleCriterionTrigger<HarvestHempCrit
     private static final Codec<GrowLight> LIGHT_CODEC = StringRepresentable.fromEnum(GrowLight::values);
 
     /**
-     * The optional fields are additive: a criterion written before {@code condition}, {@code bed} and
-     * {@code strain} existed decodes with all three empty and means exactly what it meant.
+     * The optional fields are additive: a criterion written before {@code condition}, {@code bed}, {@code strain}
+     * and {@code saw_night} existed decodes with them empty and means exactly what it meant.
      */
     public record Conditions(Optional<Holder<LootItemCondition>> player, MinMaxBounds.Ints cuts,
                              Optional<GrowLight> light, Optional<BlockPredicate> bed,
-                             Optional<ResourceKey<Strain>> strain)
+                             Optional<ResourceKey<Strain>> strain, Optional<Boolean> sawNight)
             implements SimpleCriterionTrigger.SimpleInstance {
         public static final Codec<Conditions> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 LootItemCondition.CODEC.optionalFieldOf("player").forGetter(Conditions::player),
                 MinMaxBounds.Ints.CODEC.optionalFieldOf("cuts", MinMaxBounds.Ints.ANY).forGetter(Conditions::cuts),
                 LIGHT_CODEC.optionalFieldOf("condition").forGetter(Conditions::light),
                 BlockPredicate.CODEC.optionalFieldOf("bed").forGetter(Conditions::bed),
-                ResourceKey.codec(Strain.REGISTRY_KEY).optionalFieldOf("strain").forGetter(Conditions::strain)
+                ResourceKey.codec(Strain.REGISTRY_KEY).optionalFieldOf("strain").forGetter(Conditions::strain),
+                Codec.BOOL.optionalFieldOf("saw_night").forGetter(Conditions::sawNight)
         ).apply(instance, Conditions::new));
 
         /** The four fields before {@code strain}, for a criterion that asks no strain. */
         public Conditions(Optional<Holder<LootItemCondition>> player, MinMaxBounds.Ints cuts,
                           Optional<GrowLight> light, Optional<BlockPredicate> bed) {
-            this(player, cuts, light, bed, Optional.empty());
+            this(player, cuts, light, bed, Optional.empty(), Optional.empty());
+        }
+
+        /** The five fields before {@code saw_night}, for a criterion that asks nothing of the plant's nights. */
+        public Conditions(Optional<Holder<LootItemCondition>> player, MinMaxBounds.Ints cuts,
+                          Optional<GrowLight> light, Optional<BlockPredicate> bed, Optional<ResourceKey<Strain>> strain) {
+            this(player, cuts, light, bed, strain, Optional.empty());
         }
 
         /**
@@ -104,7 +115,14 @@ public class HarvestHempCriterion extends SimpleCriterionTrigger<HarvestHempCrit
          * a plant no strain names (Industrial Hemp) a strain filter.
          */
         public boolean matches(int cuts, Optional<GrowLight> light, ServerLevel world, BlockPos bedPos, Block plant) {
+            return matches(cuts, light, world, bedPos, plant, false);
+        }
+
+        /** As above, for a plant that has ({@code sawNight}) or has not stood through a dark night while flowering. */
+        public boolean matches(int cuts, Optional<GrowLight> light, ServerLevel world, BlockPos bedPos, Block plant,
+                               boolean sawNight) {
             return this.cuts.matches(cuts)
+                    && (this.sawNight.isEmpty() || this.sawNight.get() == sawNight)
                     && (this.light.isEmpty() || this.light.equals(light))
                     && (this.bed.isEmpty() || this.bed.get().matches(world, bedPos))
                     && (this.strain.isEmpty() || Strain.ofPlant(plant, world.registryAccess())
@@ -131,6 +149,13 @@ public class HarvestHempCriterion extends SimpleCriterionTrigger<HarvestHempCrit
                                                               Optional<Holder<LootItemCondition>> player) {
             return ModCriteria.HARVEST_HEMP.createCriterion(new Conditions(player, MinMaxBounds.Ints.ANY,
                     Optional.of(light), Optional.empty(), Optional.of(strain)));
+        }
+
+        /** As {@link #strainGrownUnder}, and only a plant that stood through a dark night while flowering. */
+        public static Criterion<Conditions> strainGrownUnderThroughANight(ResourceKey<Strain> strain, GrowLight light,
+                                                                           Optional<Holder<LootItemCondition>> player) {
+            return ModCriteria.HARVEST_HEMP.createCriterion(new Conditions(player, MinMaxBounds.Ints.ANY,
+                    Optional.of(light), Optional.empty(), Optional.of(strain), Optional.of(true)));
         }
 
         public static Criterion<Conditions> create(MinMaxBounds.Ints cuts, Optional<GrowLight> light,

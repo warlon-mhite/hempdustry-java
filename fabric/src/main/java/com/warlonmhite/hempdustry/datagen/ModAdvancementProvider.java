@@ -517,12 +517,15 @@ public class ModAdvancementProvider extends FabricAdvancementProvider {
 
         // Hidden: White Widow is the one plant a light at night stresses, so a Grow Lamp left on over
         // it ruins it. A harvest still on its Grow Lamp record means the lamp went dark every night --
-        // a daylight detector on it, or a player at the lever -- which is the whole trick. Only in the
-        // Overworld: the Nether and the End have no night, so a lamp left on there would earn it too.
+        // a daylight detector on it, or a player at the lever -- which is the whole trick. The plant must
+        // also have stood through a dark night while flowering: bone meal under a lamp that never went out
+        // ripens it in one day, with no night to keep dark. Only in the Overworld: the Nether and the End
+        // have no night, so a lamp left on there would earn it too.
         Advancement.Builder.advancement()
                 .display(display(ModItems.WHITE_WIDOW_BUDS, "lights_out", AdvancementType.TASK, true))
                 .addCriterion("harvested_white_widow_under_a_grow_lamp",
-                        HarvestHempCriterion.Conditions.strainGrownUnder(ModStrains.WHITE_WIDOW, GrowLight.GROW_LAMP,
+                        HarvestHempCriterion.Conditions.strainGrownUnderThroughANight(ModStrains.WHITE_WIDOW,
+                                GrowLight.GROW_LAMP,
                                 Optional.of(EntityPredicate.wrap(EntityPredicate.Builder.entity()
                                         .located(LocationPredicate.Builder.inDimension(Level.OVERWORLD))))))
                 .parent(midnightSun)

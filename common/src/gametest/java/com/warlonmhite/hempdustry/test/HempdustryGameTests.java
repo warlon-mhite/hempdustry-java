@@ -148,6 +148,7 @@ public final class HempdustryGameTests {
         register("wild_white_widow_keeps_the_eyeblossoms_hours", WhiteWidowGameTest::wildWhiteWidowKeepsTheEyeblossomsHours);
         register("white_widow_seeds_stay_in_the_pale_garden", WhiteWidowGameTest::whiteWidowSeedsStayInThePaleGarden);
         register("lights_out", WhiteWidowGameTest::lightsOut);
+        register("lights_out_needs_a_night", WhiteWidowGameTest::lightsOutNeedsANight);
         register("dud_weed_plants_on_farmland", DudWeedGameTest::dudWeedPlantsOnFarmland);
         register("dud_weed_harvests_seeds", DudWeedGameTest::dudWeedHarvestsSeeds);
         register("dud_weed_smokes_nothing", DudWeedGameTest::dudWeedSmokesNothing);

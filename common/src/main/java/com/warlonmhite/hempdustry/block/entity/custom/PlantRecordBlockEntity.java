@@ -2,6 +2,7 @@ package com.warlonmhite.hempdustry.block.entity.custom;
 
 import com.warlonmhite.hempdustry.block.custom.GrowLuck;
 import com.warlonmhite.hempdustry.block.custom.HydroTrayBlock;
+import com.warlonmhite.hempdustry.block.custom.PlantStress;
 import com.warlonmhite.hempdustry.block.custom.IndustrialHempCropBlock;
 import com.warlonmhite.hempdustry.block.entity.ModBlockEntities;
 import com.warlonmhite.hempdustry.strain.BudTier;
@@ -99,6 +100,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
     private static final String QUALITY_KEY = "quality_gene";
     private static final String OPEN_SKY_KEY = "open_sky";
     private static final String WORKING_TRAY_KEY = "working_tray";
+    private static final String SAW_NIGHT_KEY = "saw_night";
     private static final String RESISTANCES_KEY = "resistances";
     private static final String RESIN_KEY = "resin";
     private static final String EXPERIENCE_KEY = "experience";
@@ -107,6 +109,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
     private @Nullable QualityGene gene;
     private @Nullable Boolean openSky;
     private @Nullable Boolean workingTray;
+    private boolean sawNight;
     private @Nullable ResistanceGenes resistances;
     private @Nullable ResinStep resin;
     private int experience;
@@ -180,6 +183,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
         resin = resinOf(level, getBlockState()).roll(RandomSource.create());
         openSky = null;
         workingTray = null;
+        sawNight = false;
         experience = 0;
         harvestTier = null;
         harvest = new WeakReference<>(null);
@@ -337,6 +341,39 @@ public class PlantRecordBlockEntity extends BlockEntity {
     }
 
     /**
+     * Whether this plant, once flowering and before it ripened, stood through a dark night: a random tick it
+     * took at night with no light leaking onto it ({@link #recordNight}). A plant brought to ripe in one day,
+     * by bone meal under a lamp that never went out, never did.
+     */
+    public boolean sawNight() {
+        return sawNight;
+    }
+
+    /** Sets the night record outright: what a test does. */
+    public void setSawNight(boolean sawNight) {
+        this.sawNight = sawNight;
+        setChanged();
+    }
+
+    /**
+     * One random tick of the growing plant whose root is at {@code root}, {@code age} old and standing {@code height}
+     * blocks tall once grown: it now has seen a dark night if it reads night where it stands
+     * ({@link PlantStress#hours}), is flowering ({@link PlantStress#TOUCHY_AGE} on) and not yet ripe, and no light
+     * leaks onto it ({@link PlantStress#leaks}). Kept once seen, until the plant is replanted. A root with no
+     * record, or a dimension with no night, never sees one.
+     */
+    public static void recordNight(Level level, BlockPos root, int age, int maxAge, int height) {
+        if (level.isClientSide() || age < PlantStress.TOUCHY_AGE || age >= maxAge
+                || !(level.getBlockEntity(root) instanceof PlantRecordBlockEntity record) || record.sawNight) {
+            return;
+        }
+        if (PlantStress.hours(level, root) == PlantStress.Hours.NIGHT && !PlantStress.leaks(level, root, height)) {
+            record.sawNight = true;
+            record.setChanged();
+        }
+    }
+
+    /**
      * Whether the sky reaches {@code top} through the water over it: the first block above that holds no fluid
      * sees the sky, and nothing on the way up dims the light but the water itself. That is vanilla's {@code
      * canSeeSkyFromBelowWater} (a drowned's spawn) at any height: vanilla walks down from sea level, and at or
@@ -482,6 +519,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
         gene = view.read(QUALITY_KEY, QualityGene.CODEC).orElse(null);
         openSky = view.read(OPEN_SKY_KEY, Codec.BOOL).orElse(null);
         workingTray = view.read(WORKING_TRAY_KEY, Codec.BOOL).orElse(null);
+        sawNight = view.read(SAW_NIGHT_KEY, Codec.BOOL).orElse(false);
         resistances = view.read(RESISTANCES_KEY, ResistanceGenes.CODEC).orElse(null);
         resin = view.read(RESIN_KEY, ResinStep.CODEC).orElse(null);
         experience = view.getIntOr(EXPERIENCE_KEY, 0);
@@ -501,6 +539,9 @@ public class PlantRecordBlockEntity extends BlockEntity {
         }
         if (workingTray != null) {
             view.store(WORKING_TRAY_KEY, Codec.BOOL, workingTray);
+        }
+        if (sawNight) {
+            view.store(SAW_NIGHT_KEY, Codec.BOOL, true);
         }
         if (resistances != null) {
             view.store(RESISTANCES_KEY, ResistanceGenes.CODEC, resistances);
