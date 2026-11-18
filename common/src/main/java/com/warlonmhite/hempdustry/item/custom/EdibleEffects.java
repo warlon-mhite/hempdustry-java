@@ -138,12 +138,14 @@ public final class EdibleEffects {
             return;
         }
         EdibleBundle data = EdibleBundle.of(player.registryAccess());
-        List<Dose> doses = bundle(data, tier, cbdTier, quality, rollOnsetTicks(data, quality, ThreadLocalRandom.current()));
-        // The first dose to land is the edible kicking in; it carries the mark the trigger reads.
-        // "CBD-dominant" is what the tooltip shows: a CBD tier above the THC tier.
+        List<Dose> doses = allowed(bundle(data, tier, cbdTier, quality, rollOnsetTicks(data, quality, ThreadLocalRandom.current())));
+        // The first dose to land is the edible kicking in; it carries the mark the trigger reads. Chosen among
+        // the doses the config lets through, so an edible whose earliest dose is switched off (Slowness, with
+        // debuffs off) still kicks in with the next. "CBD-dominant" is what the tooltip shows: a CBD tier above
+        // the THC tier.
         Dose first = doses.stream().min(Comparator.comparingInt(Dose::delay)).orElse(null);
         for (Dose dose : doses) {
-            queue(player, dose.delay(), dose.effect(), dose == first, cbdTier > tier);
+            EdibleScheduler.schedule(player, dose.delay(), dose.effect(), dose == first, cbdTier > tier);
         }
 
         // Fired on the swallow, not on the onset: the effects above are queued behind a come-up and
@@ -212,14 +214,18 @@ public final class EdibleEffects {
         }
     }
 
-    private static void queue(Player player, int delay, MobEffectInstance effect, boolean onset, boolean cbdDominant) {
+    private static List<Dose> allowed(List<Dose> doses) {
         // Through the same gate as everything else: an edible obeys effects.enabled, the debuff and
         // munchies switches and the level cap exactly as a bong hit does. Durations arrive already
         // scaled from durationTicks, so the policy's own scaling is not applied twice here -- it is
         // filter() that is wanted, and it returns nothing when the effect is switched off.
-        for (MobEffectInstance allowed : EffectPolicy.filterKeepingDuration(List.of(effect))) {
-            EdibleScheduler.schedule(player, delay, allowed, onset, cbdDominant);
+        List<Dose> allowed = new ArrayList<>();
+        for (Dose dose : doses) {
+            for (MobEffectInstance effect : EffectPolicy.filterKeepingDuration(List.of(dose.effect()))) {
+                allowed.add(new Dose(dose.delay(), effect));
+            }
         }
+        return allowed;
     }
 
     /**
