@@ -1,10 +1,13 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
+
 import com.mojang.serialization.JsonOps;
 import com.warlonmhite.hempdustry.advancement.HarvestHempCriterion;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
 import com.warlonmhite.hempdustry.block.custom.GrowLight;
+import com.warlonmhite.hempdustry.block.custom.IndicaCropBlock;
 import com.warlonmhite.hempdustry.block.custom.PlantStress;
 import com.warlonmhite.hempdustry.block.custom.WhiteWidowFlowerBlock;
 import com.warlonmhite.hempdustry.component.ModComponents;
@@ -456,29 +459,112 @@ public final class WhiteWidowGameTest {
         context.assertTrue(lightsOut.value().parent().equals(Optional.of(Identifier.fromNamespaceAndPath("hempdustry", "midnight_sun"))),
                 "Lights Out does not hang under Midnight Sun");
 
-        context.assertTrue(!harvest(context, ModBlocks.WHITE_WIDOW_CROP, GrowLight.STRESSED, lightsOut),
+        context.assertTrue(!harvest(context, ModBlocks.WHITE_WIDOW_CROP, GrowLight.STRESSED, true, lightsOut),
                 "a stressed White Widow granted Lights Out");
-        context.assertTrue(!harvest(context, ModBlocks.WHITE_WIDOW_CROP, GrowLight.LAMP, lightsOut),
+        context.assertTrue(!harvest(context, ModBlocks.WHITE_WIDOW_CROP, GrowLight.LAMP, true, lightsOut),
                 "a White Widow grown under a redstone lamp granted Lights Out");
-        context.assertTrue(!harvest(context, ModBlocks.INDICA_CROP, GrowLight.GROW_LAMP, lightsOut),
+        context.assertTrue(!harvest(context, ModBlocks.INDICA_CROP, GrowLight.GROW_LAMP, true, lightsOut),
                 "a Purple Kush on its Grow Lamp record granted Lights Out");
-        context.assertTrue(harvest(context, ModBlocks.WHITE_WIDOW_CROP, GrowLight.GROW_LAMP, lightsOut),
-                "a White Widow on its Grow Lamp record did not grant Lights Out");
+        context.assertTrue(!harvest(context, ModBlocks.WHITE_WIDOW_CROP, GrowLight.GROW_LAMP, false, lightsOut),
+                "a White Widow on its Grow Lamp record that never stood through a night granted Lights Out");
+        context.assertTrue(harvest(context, ModBlocks.WHITE_WIDOW_CROP, GrowLight.GROW_LAMP, true, lightsOut),
+                "a White Widow on its Grow Lamp record, through a dark night, did not grant Lights Out");
 
-        // The End has no night, so a lamp left on all the time keeps the record there: no Lights Out.
+        // The End has no night, so a lamp left on all the time keeps the record there: no Lights Out. The plant
+        // there is given a night it could never have, so only the dimension stands between it and the advancement.
         ServerLevel end = world.getServer().getLevel(Level.END);
         context.assertTrue(end != null, "the test server has no End");
         BlockState ripe = Defoliation.unworked(ModBlocks.WHITE_WIDOW_CROP.defaultBlockState())
                 .setValue(BlockStateProperties.AGE_7, 7).setValue(GrowLight.PROPERTY, GrowLight.GROW_LAMP);
-        ServerPlayer inTheEnd = Players.survival(context, end);
-        HarvestHempCriterion.trigger(inTheEnd, end, BlockPos.ZERO.above(64), ripe);
-        context.assertTrue(!inTheEnd.getAdvancements().getOrStartProgress(lightsOut).isDone(),
-                "a White Widow on its Grow Lamp record harvested in the End granted Lights Out");
+        BlockPos inEnd = BlockPos.ZERO.above(64);
+        end.setBlock(inEnd, ripe, Block.UPDATE_CLIENTS);
+        try {
+            if (end.getBlockEntity(inEnd) instanceof PlantRecordBlockEntity record) {
+                record.setSawNight(true);
+            }
+            ServerPlayer inTheEnd = Players.survival(context, end);
+            HarvestHempCriterion.trigger(inTheEnd, end, inEnd, ripe);
+            context.assertTrue(!inTheEnd.getAdvancements().getOrStartProgress(lightsOut).isDone(),
+                    "a White Widow on its Grow Lamp record harvested in the End granted Lights Out");
+        } finally {
+            end.setBlock(inEnd, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+        }
+        plant(context, ModBlocks.WHITE_WIDOW_CROP, 7, GrowLight.GROW_LAMP);
+        record(context).setSawNight(true);
         ServerPlayer atHome = Players.survival(context);
         HarvestHempCriterion.trigger(atHome, world, context.absolutePos(CROP), ripe);
         context.assertTrue(atHome.getAdvancements().getOrStartProgress(lightsOut).isDone(),
                 "the same harvest in the Overworld did not grant Lights Out, so the End probe proves nothing");
         context.succeed();
+    }
+
+    /**
+     * "Lights Out" asks for a night: a White Widow brought from flowering to ripe in one day, by bone meal under a
+     * Grow Lamp that was never switched off, keeps its Grow Lamp record and never earns it. A plant notes a dark night
+     * on a random tick at night while it flowers (from age 3, before ripe) with no light leaking onto it: not by day,
+     * not under a lit lamp, not as a seedling, not once ripe, and a replanted plant starts without one.
+     */
+    public static void lightsOutNeedsANight(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        AdvancementHolder lightsOut = world.getServer().getAdvancements().get(Identifier.fromNamespaceAndPath("hempdustry", "lights_out"));
+        BlockPos pos = context.absolutePos(CROP);
+
+        // The rush: flowering to ripe by bone meal at noon, under a lit Grow Lamp.
+        lamp(context, true);
+        at(context, NOON, () -> plant(context, ModBlocks.WHITE_WIDOW_CROP, 3, GrowLight.GROW_LAMP));
+        for (int age = 3; age < IndicaCropBlock.MAX_AGE; age++) {
+            at(context, NOON, () -> ((CropBlock) ModBlocks.WHITE_WIDOW_CROP).performBonemeal(world, MISS, pos,
+                    world.getBlockState(pos)));
+        }
+        context.assertTrue(context.getBlockState(CROP).getValue(BlockStateProperties.AGE_7) == IndicaCropBlock.MAX_AGE
+                        && context.getBlockState(CROP).getValue(GrowLight.PROPERTY) == GrowLight.GROW_LAMP,
+                "bone meal at noon did not ripen the White Widow on its Grow Lamp record: " + context.getBlockState(CROP));
+        context.assertTrue(!record(context).sawNight(), "a White Widow ripened by noon's bone meal saw a night");
+        ServerPlayer rusher = Players.survival(context);
+        rusher.gameMode.destroyBlock(pos);
+        context.assertTrue(!rusher.getAdvancements().getOrStartProgress(lightsOut).isDone(),
+                "a White Widow brought to ripe in one day under a lamp left on granted Lights Out");
+
+        // Each tick that may or may not count, on a plant that has seen no night yet.
+        Object[][] cases = {
+                {4, Boolean.FALSE, MIDNIGHT, true, "a flowering plant under a dark lamp at midnight"},
+                {4, Boolean.TRUE, MIDNIGHT, false, "a flowering plant under a lit lamp at midnight"},
+                {4, Boolean.FALSE, NOON, false, "a flowering plant at noon"},
+                {1, Boolean.FALSE, MIDNIGHT, false, "a seedling at midnight"},
+                {IndicaCropBlock.MAX_AGE, Boolean.FALSE, MIDNIGHT, false, "a ripe plant at midnight"}};
+        for (Object[] c : cases) {
+            lamp(context, (Boolean) c[1]);
+            at(context, NOON, () -> plant(context, ModBlocks.WHITE_WIDOW_CROP, (int) c[0], GrowLight.GROW_LAMP));
+            record(context).setSawNight(false);
+            at(context, (long) c[2], () -> tick(context, CROP));
+            context.assertTrue(record(context).sawNight() == (boolean) c[3], c[4] + (((boolean) c[3]) ? " saw no night"
+                    : " counted as a night"));
+        }
+        record(context).setSawNight(true);
+        record(context).replant();
+        context.assertTrue(!record(context).sawNight(), "a replanted plant kept the old one's night");
+
+        // The honest way: a dark night while flowering, then ripe under the lamp by day.
+        lamp(context, false);
+        at(context, NOON, () -> plant(context, ModBlocks.WHITE_WIDOW_CROP, 4, GrowLight.GROW_LAMP));
+        at(context, MIDNIGHT, () -> tick(context, CROP));
+        lamp(context, true);
+        for (int age = context.getBlockState(CROP).getValue(BlockStateProperties.AGE_7); age < IndicaCropBlock.MAX_AGE; age++) {
+            at(context, NOON, () -> ((CropBlock) ModBlocks.WHITE_WIDOW_CROP).performBonemeal(world, MISS, pos,
+                    world.getBlockState(pos)));
+        }
+        context.assertTrue(context.getBlockState(CROP).getValue(GrowLight.PROPERTY) == GrowLight.GROW_LAMP,
+                "the White Widow lost its Grow Lamp record: " + context.getBlockState(CROP));
+        ServerPlayer grower = Players.survival(context);
+        grower.gameMode.destroyBlock(pos);
+        context.assertTrue(grower.getAdvancements().getOrStartProgress(lightsOut).isDone(),
+                "a White Widow kept dark through a night, then ripe on its Grow Lamp record, did not grant Lights Out");
+        lamp(context, null);
+        context.succeed();
+    }
+
+    private static PlantRecordBlockEntity record(GameTestHelper context) {
+        return (PlantRecordBlockEntity) context.getLevel().getBlockEntity(context.absolutePos(CROP));
     }
 
     // ----- helpers -----
@@ -567,9 +653,16 @@ public final class WhiteWidowGameTest {
         world.getBlockState(pos).randomTick(world, pos, MISS);
     }
 
-    /** A ripe plant of {@code crop} keeping {@code record}, broken by a fresh player; whether they got {@code advancement}. */
-    private static boolean harvest(GameTestHelper context, Block crop, GrowLight record, AdvancementHolder advancement) {
+    /**
+     * A ripe plant of {@code crop} keeping {@code record}, and a night it stood through ({@code night}) or not, broken by
+     * a fresh player; whether they got {@code advancement}.
+     */
+    private static boolean harvest(GameTestHelper context, Block crop, GrowLight record, boolean night,
+                                   AdvancementHolder advancement) {
         plant(context, crop, 7, record);
+        if (context.getLevel().getBlockEntity(context.absolutePos(CROP)) instanceof PlantRecordBlockEntity kept) {
+            kept.setSawNight(night);
+        }
         ServerPlayer player = Players.survival(context);
         player.gameMode.destroyBlock(context.absolutePos(CROP));
         context.assertTrue(context.getBlockState(CROP).isAir(), "the ripe " + crop + " was not harvested");

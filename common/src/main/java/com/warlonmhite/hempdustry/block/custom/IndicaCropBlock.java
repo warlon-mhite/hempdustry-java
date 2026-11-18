@@ -334,6 +334,8 @@ public class IndicaCropBlock extends CropBlock implements RecordOnTheRoot {
         }
         int age = this.getAge(state);
         int grown = age;
+        // Before the step, at the age it stood at: a plant only counts a night it lived through while flowering.
+        PlantRecordBlockEntity.recordNight(world, pos, age, this.getMaxAge(), 2);
         if (age < this.getMaxAge() && this.lightLetsItGrow(world, pos)) {
             // The ground answers for itself when it is a bed of ours (a pot or a tray): its own
             // moisture, and no crowding penalty, because the plant has soil or solution to itself.

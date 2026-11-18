@@ -15,6 +15,7 @@
             }
           }
         ],
+        "saw_night": true,
         "strain": "hempdustry:white_widow"
       },
       "trigger": "hempdustry:harvest_hemp"

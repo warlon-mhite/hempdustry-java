@@ -274,6 +274,8 @@ public class EnderHazeCropBlock extends CropBlock implements RecordOnTheRoot {
         }
         int age = this.getAge(state);
         int grown = age;
+        // Before the step, at the age it stood at: a plant only counts a night it lived through while flowering.
+        PlantRecordBlockEntity.recordNight(world, pos, age, this.getMaxAge(), HEIGHT);
         if (age < this.getMaxAge() && world.getRawBrightness(pos, 0) >= 9) {
             BlockState floor = world.getBlockState(pos.below());
             float moisture = FLAT_MOISTURE;
