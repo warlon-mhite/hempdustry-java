@@ -158,6 +158,38 @@ public final class RawWritesGameTest {
     }
 
     /**
+     * The raw write above the root leaves no record behind it: the game makes a block entity from the root's state
+     * it was handed, after the crop has put the block back, and the crop takes it away again. Only the root keeps
+     * one. One crop after another, a few ticks apart, since the record goes on the server's next turn.
+     */
+    public static void aRawWriteAboveTheRootLeavesNoRecordThere(GameTestHelper context) {
+        checkNoStrayRecord(context, 0);
+    }
+
+    private static void checkNoStrayRecord(GameTestHelper context, int index) {
+        if (index == TALL.size()) {
+            context.succeed();
+            return;
+        }
+        Block crop = TALL.get(index);
+        BlockState ripe = root(crop, IndicaCropBlock.MAX_AGE, GrowLight.NATURAL, false, false, false);
+        int height = wholePlant(crop, ripe).size();
+        ground(context, field(crop));
+        place(context, crop, ripe);
+        raw(context, crop, CROP.above(1), 0);
+        context.runAfterDelay(6, () -> {
+            context.assertTrue(context.getLevel().getBlockEntity(context.absolutePos(CROP)) != null,
+                    name(crop) + "'s root lost its record");
+            for (int up = 1; up < height; up++) {
+                var stray = context.getLevel().getBlockEntity(context.absolutePos(CROP.above(up)));
+                context.assertTrue(stray == null, name(crop) + ", written raw above its root, keeps a "
+                        + stray + " " + up + " block(s) above it");
+            }
+            checkNoStrayRecord(context, index + 1);
+        });
+    }
+
+    /**
      * The same click on the root: the harvest is taken and the age set back, every other property kept. What
      * stands is a new plant, and none of the old one's trims or rub, which a seedling could not have earned,
      * may move its harvest.
