@@ -10,7 +10,7 @@
     },
     {
       "type": "minecraft:heightmap",
-      "heightmap": "MOTION_BLOCKING"
+      "heightmap": "MOTION_BLOCKING_NO_LEAVES"
     },
     {
       "type": "minecraft:biome"
@@ -41,8 +41,8 @@
       },
       "y": {
         "type": "minecraft:trapezoid",
-        "max": 2,
-        "min": -2,
+        "max": 3,
+        "min": -3,
         "plateau": 0
       },
       "z": {

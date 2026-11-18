@@ -25,7 +25,10 @@ public class ModTags {
         public static final TagKey<Biome> BELDIA_GEN = createTag("beldia_gen");
         public static final TagKey<Biome> DITCHWEED_GEN = createTag("ditchweed_gen");
         public static final TagKey<Biome> WARPED_KUSH_GEN = createTag("warped_kush_gen");
+        /** Where Ruderalis grows wild at its plain rate: the taiga. */
         public static final TagKey<Biome> RUDERALIS_GEN = createTag("ruderalis_gen");
+        /** Where Ruderalis grows wild at its snowy rate, about twice the taiga's: the snowy taiga. */
+        public static final TagKey<Biome> RUDERALIS_SNOWY_GEN = createTag("ruderalis_snowy_gen");
         /**
          * Where Crimson Weed grows wild: the crimson forest, and never the warped one. Not
          * {@code #c:is_nether_forest}, which holds both forests -- a tag cannot take one back out.

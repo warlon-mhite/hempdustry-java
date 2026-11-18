@@ -301,6 +301,18 @@ public final class RuderalisGameTest {
             }
         }
         context.assertTrue(placed > 0, "twenty Ruderalis patches on podzol placed nothing");
+
+        // Each taiga takes one stand, at its own rate: the plain one 1 in 384 chunks, the snowy one 1 in 200.
+        var biomes = world.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.BIOME);
+        var taiga = biomes.getOrThrow(net.minecraft.world.level.biome.Biomes.TAIGA);
+        var snowy = biomes.getOrThrow(net.minecraft.world.level.biome.Biomes.SNOWY_TAIGA);
+        context.assertTrue(taiga.is(com.warlonmhite.hempdustry.util.ModTags.Biomes.RUDERALIS_GEN)
+                        && !taiga.is(com.warlonmhite.hempdustry.util.ModTags.Biomes.RUDERALIS_SNOWY_GEN),
+                "the taiga does not take the plain Ruderalis stand alone");
+        context.assertTrue(snowy.is(com.warlonmhite.hempdustry.util.ModTags.Biomes.RUDERALIS_SNOWY_GEN)
+                        && !snowy.is(com.warlonmhite.hempdustry.util.ModTags.Biomes.RUDERALIS_GEN),
+                "the snowy taiga does not take the snowy Ruderalis stand alone");
+        wildPatch(world, com.warlonmhite.hempdustry.world.ModPlacedFeatures.RUDERALIS_SNOWY_PLACED_KEY, 1);
         context.succeed();
     }
 

@@ -28,6 +28,8 @@ import net.minecraft.world.level.levelgen.placement.EnvironmentScanPlacement;
 import net.minecraft.world.level.levelgen.placement.InSquarePlacement;
 import net.minecraft.world.level.levelgen.placement.OffsetPlacement;
 import net.minecraft.world.level.levelgen.placement.HeightRangePlacement;
+import net.minecraft.world.level.levelgen.placement.HeightmapPlacement;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.levelgen.VerticalAnchor;
 import net.minecraft.world.level.levelgen.placement.PlacementModifier;
@@ -46,6 +48,7 @@ public class ModPlacedFeatures {
     public static final ResourceKey<PlacedFeature> DITCHWEED_PLACED_KEY = registerKey("ditchweed_placed");
     public static final ResourceKey<PlacedFeature> WARPED_KUSH_PLACED_KEY = registerKey("warped_kush_placed");
     public static final ResourceKey<PlacedFeature> RUDERALIS_PLACED_KEY = registerKey("ruderalis_placed");
+    public static final ResourceKey<PlacedFeature> RUDERALIS_SNOWY_PLACED_KEY = registerKey("ruderalis_snowy_placed");
     public static final ResourceKey<PlacedFeature> CRIMSON_PLACED_KEY = registerKey("crimson_placed");
     public static final ResourceKey<PlacedFeature> ENDER_HAZE_PLACED_KEY = registerKey("ender_haze_placed");
     public static final ResourceKey<PlacedFeature> CHERRY_WINE_PLACED_KEY = registerKey("cherry_wine_placed");
@@ -108,6 +111,11 @@ public class ModPlacedFeatures {
      * crosses five or six taigas looking at the ground.
      */
     private static final int RUDERALIS_RARITY = 384;
+    /**
+     * The same in a snowy taiga, where the plant's cold roots are best placed: about one wild plant per 430
+     * snowy-taiga chunks at the measured 0.47 plants an attempt, still the rarest wild plant of the mod.
+     */
+    private static final int RUDERALIS_SNOWY_RARITY = 200;
     /** A relict stand is a weed or two, never a field: a handful of tries within two blocks. */
     private static final int RUDERALIS_TRIES = 6;
 
@@ -199,11 +207,11 @@ public class ModPlacedFeatures {
         register(context, CHERRY_WINE_PLACED_KEY,
                 features.getOrThrow(ModConfiguredFeatures.CHERRY_WINE_KEY), wildPatch(48, WILD_TRIES));
 
-        // Wild White Widow: Purple Kush's surface patch, in pale gardens -- but one per 16 chunks, not
-        // 48, since a pale garden is small and rare and a 48 would leave most of them bare. Vanilla's
-        // own eyeblossom patch there is one in 32.
+        // Wild White Widow: Purple Kush's patch, in pale gardens -- but one per 16 chunks, not 48, since a
+        // pale garden is small and rare and a 48 would leave most of them bare -- and on the ground under
+        // the pale oaks, where vanilla's eyeblossoms grow, never on their canopy.
         register(context, WHITE_WIDOW_PLACED_KEY,
-                features.getOrThrow(ModConfiguredFeatures.WHITE_WIDOW_KEY), wildPatch(16, WILD_TRIES));
+                features.getOrThrow(ModConfiguredFeatures.WHITE_WIDOW_KEY), wildPatchUnderCanopy(16, WILD_TRIES));
 
         // Wild Maui Wowie: Purple Kush's patch, on the sea floor of warm and lukewarm oceans, each plant only
         // where the water over it is 3 to 6 blocks deep -- shelves by the coast and the tops of underwater
@@ -358,16 +366,9 @@ public class ModPlacedFeatures {
         // full of ferns, berry bushes and snow layers it must not write over — and ground the plant
         // would survive on.
         register(context, RUDERALIS_PLACED_KEY,
-                features.getOrThrow(ModConfiguredFeatures.RUDERALIS_KEY),
-                RarityFilter.onAverageOnceEvery(RUDERALIS_RARITY),
-                InSquarePlacement.spread(),
-                PlacementUtils.HEIGHTMAP,
-                BiomeFilter.biome(),
-                CountPlacement.of(RUDERALIS_TRIES),
-                OffsetPlacement.ofTriangle(2, 1),
-                BlockPredicateFilter.forPredicate(BlockPredicate.allOf(
-                        BlockPredicate.ONLY_IN_AIR_PREDICATE,
-                        BlockPredicate.wouldSurvive(ModBlocks.RUDERALIS_CROP))));
+                features.getOrThrow(ModConfiguredFeatures.RUDERALIS_KEY), ruderalisStand(RUDERALIS_RARITY));
+        register(context, RUDERALIS_SNOWY_PLACED_KEY,
+                features.getOrThrow(ModConfiguredFeatures.RUDERALIS_KEY), ruderalisStand(RUDERALIS_SNOWY_RARITY));
     }
 
     /**
@@ -400,6 +401,36 @@ public class ModPlacedFeatures {
         }
         column[MAUI_WOWIE_MIN_DEPTH + 2] = BlockPredicate.anyOf(surface);
         return BlockPredicate.allOf(column);
+    }
+
+    private static PlacementModifier[] ruderalisStand(int rarity) {
+        return new PlacementModifier[]{
+                RarityFilter.onAverageOnceEvery(rarity),
+                InSquarePlacement.spread(),
+                PlacementUtils.HEIGHTMAP,
+                BiomeFilter.biome(),
+                CountPlacement.of(RUDERALIS_TRIES),
+                OffsetPlacement.ofTriangle(2, 1),
+                BlockPredicateFilter.forPredicate(BlockPredicate.allOf(
+                        BlockPredicate.ONLY_IN_AIR_PREDICATE,
+                        BlockPredicate.wouldSurvive(ModBlocks.RUDERALIS_CROP)))};
+    }
+
+    /**
+     * {@link #wildPatch} on the ground under a canopy: the patch starts on the terrain below the leaves, and
+     * its plants are scattered 3 up or down, as vanilla's eyeblossoms are in the same pale gardens
+     * ({@code pale_garden_flowers}: {@code MOTION_BLOCKING_NO_LEAVES}, ±3). From the top of the leaves, as
+     * {@link #wildPatch} starts, a pale garden's patch would land on its canopy, where no flower stands.
+     */
+    private static PlacementModifier[] wildPatchUnderCanopy(int rarity, IntProvider tries) {
+        return new PlacementModifier[]{
+                RarityFilter.onAverageOnceEvery(rarity),
+                InSquarePlacement.spread(),
+                HeightmapPlacement.onHeightmap(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES),
+                BiomeFilter.biome(),
+                CountPlacement.of(tries),
+                OffsetPlacement.ofTriangle(6, 3),
+                BlockPredicateFilter.forPredicate(BlockPredicate.ONLY_IN_AIR_PREDICATE)};
     }
 
     private static PlacementModifier[] wildPatch(int rarity, IntProvider tries) {
