@@ -138,6 +138,7 @@ public final class HempdustryGameTests {
         register("cherry_wine_plants_on_farmland", CherryWineGameTest::cherryWinePlantsOnFarmland);
         register("cherry_wine_smokes_cbd_only", CherryWineGameTest::cherryWineSmokesCbdOnly);
         register("cherry_wine_seeds_skip_the_grass", CherryWineGameTest::cherryWineSeedsSkipTheGrass);
+        register("a_cherry_grove_camp_keeps_cherry_wine_seeds", CherryWineGameTest::aCherryGroveCampKeepsCherryWineSeeds);
         register("wild_cherry_wine_is_a_flower", CherryWineGameTest::wildCherryWineIsAFlower);
         register("it_doesnt_work_like_that", CherryWineGameTest::itDoesntWorkLikeThat);
         register("white_widow_grows_and_smokes", WhiteWidowGameTest::whiteWidowGrowsAndSmokes);

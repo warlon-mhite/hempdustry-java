@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import java.util.function.Predicate;
 import com.mojang.serialization.JsonOps;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.Mildew;
@@ -149,6 +150,29 @@ public final class CherryWineGameTest {
         expect(context, world, BuiltInLootTables.VILLAGE_PLAINS_HOUSE, seeds, true, "hempdustry:indica_seeds");
         expect(context, world, BuiltInLootTables.VILLAGE_TAIGA_HOUSE, seeds, true, "hempdustry:indica_seeds");
         expect(context, world, BuiltInLootTables.DESERT_PYRAMID, seeds, false, "hempdustry:beldia_seeds");
+        context.succeed();
+    }
+
+    /**
+     * A cherry grove's abandoned camp keeps Cherry Wine seeds in its common chest, at the chests' chance, as a
+     * pale garden's camp keeps White Widow's; a camp anywhere else, and the camp's secret chest, never do.
+     */
+    public static void aCherryGroveCampKeepsCherryWineSeeds(GameTestHelper context) {
+        Predicate<ItemStack> cherry = stack -> stack.is(ModItems.CHERRY_WINE_SEEDS);
+        BlockPos at = new BlockPos(2, 2, 2);
+        WhiteWidowGameTest.fillBiome(context, at, "minecraft:plains");
+        try {
+            context.assertValueEqual(WhiteWidowGameTest.rolls(context, BuiltInLootTables.ABANDONED_CAMP_COMMON_CHEST, at, cherry), 0,
+                    "a plains camp's common chest holding Cherry Wine seeds");
+            WhiteWidowGameTest.fillBiome(context, at, "minecraft:cherry_grove");
+            int camp = WhiteWidowGameTest.rolls(context, BuiltInLootTables.ABANDONED_CAMP_COMMON_CHEST, at, cherry);
+            context.assertTrue(camp >= 230 && camp <= 370, "a cherry-grove camp's common chest held Cherry Wine seeds "
+                    + camp + " times in 1000, expected about 300");
+            context.assertValueEqual(WhiteWidowGameTest.rolls(context, BuiltInLootTables.ABANDONED_CAMP_SECRET_CHEST, at, cherry), 0,
+                    "a cherry-grove camp's secret chest holding Cherry Wine seeds");
+        } finally {
+            WhiteWidowGameTest.fillBiome(context, at, "minecraft:plains");
+        }
         context.succeed();
     }
 

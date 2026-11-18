@@ -238,6 +238,13 @@ public class ModLootTableModifiers {
     private static final float PALE_CAMP_SEED_CHANCE = CHEST_SEED_CHANCE;
 
     /**
+     * Chance an abandoned camp's common chest holds Cherry Wine seeds, in a cherry grove only, as White Widow's
+     * in a pale garden: the grove's camp is the one place the grove's own seeds are found that the other chests
+     * are not.
+     */
+    private static final float GROVE_CAMP_SEED_CHANCE = CHEST_SEED_CHANCE;
+
+    /**
      * Chance an Ancient City chest holds a few Echo OG buds: the first chest of a raid gives the smoke that
      * makes the rest of it quieter. Vanilla's main pool there rolls 5-10 times over 84 in weights, so a
      * weight-3 entry (the Bottle o' Enchanting beside it) turns up in about 24% of chests and a weight-2 in
@@ -455,6 +462,10 @@ public class ModLootTableModifiers {
                 table.addPool(seedStash(registries, PALE_CAMP_SEED_CHANCE, from(ModCrops.Home.PALE))
                         .when(LocationCheck.checkLocation(LocationPredicate.Builder.inBiome(
                                 registries.lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.PALE_GARDEN)))));
+                // A pool of its own, after the pale garden's: no draw of the pools before it moves.
+                table.addPool(seedStash(registries, GROVE_CAMP_SEED_CHANCE, from(ModCrops.Home.GROVE))
+                        .when(LocationCheck.checkLocation(LocationPredicate.Builder.inBiome(
+                                registries.lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.CHERRY_GROVE)))));
             } else if (VILLAGE_HOUSE_SOURCES.contains(key)) {
                 table.addPool(seedStash(registries, VILLAGE_HOUSE_SEED_CHANCE, seeds -> !isRegionBound(seeds)));
             } else if (key.equals(BuiltInLootTables.DESERT_PYRAMID)) {

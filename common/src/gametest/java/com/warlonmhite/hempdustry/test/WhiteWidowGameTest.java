@@ -601,7 +601,7 @@ public final class WhiteWidowGameTest {
         return player.getAdvancements().getOrStartProgress(advancement).isDone();
     }
 
-    private static int rolls(GameTestHelper context, ResourceKey<LootTable> key, BlockPos at, Predicate<ItemStack> what) {
+    static int rolls(GameTestHelper context, ResourceKey<LootTable> key, BlockPos at, Predicate<ItemStack> what) {
         ServerLevel world = context.getLevel();
         LootTable table = world.getServer().reloadableRegistries().getLootTable(key);
         LootParams params = new LootParams.Builder(world)
@@ -617,7 +617,7 @@ public final class WhiteWidowGameTest {
         return found;
     }
 
-    private static void fillBiome(GameTestHelper context, BlockPos at, String biome) {
+    static void fillBiome(GameTestHelper context, BlockPos at, String biome) {
         BlockPos a = context.absolutePos(at).offset(-4, -4, -4);
         BlockPos b = context.absolutePos(at).offset(4, 4, 4);
         var server = context.getLevel().getServer();
