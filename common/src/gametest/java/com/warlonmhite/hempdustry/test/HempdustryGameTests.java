@@ -325,6 +325,7 @@ public final class HempdustryGameTests {
         register("the_tier_table_is_vanillas_luck_grammar", TierGameTest::theTierTableIsVanillasLuckGrammar);
         register("a_plant_rolls_its_gene_and_knows_its_ceiling", TierGameTest::aPlantRollsItsGeneAndKnowsItsCeiling);
         register("grow_luck_adds_up", TierGameTest::growLuckAddsUp);
+        register("a_tray_pays_only_for_the_steps_it_worked", TierGameTest::aTrayPaysOnlyForTheStepsItWorked);
         register("the_open_sky_is_read_like_the_light", TierGameTest::theOpenSkyIsReadLikeTheLight);
         register("one_tier_roll_per_harvest", TierGameTest::oneTierRollPerHarvest);
         register("a_tier_buys_smoothness_and_length", TierGameTest::aTierBuysSmoothnessAndLength);

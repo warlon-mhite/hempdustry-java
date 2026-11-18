@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
  *   <li><b>one per trim window used</b>, two at most;</li>
  *   <li>the <b>light</b> it kept: a lamp +1, a Grow Lamp +2, <b>open sky +1</b>, shade and glowstone 0 —
  *       the best one only, never two, so a Grow Lamp under the sky is a Grow Lamp;</li>
- *   <li><b>a Hydro Tray +1</b> under the root;</li>
+ *   <li><b>a Hydro Tray +1</b>, at work under the root at every growth step (water, fed, the pump on);</li>
  *   <li>the <b>harvesting player's luck</b> ({@code minecraft:luck}: Luck +1 a level, Bad Luck −1), which
  *       vanilla hands fishing and chests but never a block's loot. No player, no luck.</li>
  * </ul>
@@ -45,8 +45,7 @@ public final class GrowLuck {
                 .map(Strain::quality)
                 .orElse(GrowQuality.DEFAULT)
                 .baseLuck();
-        boolean tray = level.getBlockState(record.getBlockPos().below()).getBlock() instanceof HydroTrayBlock;
-        return baseLuck + record.gene().luck() + care(root, record.openSky(), tray) + luckOf(harvester);
+        return baseLuck + record.gene().luck() + care(root, record.openSky(), record.workingTray()) + luckOf(harvester);
     }
 
     /** What the plant's care adds: its trims, the best light it kept, and a Hydro Tray. */

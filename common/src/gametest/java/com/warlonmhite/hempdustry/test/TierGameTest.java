@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.block.custom.HydroTrayBlock;
 import com.mojang.serialization.JsonOps;
 import com.google.gson.JsonParser;
 import com.warlonmhite.hempdustry.block.ModBlocks;
@@ -270,8 +271,11 @@ public final class TierGameTest {
         record.setOpenSky(false);
         context.assertValueEqual(GrowLuck.of(record, trimmed.setValue(GrowLight.PROPERTY, GrowLight.LAMP), world, null), 4.0F,
                 "a lamp record in the shade");
+        // A tray pays only for the steps it worked through, as the record keeps them, never for standing there.
         world.setBlock(pos.below(), ModBlocks.HYDRO_TRAY.defaultBlockState(), Block.UPDATE_CLIENTS);
-        context.assertValueEqual(GrowLuck.of(record, trimmed, world, null), 4.0F, "both trims on a Hydro Tray");
+        context.assertValueEqual(GrowLuck.of(record, trimmed, world, null), 3.0F, "both trims on a dry tray it never grew on");
+        record.setWorkingTray(true);
+        context.assertValueEqual(GrowLuck.of(record, trimmed, world, null), 4.0F, "both trims, grown on a working Hydro Tray");
 
         ServerPlayer player = Players.survival(context);
         context.assertValueEqual(GrowLuck.of(record, trimmed, world, player), 4.0F, "a player with no luck");
@@ -282,6 +286,38 @@ public final class TierGameTest {
         context.assertValueEqual(GrowLuck.of(record, trimmed, world, player), 3.0F, "a player under Bad Luck");
         Entity notAPlayer = net.minecraft.world.entity.EntityTypes.PIG.create(world, net.minecraft.world.entity.EntitySpawnReason.COMMAND);
         context.assertValueEqual(GrowLuck.of(record, trimmed, world, notAPlayer), 4.0F, "a harvester that is no player");
+        context.succeed();
+    }
+
+    /**
+     * The working-tray record is kept like the open sky: a working tray (water, fed, pump on) on the first step,
+     * the weaker of before and now after. A dry, unfed or unpowered tray on any step loses it for that plant, and
+     * it does not come back; a replanted plant starts afresh.
+     */
+    public static void aTrayPaysOnlyForTheStepsItWorked(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        BlockPos pos = context.absolutePos(ROOT);
+        BlockState working = ModBlocks.HYDRO_TRAY.defaultBlockState().setValue(HydroTrayBlock.LEVEL, 3)
+                .setValue(HydroTrayBlock.FED, true).setValue(HydroTrayBlock.POWERED, true);
+        world.setBlock(pos.below(), working, Block.UPDATE_CLIENTS);
+        world.setBlock(pos, ripe(ModBlocks.INDICA_CROP, 0), Block.UPDATE_CLIENTS);
+        PlantRecordBlockEntity record = record(world, pos);
+        context.assertTrue(record.workingTray() == false, "a seedling that has taken no step yet counts its tray");
+        PlantRecordBlockEntity.recordTray(world, pos, 0);
+        context.assertTrue(record.workingTray(), "a step on a working tray is not kept");
+        for (BlockState idle : List.of(working.setValue(HydroTrayBlock.POWERED, false), working.setValue(HydroTrayBlock.FED, false),
+                working.setValue(HydroTrayBlock.LEVEL, 0).setValue(HydroTrayBlock.FED, false), Blocks.FARMLAND.defaultBlockState())) {
+            record.setWorkingTray(null);
+            PlantRecordBlockEntity.recordTray(world, pos, 0);
+            world.setBlock(pos.below(), idle, Block.UPDATE_CLIENTS);
+            PlantRecordBlockEntity.recordTray(world, pos, 1);
+            context.assertTrue(!record.workingTray(), "a step on " + idle + " kept the tray's +1");
+            world.setBlock(pos.below(), working, Block.UPDATE_CLIENTS);
+            PlantRecordBlockEntity.recordTray(world, pos, 2);
+            context.assertTrue(!record.workingTray(), "a tray put back to work after " + idle + " gave its +1 back");
+        }
+        record.replant();
+        context.assertTrue(record.workingTray() == false, "a replanted plant kept the old one's tray");
         context.succeed();
     }
 

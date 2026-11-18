@@ -113,8 +113,9 @@ public final class PlantStress {
     public static GrowLight afterStep(Level world, BlockPos lower, GrowLight record, int fromAge, int toAge,
                                       int height, StressCause extra, RandomSource random, boolean stressable,
                                       boolean touchy, boolean shy) {
-        // The open-sky record rides the same step as the light record, on every growth route.
+        // The open-sky and working-tray records ride the same step as the light record, on every growth route.
         PlantRecordBlockEntity.recordSky(world, lower, fromAge, height);
+        PlantRecordBlockEntity.recordTray(world, lower, fromAge);
         ResistanceGenes genes = PlantRecordBlockEntity.resistancesAt(world, lower);
         GrowLight next = shy ? shyStep(world, lower, record, toAge, genes.light(), random)
                 : touchy ? touchyStep(world, lower, record, fromAge, toAge, height, genes.light(), random)
