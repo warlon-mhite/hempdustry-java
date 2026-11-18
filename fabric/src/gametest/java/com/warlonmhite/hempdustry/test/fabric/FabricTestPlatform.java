@@ -1,5 +1,13 @@
 package com.warlonmhite.hempdustry.test.fabric;
 
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.api.HempdustryEvents;
 import com.warlonmhite.hempdustry.test.HempdustryGameTests;
@@ -77,5 +85,32 @@ public final class FabricTestPlatform implements TestPlatform {
 
     private static List<Path> roots(String modId) {
         return FabricLoader.getInstance().getModContainer(modId).orElseThrow().getRootPaths();
+    }
+
+    @Override
+    public int[] insertThroughTwoLookupsAndAbort(ServerLevel level, BlockPos pos, Direction side, ItemStack first,
+                                                 ItemStack second, boolean nested) {
+        try (Transaction outer = Transaction.openOuter()) {
+            int[] took;
+            if (nested) {
+                try (Transaction inner = outer.openNested()) {
+                    took = twoLookups(level, pos, side, first, second, inner);
+                    inner.commit();
+                }
+            } else {
+                took = twoLookups(level, pos, side, first, second, outer);
+            }
+            outer.abort();
+            return took;
+        }
+    }
+
+    private static int[] twoLookups(ServerLevel level, BlockPos pos, Direction side, ItemStack first, ItemStack second,
+                                    Transaction transaction) {
+        Storage<ItemVariant> a = ItemStorage.SIDED.find(level, pos, side);
+        long tookA = a.insert(ItemVariant.of(first), first.getCount(), transaction);
+        Storage<ItemVariant> b = ItemStorage.SIDED.find(level, pos, side);
+        long tookB = b.insert(ItemVariant.of(second), second.getCount(), transaction);
+        return new int[]{(int) tookA, (int) tookB};
     }
 }

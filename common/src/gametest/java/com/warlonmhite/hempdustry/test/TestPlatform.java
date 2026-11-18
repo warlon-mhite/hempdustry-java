@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.test;
 
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.Direction;
 import com.warlonmhite.hempdustry.platform.Services;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.RegistryDataLoader;
@@ -133,4 +136,13 @@ public interface TestPlatform {
             return refuse && pos.equals(watched);
         }
     }
+
+    /**
+     * Inserts {@code first} through one lookup of the item storage at {@code pos} and {@code second}
+     * through a second lookup, both in the root transaction or, when {@code nested}, both in a nested
+     * transaction that commits into it, then rolls the root back, as a storage network that looks a block
+     * up twice in one move and gives up would. Answers how many items each lookup took.
+     */
+    int[] insertThroughTwoLookupsAndAbort(ServerLevel level, BlockPos pos, Direction side, ItemStack first,
+                                          ItemStack second, boolean nested);
 }

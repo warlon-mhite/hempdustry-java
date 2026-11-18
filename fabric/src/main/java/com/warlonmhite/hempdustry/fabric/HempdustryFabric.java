@@ -13,6 +13,6 @@ public class HempdustryFabric implements ModInitializer {
         Hempdustry.init();
         // Every other block entity of the mod is a container, which the transfer API wraps on its own;
         // the Stash Jar is not, so it says what it is.
-        ItemStorage.SIDED.registerForBlockEntity((jar, side) -> new FabricStashJarStorage(jar), ModBlockEntities.STASH_JAR);
+        ItemStorage.SIDED.registerForBlockEntity((jar, side) -> jar.transferHandler(FabricStashJarStorage::new), ModBlockEntities.STASH_JAR);
     }
 }

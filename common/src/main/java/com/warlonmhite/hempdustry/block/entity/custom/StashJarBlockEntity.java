@@ -22,6 +22,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -51,6 +52,10 @@ public class StashJarBlockEntity extends BlockEntity {
     // On the client: what the server last sent. On the server: what it last sent, so it sends only a change.
     private StashPieces.Colours shownPieces = StashPieces.Colours.NONE;
     private int shownCount;
+    // The loader's transfer handler over this jar, made on the first lookup and kept for the jar's life.
+    // Each handler is a snapshot participant of its own: a pipe that looked the jar up twice in one
+    // transaction would hold two over the same contents, and a rollback could restore the wrong one.
+    private Object transferHandler;
 
     public StashJarBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.STASH_JAR, pos, state);
@@ -92,6 +97,19 @@ public class StashJarBlockEntity extends BlockEntity {
             setContents(working.toImmutable());
         }
         return out;
+    }
+
+    /**
+     * This jar's one transfer handler on the running loader, made by {@code make} the first time it is
+     * asked for. Every lookup answers the same object, so a transaction sees one snapshot of the
+     * contents however many times a pipe or a storage network looks the jar up.
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T transferHandler(Function<StashJarBlockEntity, T> make) {
+        if (transferHandler == null) {
+            transferHandler = make.apply(this);
+        }
+        return (T) transferHandler;
     }
 
     /** Sets the contents and tells the world: the fill level, comparators, the client's copy. */

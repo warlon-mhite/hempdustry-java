@@ -308,6 +308,7 @@ public final class HempdustryGameTests {
         register("a_jar_set_in_water_keeps_it", StashJarGameTest::aJarSetInWaterKeepsIt);
         register("the_comparator_reads_how_full_the_jar_is", StashJarGameTest::theComparatorReadsHowFullTheJarIs);
         register("hoppers_fill_and_empty_a_jar", StashJarGameTest::hoppersFillAndEmptyAJar);
+        register("two_lookups_of_a_jar_roll_back_as_one", StashJarGameTest::twoLookupsOfAJarRollBackAsOne);
         register("the_fill_level_follows_the_stash", StashJarGameTest::theFillLevelFollowsTheStash);
         register("the_pieces_share_the_strains", StashJarGameTest::thePiecesShareTheStrains);
         register("a_strains_jar_colour_is_optional", StashJarGameTest::aStrainsJarColourIsOptional);
