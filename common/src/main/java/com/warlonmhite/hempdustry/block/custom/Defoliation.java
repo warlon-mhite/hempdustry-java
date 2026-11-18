@@ -223,11 +223,16 @@ public final class Defoliation {
      * and keeping the rest (a right-click harvest does). On the new plant it would move the harvest with no cut
      * made, and take off it a leaf that was never handed over; a kept rub would also refuse the new plant's.
      * A flag the age could have earned stays, as {@code /setblock} writes it.
+     *
+     * <p>Set back to a seedling, it is a new plant: it carries none of the old one's powdery mildew or sulfur
+     * either, as a plant broken and planted again would not. Kept, a mildewed field under a click harvest would
+     * never be rid of it, and every harvest of it would be Mids.
      */
     public static BlockState onlyEarned(BlockState state, int age) {
-        return state.setValue(TRIMMED_EARLY, state.getValue(TRIMMED_EARLY) && age >= EARLY_MIN_AGE)
+        BlockState earned = state.setValue(TRIMMED_EARLY, state.getValue(TRIMMED_EARLY) && age >= EARLY_MIN_AGE)
                 .setValue(TRIMMED_LATE, state.getValue(TRIMMED_LATE) && age >= LATE_MIN_AGE)
                 .setValue(RUBBED, state.getValue(RUBBED) && age >= RUB_MIN_AGE);
+        return age == 0 && earned.hasProperty(Mildew.PROPERTY) ? earned.setValue(Mildew.PROPERTY, Mildew.CLEAN) : earned;
     }
 
     /**

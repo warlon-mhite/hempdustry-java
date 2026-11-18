@@ -355,6 +355,8 @@ public final class HempdustryGameTests {
         register("a_replanting_age_written_on_the_root_starts_a_new_plant", RawWritesGameTest::aReplantingAgeWrittenOnTheRootStartsANewPlant);
         register("a_raised_age_written_above_the_root_grows_the_plant_from_its_root",
                 RawWritesGameTest::aRaisedAgeWrittenAboveTheRootGrowsThePlantFromItsRoot);
+        register("a_replanting_age_written_on_the_root_leaves_no_mildew",
+                RawWritesGameTest::aReplantingAgeWrittenOnTheRootLeavesNoMildew);
         register("bone_meal_on_any_block_grows_the_plant_from_its_root",
                 RawWritesGameTest::boneMealOnAnyBlockGrowsThePlantFromItsRoot);
         register("our_own_step_is_not_taken_for_a_raw_one", RawWritesGameTest::ourOwnStepIsNotTakenForARawOne);
