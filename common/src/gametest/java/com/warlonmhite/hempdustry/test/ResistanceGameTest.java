@@ -55,7 +55,7 @@ public final class ResistanceGameTest {
         PROFILES.put(ModStrains.SATIVA, new Resistance[]{r, w, n, r});
         PROFILES.put(ModStrains.BELDIA, new Resistance[]{vr, w, n, r});
         PROFILES.put(ModStrains.WARPED_KUSH, new Resistance[]{r, n, vr, n});
-        PROFILES.put(ModStrains.CRIMSON, new Resistance[]{r, n, vr, w});
+        PROFILES.put(ModStrains.CRIMSON, new Resistance[]{r, n, vr, n});
         PROFILES.put(ModStrains.ENDER_HAZE, new Resistance[]{n, w, r, r});
         PROFILES.put(ModStrains.RUDERALIS, new Resistance[]{r, n, vr, n});
         PROFILES.put(ModStrains.CHERRY_WINE, new Resistance[]{n, r, n, w});

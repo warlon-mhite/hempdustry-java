@@ -5,7 +5,8 @@
   "effects": [
     {
       "effect": "minecraft:health_boost",
-      "label": "thc"
+      "label": "thc",
+      "max_amplifier": 0
     },
     {
       "effect": "minecraft:hunger",

@@ -133,6 +133,11 @@ public final class WhiteWidowGameTest {
                 MobEffects.UNLUCK)) {
             context.assertTrue(smoker.hasEffect(effect), "a White Widow pipe gave no " + effect.getRegisteredName());
         }
+        // Health Boost stays at I whatever the dose: vanilla gives a survival player none at all, and +4 hearts
+        // from a renewable crop would outclass a golden apple.
+        context.assertTrue(widow.value().smokeEffects().stream().filter(e -> e.effect().value() == MobEffects.HEALTH_BOOST.value())
+                        .allMatch(e -> e.maxAmplifier() == 0),
+                "White Widow's Health Boost may rise above level I: " + widow.value().smokeEffects());
         context.succeed();
     }
 
