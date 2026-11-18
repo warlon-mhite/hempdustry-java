@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.entity;
 
+import com.warlonmhite.hempdustry.block.ModCrops;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.entity.custom.BongBlockEntity;
@@ -52,17 +53,12 @@ public class ModBlockEntities {
                     Services.REGISTRATION.blockEntityType(HempBedBlockEntity::new,
                             ModBlocks.HEMP_BED));
 
-    // On the root of every crop that grows buds: the plant's own rolls (see PlantRecordBlockEntity).
-    // Industrial Hemp grows none and keeps no record.
+    // On the root of every crop: the plant's own rolls (see PlantRecordBlockEntity). Industrial Hemp grows
+    // no buds and keeps one all the same, for what it rolls beside them.
     public static final BlockEntityType<PlantRecordBlockEntity> PLANT_RECORD =
             Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE,
                     Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "plant_record"),
-                    Services.REGISTRATION.blockEntityType(PlantRecordBlockEntity::new,
-                            ModBlocks.INDICA_CROP, ModBlocks.SATIVA_CROP, ModBlocks.BELDIA_CROP,
-                            ModBlocks.WARPED_KUSH_CROP, ModBlocks.RUDERALIS_CROP, ModBlocks.CRIMSON_CROP,
-                            ModBlocks.ENDER_HAZE_CROP, ModBlocks.CHERRY_WINE_CROP,
-                            ModBlocks.WHITE_WIDOW_CROP, ModBlocks.DUD_WEED_CROP, ModBlocks.INDUSTRIAL_HEMP_CROP,
-                            ModBlocks.ECHO_OG_CROP, ModBlocks.MAUI_WOWIE_CROP));
+                    Services.REGISTRATION.blockEntityType(PlantRecordBlockEntity::new, ModCrops.blocks()));
 
     // A placed Stash Jar's contents, one type for the three jars.
     public static final BlockEntityType<StashJarBlockEntity> STASH_JAR =

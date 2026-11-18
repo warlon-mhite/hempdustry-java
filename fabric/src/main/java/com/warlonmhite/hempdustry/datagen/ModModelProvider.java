@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.datagen;
 
+import com.warlonmhite.hempdustry.block.ModCrops;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.BongBlock;
@@ -165,35 +166,14 @@ public class ModModelProvider extends FabricModelProvider {
         itemModelGenerator.generateFlatItem(ModItems.SPACE_BROWNIE, ModelTemplates.FLAT_ITEM);
         itemModelGenerator.generateFlatItem(ModItems.BHANG_BUCKET, ModelTemplates.FLAT_ITEM);
         itemModelGenerator.generateFlatItem(ModItems.DAWAMESK, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.INDICA_SEEDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.INDICA_BUDS, ModelTemplates.FLAT_ITEM);
+        for (ModCrops.Crop crop : ModCrops.ALL) {
+            itemModelGenerator.generateFlatItem(crop.seeds(), ModelTemplates.FLAT_ITEM);
+            crop.buds().ifPresent(buds -> itemModelGenerator.generateFlatItem(buds, ModelTemplates.FLAT_ITEM));
+        }
         for (Item disc : ModItems.MUSIC_DISCS) {
             itemModelGenerator.generateFlatItem(disc, ModelTemplates.FLAT_ITEM);
         }
 
-        itemModelGenerator.generateFlatItem(ModItems.SATIVA_BUDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.SATIVA_SEEDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.BELDIA_SEEDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.BELDIA_BUDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.INDUSTRIAL_HEMP_SEEDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.WARPED_KUSH_SEEDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.WARPED_KUSH_BUDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.CRIMSON_SEEDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.CRIMSON_BUDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.ENDER_HAZE_SEEDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.ENDER_HAZE_BUDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.CHERRY_WINE_SEEDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.CHERRY_WINE_BUDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.WHITE_WIDOW_SEEDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.WHITE_WIDOW_BUDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.DUD_WEED_SEEDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.DUD_WEED_BUDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.ECHO_OG_SEEDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.ECHO_OG_BUDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.MAUI_WOWIE_SEEDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.MAUI_WOWIE_BUDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.RUDERALIS_SEEDS, ModelTemplates.FLAT_ITEM);
-        itemModelGenerator.generateFlatItem(ModItems.RUDERALIS_BUDS, ModelTemplates.FLAT_ITEM);
         // Smoking gear. One item per device carries every strain in a component, so the visual
         // per-strain split lives in the *client item definition* rather than in separate items —
         // exactly how vanilla varies a bow by "pulling" or a crossbow by "charged".

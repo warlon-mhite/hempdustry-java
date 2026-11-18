@@ -239,6 +239,7 @@ public final class HempdustryGameTests {
         register("no_recipe_reads_a_stack_size", SweepGameTest::noRecipeReadsAStackSize);
         register("every_container_spills_when_broken", SweepGameTest::everyContainerSpillsWhenBroken);
         register("every_container_answers_pipes", SweepGameTest::everyContainerAnswersPipes);
+        register("every_crop_is_listed_once", ModCropsGameTest::everyCropIsListedOnce);
         register("the_addon_events_reach_a_listener", AddonEventGameTest::theAddonEventsReachAListener);
         register("the_loader_names_itself_and_the_mods_version",
                 PlatformGameTest::theLoaderNamesItselfAndTheModsVersion);

@@ -1,27 +1,21 @@
 package com.warlonmhite.hempdustry.loot;
 
+import com.warlonmhite.hempdustry.block.ModCrops;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.strain.Strain;
-import com.warlonmhite.hempdustry.block.custom.RuderalisCropBlock;
-import com.warlonmhite.hempdustry.block.custom.WarpedKushCropBlock;
-import com.warlonmhite.hempdustry.block.custom.CrimsonWeedCropBlock;
-import com.warlonmhite.hempdustry.block.custom.EchoOgCropBlock;
-import com.warlonmhite.hempdustry.block.custom.MauiWowieCropBlock;
-import com.warlonmhite.hempdustry.util.ModTags;
-import com.warlonmhite.hempdustry.block.custom.EnderHazeCropBlock;
 import net.minecraft.advancements.criterion.BlockPredicate;
 import net.minecraft.advancements.criterion.ItemPredicate;
 import net.minecraft.advancements.criterion.LocationPredicate;
 import net.minecraft.advancements.criterion.StatePropertiesPredicate;
+import com.warlonmhite.hempdustry.util.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -46,10 +40,6 @@ import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCon
 import net.minecraft.world.level.storage.loot.predicates.MatchTool;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
-import com.warlonmhite.hempdustry.block.custom.BeldiaCropBlock;
-import com.warlonmhite.hempdustry.block.custom.CherryWineCropBlock;
-import com.warlonmhite.hempdustry.block.custom.DudWeedCropBlock;
-import com.warlonmhite.hempdustry.block.custom.WhiteWidowCropBlock;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -364,90 +354,21 @@ public class ModLootTableModifiers {
     }
 
     /**
-     * Whether these seeds plant Beldía, which keeps them out of tall grass and the generic chests and
-     * puts them in the desert's. The lore is placement: a desert plant is found in the desert.
+     * Whether these seeds' crop has its home in {@code home} (see {@link ModCrops.Home}). The lore is
+     * placement: a desert plant is found in the desert, a city's in its city.
      *
-     * <p><b>Code, not a tag, and it has to be</b> -- this and the two below. Item tags are not bound
-     * yet while loot tables load: reading one here throws "Trying to access unbound tag" and takes
-     * the server down with it. Nothing is lost either, since each of these plants needs a crop block
-     * of its own, which is code no datapack can add.
+     * <p><b>Code, not a tag, and it has to be.</b> Item tags are not bound yet while loot tables load:
+     * reading one here throws "Trying to access unbound tag" and takes the server down with it. Nothing
+     * is lost either, since each of these plants needs a crop block of its own, which is code no
+     * datapack can add.
      */
-    private static boolean isDesertSeed(Item seeds) {
-        return plants(seeds) instanceof BeldiaCropBlock;
+    private static Predicate<Item> from(ModCrops.Home home) {
+        return seeds -> ModCrops.home(seeds) == home;
     }
 
-    /** Whether these seeds plant a Nether crop, found in the Nether's chests instead. */
-    private static boolean isNetherSeed(Item seeds) {
-        return plants(seeds) instanceof WarpedKushCropBlock;
-    }
-
-    /** Whether these seeds plant Ruderalis, which is only ever dug up: by a brush, or a sniffer. */
-    private static boolean isBuriedSeed(Item seeds) {
-        return plants(seeds) instanceof RuderalisCropBlock;
-    }
-
-    /**
-     * Whether these seeds plant Crimson Weed, kept in the hoglin stables and nowhere else -- never
-     * with Warped Kush's in the Nether's other chests, its treasure or its bartering.
-     */
-    private static boolean isStableSeed(Item seeds) {
-        return plants(seeds) instanceof CrimsonWeedCropBlock;
-    }
-
-    /** Whether these seeds plant Ender Haze, kept in the End's cities and nowhere else. */
-    private static boolean isEndSeed(Item seeds) {
-        return plants(seeds) instanceof EnderHazeCropBlock;
-    }
-
-    /**
-     * Whether these seeds plant Cherry Wine: a farm strain, so in the generic chests and the village
-     * houses with the other two, but never in the tall grass -- found growing, it is the cherry
-     * grove's plant, and grass anywhere would make the grove no place to go.
-     */
-    private static boolean isGroveSeed(Item seeds) {
-        return plants(seeds) instanceof CherryWineCropBlock;
-    }
-
-    /**
-     * Whether these seeds plant White Widow, the pale garden's: found in its mansions,
-     * never in the grass, the shared chests or the villages.
-     */
-    private static boolean isPaleSeed(Item seeds) {
-        return plants(seeds) instanceof WhiteWidowCropBlock;
-    }
-
-    /**
-     * Whether these seeds plant Dud Weed, which is found in a field of ripe Industrial Hemp (its crop
-     * table's sport) and in a shipwreck's stores: never in the grass, the shared chests or the villages.
-     */
-    private static boolean isSportSeed(Item seeds) {
-        return plants(seeds) instanceof DudWeedCropBlock;
-    }
-
-    /** Whether these seeds plant Echo OG, kept in the Ancient City's ice box and nowhere else. */
-    private static boolean isCitySeed(Item seeds) {
-        return plants(seeds) instanceof EchoOgCropBlock;
-    }
-
-    /** Whether these seeds plant Maui Wowie, kept in the warm ocean ruins and grown in the warm shallows. */
-    private static boolean isOceanSeed(Item seeds) {
-        return plants(seeds) instanceof MauiWowieCropBlock;
-    }
-
-    /**
-     * Whether these seeds belong to one place, and so stay out of the tall grass and the generic
-     * chests that every other strain shares. Each such strain is found where it belongs, and leaving
-     * all of them out keeps the others' share of those rolls what it was.
-     */
+    /** Whether these seeds belong to one place, and so stay out of the tall grass and the shared chests. */
     private static boolean isRegionBound(Item seeds) {
-        return isDesertSeed(seeds) || isNetherSeed(seeds) || isBuriedSeed(seeds) || isStableSeed(seeds)
-                || isEndSeed(seeds) || isPaleSeed(seeds) || isSportSeed(seeds) || isCitySeed(seeds)
-                || isOceanSeed(seeds);
-    }
-
-    /** The block these seeds plant, or null for an item that plants nothing. */
-    private static Block plants(Item seeds) {
-        return seeds instanceof BlockItem item ? item.getBlock() : null;
+        return ModCrops.home(seeds).regionBound();
     }
 
     /**
@@ -512,7 +433,7 @@ public class ModLootTableModifiers {
                 // grows in a meadow's grass, and Ruderalis grows nowhere until it is dug up. Nor is
                 // Cherry Wine's, which the chests share but the grass leaves to its grove.
                 for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    strain.value().seedItem().filter(seeds -> !isRegionBound(seeds) && !isGroveSeed(seeds))
+                    strain.value().seedItem().filter(seeds -> ModCrops.home(seeds) == ModCrops.Home.SHARED)
                             .ifPresent(seeds -> pool.add(LootItem.lootTableItem(seeds)
                             .apply(ApplyBonusCount.addUniformBonusCount(fortune, 2))
                             .apply(ApplyExplosionDecay.explosionDecay())));
@@ -521,27 +442,27 @@ public class ModLootTableModifiers {
             } else if (CHEST_SOURCES.contains(key)) {
                 table.addPool(seedStash(registries, CHEST_SEED_CHANCE, seeds -> !isRegionBound(seeds)));
                 if (key.equals(BuiltInLootTables.WOODLAND_MANSION)) {
-                    table.addPool(seedStash(registries, MANSION_SEED_CHANCE, ModLootTableModifiers::isPaleSeed));
+                    table.addPool(seedStash(registries, MANSION_SEED_CHANCE, from(ModCrops.Home.PALE)));
                 }
             } else if (VILLAGE_HOUSE_SOURCES.contains(key)) {
                 table.addPool(seedStash(registries, VILLAGE_HOUSE_SEED_CHANCE, seeds -> !isRegionBound(seeds)));
             } else if (key.equals(BuiltInLootTables.DESERT_PYRAMID)) {
-                table.addPool(seedStash(registries, DESERT_TEMPLE_SEED_CHANCE, ModLootTableModifiers::isDesertSeed));
+                table.addPool(seedStash(registries, DESERT_TEMPLE_SEED_CHANCE, from(ModCrops.Home.DESERT)));
             } else if (key.equals(BuiltInLootTables.VILLAGE_DESERT_HOUSE)) {
-                table.addPool(seedStash(registries, DESERT_HOUSE_SEED_CHANCE, ModLootTableModifiers::isDesertSeed));
+                table.addPool(seedStash(registries, DESERT_HOUSE_SEED_CHANCE, from(ModCrops.Home.DESERT)));
             } else if (NETHER_CHEST_SOURCES.contains(key)) {
-                table.addPool(seedStash(registries, CHEST_SEED_CHANCE, ModLootTableModifiers::isNetherSeed));
+                table.addPool(seedStash(registries, CHEST_SEED_CHANCE, from(ModCrops.Home.NETHER)));
             } else if (DESERT_ARCHAEOLOGY_SOURCES.contains(key)) {
                 // Into vanilla's one brushing pool, as a weighted entry beside the sherds.
                 for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    strain.value().seedItem().filter(ModLootTableModifiers::isDesertSeed)
+                    strain.value().seedItem().filter(from(ModCrops.Home.DESERT))
                             .ifPresent(seeds -> table.addToEveryPool(LootItem.lootTableItem(seeds)
                                     .setWeight(DESERT_ARCHAEOLOGY_SEED_WEIGHT)));
                 }
             } else if (key.equals(BuiltInLootTables.TRAIL_RUINS_ARCHAEOLOGY_COMMON)) {
                 // Into vanilla's one brushing pool, beside its wheat and beetroot seeds.
                 for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    strain.value().seedItem().filter(ModLootTableModifiers::isBuriedSeed)
+                    strain.value().seedItem().filter(from(ModCrops.Home.BURIED))
                             .ifPresent(seeds -> table.addToEveryPool(LootItem.lootTableItem(seeds)
                                     .setWeight(TRAIL_RUINS_SEED_WEIGHT)));
                 }
@@ -551,14 +472,14 @@ public class ModLootTableModifiers {
                         .setRolls(ConstantValue.exactly(1))
                         .when(LootItemRandomChanceCondition.randomChance(chance(SNIFFER_SEED_CHANCE)));
                 for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    strain.value().seedItem().filter(ModLootTableModifiers::isBuriedSeed)
+                    strain.value().seedItem().filter(from(ModCrops.Home.BURIED))
                             .ifPresent(seeds -> pool.add(LootItem.lootTableItem(seeds)));
                 }
                 table.addPool(pool);
             } else if (key.equals(BuiltInLootTables.BASTION_HOGLIN_STABLE)) {
-                table.addPool(seedStash(registries, HOGLIN_STABLE_SEED_CHANCE, ModLootTableModifiers::isStableSeed));
+                table.addPool(seedStash(registries, HOGLIN_STABLE_SEED_CHANCE, from(ModCrops.Home.STABLE)));
             } else if (key.equals(BuiltInLootTables.END_CITY_TREASURE)) {
-                table.addPool(seedStash(registries, END_CITY_SEED_CHANCE, ModLootTableModifiers::isEndSeed));
+                table.addPool(seedStash(registries, END_CITY_SEED_CHANCE, from(ModCrops.Home.END)));
             } else if (key.equals(BuiltInLootTables.ANCIENT_CITY)) {
                 // Buds, never seeds: a city's chests hold its smoke, its ice box its seed.
                 LootPool.Builder pool = LootPool.lootPool()
@@ -566,7 +487,7 @@ public class ModLootTableModifiers {
                         .when(LootItemRandomChanceCondition.randomChance(chance(ANCIENT_CITY_BUD_CHANCE)));
                 for (Holder.Reference<Strain> strain : Strain.all(registries)) {
                     Strain value = strain.value();
-                    if (value.seedItem().filter(ModLootTableModifiers::isCitySeed).isPresent()) {
+                    if (value.seedItem().filter(from(ModCrops.Home.CITY)).isPresent()) {
                         pool.add(LootItem.lootTableItem(value.buds())
                                 .apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 3))));
                     }
@@ -577,19 +498,19 @@ public class ModLootTableModifiers {
                         .setRolls(ConstantValue.exactly(1))
                         .when(LootItemRandomChanceCondition.randomChance(chance(ICE_BOX_SEED_CHANCE)));
                 for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    strain.value().seedItem().filter(ModLootTableModifiers::isCitySeed)
+                    strain.value().seedItem().filter(from(ModCrops.Home.CITY))
                             .ifPresent(seeds -> pool.add(LootItem.lootTableItem(seeds)
                                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(2, 4)))));
                 }
                 table.addPool(pool);
             } else if (OCEAN_RUIN_SOURCES.contains(key)) {
-                table.addPool(seedStash(registries, OCEAN_RUIN_SEED_CHANCE, ModLootTableModifiers::isOceanSeed)
+                table.addPool(seedStash(registries, OCEAN_RUIN_SEED_CHANCE, from(ModCrops.Home.OCEAN))
                         .when(LocationCheck.checkLocation(LocationPredicate.Builder.location().setBiomes(
                                 registries.lookupOrThrow(Registries.BIOME).getOrThrow(ModTags.Biomes.MAUI_WOWIE_GEN)))));
             } else if (key.equals(BuiltInLootTables.OCEAN_RUIN_WARM_ARCHAEOLOGY)) {
                 // Into vanilla's one brushing pool, beside its wheat.
                 for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    strain.value().seedItem().filter(ModLootTableModifiers::isOceanSeed)
+                    strain.value().seedItem().filter(from(ModCrops.Home.OCEAN))
                             .ifPresent(seeds -> table.addToEveryPool(LootItem.lootTableItem(seeds)
                                     .setWeight(WARM_RUIN_ARCHAEOLOGY_SEED_WEIGHT)));
                 }
@@ -600,7 +521,7 @@ public class ModLootTableModifiers {
                         .when(LootItemRandomChanceCondition.randomChance(chance(BURIED_TREASURE_BUD_CHANCE)));
                 for (Holder.Reference<Strain> strain : Strain.all(registries)) {
                     Strain value = strain.value();
-                    if (value.seedItem().filter(ModLootTableModifiers::isOceanSeed).isPresent()) {
+                    if (value.seedItem().filter(from(ModCrops.Home.OCEAN)).isPresent()) {
                         pool.add(LootItem.lootTableItem(value.buds())
                                 .apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 3))));
                     }
@@ -612,7 +533,7 @@ public class ModLootTableModifiers {
                         .when(LootItemRandomChanceCondition.randomChance(chance(BASTION_TREASURE_BUD_CHANCE)));
                 for (Holder.Reference<Strain> strain : Strain.all(registries)) {
                     Strain value = strain.value();
-                    if (value.seedItem().filter(seeds -> isNetherSeed(seeds)).isPresent()) {
+                    if (value.seedItem().filter(from(ModCrops.Home.NETHER)).isPresent()) {
                         pool.add(LootItem.lootTableItem(value.buds())
                                 .apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 3))));
                     }
@@ -622,7 +543,7 @@ public class ModLootTableModifiers {
                 // Into vanilla's one bartering pool, as a weighted entry beside soul sand and the rest,
                 // rather than a second pool -- which would hand one over on top of every barter.
                 for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    strain.value().seedItem().filter(seeds -> isNetherSeed(seeds))
+                    strain.value().seedItem().filter(from(ModCrops.Home.NETHER))
                             .ifPresent(seeds -> table.addToEveryPool(LootItem.lootTableItem(seeds)
                                     .setWeight(BARTER_SEED_WEIGHT)
                                     .apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 3)))));
@@ -652,7 +573,7 @@ public class ModLootTableModifiers {
                         .add(LootItem.lootTableItem(ModItems.INDUSTRIAL_HEMP_SEEDS)
                                 .apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 3)))));
                 for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    strain.value().seedItem().filter(ModLootTableModifiers::isSportSeed)
+                    strain.value().seedItem().filter(from(ModCrops.Home.SPORT))
                             .ifPresent(seeds -> table.addPool(LootPool.lootPool()
                                     .setRolls(ConstantValue.exactly(1))
                                     .when(LootItemRandomChanceCondition.randomChance(chance(SHIPWRECK_DUD_WEED_SEED_CHANCE)))

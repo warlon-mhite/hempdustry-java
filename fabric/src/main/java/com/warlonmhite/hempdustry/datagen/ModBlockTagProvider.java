@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.datagen;
 
+import com.warlonmhite.hempdustry.block.ModCrops;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.util.ModTags;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
@@ -22,12 +23,7 @@ public class ModBlockTagProvider extends FabricTagProvider.BlockTagProvider {
         // check is this tag, not "is this a CropBlock" — and the unsupported plant then pops off.
         // Vanilla lists every one of its crops here; ours have to opt in the same way.
         valueLookupBuilder(BlockTags.MAINTAINS_FARMLAND)
-                .add(ModBlocks.INDICA_CROP)
-                .add(ModBlocks.SATIVA_CROP)
-                .add(ModBlocks.INDUSTRIAL_HEMP_CROP)
-                .add(ModBlocks.CHERRY_WINE_CROP)
-                .add(ModBlocks.WHITE_WIDOW_CROP)
-                .add(ModBlocks.DUD_WEED_CROP);
+                .addAll(ModCrops.ALL.stream().filter(ModCrops.Crop::farmland).map(ModCrops.Crop::crop));
 
         // Nothing in 1.21.1's *code* reads #minecraft:crops (the only class referencing it is the
         // vanilla tag provider that builds it) — its one effect is that #minecraft:bee_growables
@@ -40,13 +36,7 @@ public class ModBlockTagProvider extends FabricTagProvider.BlockTagProvider {
         // #minecraft:maintains_farmland above. Ruderalis stays out of both: a bee is an accelerant,
         // and nothing hurries that plant.
         valueLookupBuilder(BlockTags.CROPS)
-                .add(ModBlocks.INDICA_CROP)
-                .add(ModBlocks.SATIVA_CROP)
-                .add(ModBlocks.BELDIA_CROP)
-                .add(ModBlocks.INDUSTRIAL_HEMP_CROP)
-                .add(ModBlocks.CHERRY_WINE_CROP)
-                .add(ModBlocks.WHITE_WIDOW_CROP)
-                .add(ModBlocks.DUD_WEED_CROP);
+                .addAll(ModCrops.ALL.stream().filter(ModCrops.Crop::bees).map(ModCrops.Crop::crop));
 
         // "A hemp plant you can defoliate", strain-agnostic. The "Trim Season" advancement matches
         // shears-used-on-a-block-in-this-tag, which is exactly where Defoliation#tryCut succeeds
@@ -54,19 +44,7 @@ public class ModBlockTagProvider extends FabricTagProvider.BlockTagProvider {
         // Industrial Hemp is in it too, and cannot be defoliated: the tag is "a hemp plant" (creepers
         // lurk in it; the trim advancement filters on the trim ages, which shears on it never accept).
         valueLookupBuilder(ModTags.Blocks.HEMP_CROPS)
-                .add(ModBlocks.INDICA_CROP)
-                .add(ModBlocks.SATIVA_CROP)
-                .add(ModBlocks.BELDIA_CROP)
-                .add(ModBlocks.INDUSTRIAL_HEMP_CROP)
-                .add(ModBlocks.WARPED_KUSH_CROP)
-                .add(ModBlocks.RUDERALIS_CROP)
-                .add(ModBlocks.CRIMSON_CROP)
-                .add(ModBlocks.ENDER_HAZE_CROP)
-                .add(ModBlocks.CHERRY_WINE_CROP)
-                .add(ModBlocks.WHITE_WIDOW_CROP)
-                .add(ModBlocks.DUD_WEED_CROP)
-                .add(ModBlocks.ECHO_OG_CROP)
-                .add(ModBlocks.MAUI_WOWIE_CROP);
+                .addAll(ModCrops.ALL.stream().map(ModCrops.Crop::crop));
 
         // Hoglins keep about eight blocks from anything in here (HoglinSpecificSensor), and vanilla's
         // only plant in it is warped fungus. Warped Kush grows beside it and joins it: a field of it
@@ -144,12 +122,7 @@ public class ModBlockTagProvider extends FabricTagProvider.BlockTagProvider {
         // Deliberately NOT joined: #minecraft:flowers, #minecraft:small_flowers (bees, above), and
         // the *item* tag #minecraft:small_flowers (suspicious stew -- see ModBlocks).
         valueLookupBuilder(BlockTags.SWORD_EFFICIENT)
-                .add(ModBlocks.INDICA_FLOWER)
-                .add(ModBlocks.CHERRY_WINE_FLOWER)
-                .add(ModBlocks.WHITE_WIDOW_FLOWER)
-                .add(ModBlocks.MAUI_WOWIE_FLOWER)
-                .add(ModBlocks.SATIVA_FLOWER)
-                .add(ModBlocks.DITCHWEED);
+                .addAll(ModCrops.wilds().map(ModCrops.Wild::flower));
         // SATIVA_FLOWER is deliberately absent: it is two blocks tall, and an enderman lifts ONE
         // block. Taking either half orphans the other, which pops off and rolls the loot table --
         // so the mob destroys the plant instead of relocating it, and the block it carries can only
@@ -157,9 +130,7 @@ public class ModBlockTagProvider extends FabricTagProvider.BlockTagProvider {
         // plant in this tag for the same reason. MAUI_WOWIE_FLOWER is absent too: it holds its own water, and
         // set down on land it would be a block of sea there. Vanilla's seagrass is not holdable either.
         valueLookupBuilder(BlockTags.ENDERMAN_HOLDABLE)
-                .add(ModBlocks.INDICA_FLOWER)
-                .add(ModBlocks.CHERRY_WINE_FLOWER)
-                .add(ModBlocks.WHITE_WIDOW_FLOWER);
+                .addAll(ModCrops.wilds().filter(ModCrops.Wild::holdable).map(ModCrops.Wild::flower));
 
         // What will heat an Infuser standing on top of it. Anything here that carries a LIT
         // property must also be lit (see InfuserBlockEntity#isHeatedFrom), which is what makes the
