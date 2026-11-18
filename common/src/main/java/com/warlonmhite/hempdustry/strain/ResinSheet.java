@@ -24,7 +24,7 @@ public record ResinSheet(int veryLow, int low, int average, int rich, int veryRi
             Codec.intRange(0, 1000).optionalFieldOf("average", 0).forGetter(ResinSheet::average),
             Codec.intRange(0, 1000).optionalFieldOf("rich", 0).forGetter(ResinSheet::rich),
             Codec.intRange(0, 1000).optionalFieldOf("very_rich", 0).forGetter(ResinSheet::veryRich),
-            ResinTexture.CODEC.optionalFieldOf("texture", ResinTexture.EVEN).forGetter(ResinSheet::texture)
+            FileFields.written(ResinTexture.CODEC, "texture", ResinTexture.EVEN).forGetter(ResinSheet::texture)
     ).apply(instance, ResinSheet::new));
 
     /** The weight of {@code step} among the five. */

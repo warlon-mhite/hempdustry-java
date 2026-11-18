@@ -1,6 +1,9 @@
 package com.warlonmhite.hempdustry.strain;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.Encoder;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.warlonmhite.hempdustry.item.custom.SmokeContents;
@@ -195,7 +198,7 @@ public record Strain(String translationKey, int color, int modelIndex,
 
     /**
      * What a plant of a strain rolls at planting beyond its potency band, kept in the strain file's {@code plant}
-     * object: {@code "plant": {"quality": {...}, "resistances": {...}, "resin": {...}}}. Every key is optional.
+     * object: {@code "plant": {"grow_quality": {...}, "resistances": {...}, "resin": {...}}}. Every key is optional.
      *
      * @param quality     the base luck of its harvests and the odds of each quality gene (see {@link GrowQuality})
      * @param resistances the odds of each resistance step, per phenomenon (see {@link Resistances})
@@ -210,17 +213,15 @@ public record Strain(String translationKey, int color, int modelIndex,
         public static final Plant DEFAULT = new Plant(GrowQuality.DEFAULT, Resistances.DEFAULT, ResinSheet.DEFAULT);
 
         public static final Codec<Plant> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                GrowQuality.CODEC.optionalFieldOf("quality", GrowQuality.DEFAULT).forGetter(Plant::quality),
-                // Read with a default, but always written: the spread round neutral is also what four "neutral"s
-                // read as, and a default-valued field is left out on encode, so a strain neutral on all four
-                // would lose its sheet from its file.
-                Resistances.CODEC.optionalFieldOf("resistances")
-                        .xmap(named -> named.orElse(Resistances.DEFAULT), Optional::of).forGetter(Plant::resistances),
-                ResinSheet.CODEC.optionalFieldOf("resin", ResinSheet.DEFAULT).forGetter(Plant::resin)
+                FileFields.written(GrowQuality.CODEC, "grow_quality", GrowQuality.DEFAULT).forGetter(Plant::quality),
+                // Always written, as every key here: the spread round neutral is also what four "neutral"s read
+                // as, so a strain neutral on all four would otherwise lose its sheet from its file.
+                FileFields.written(Resistances.CODEC, "resistances", Resistances.DEFAULT).forGetter(Plant::resistances),
+                FileFields.written(ResinSheet.CODEC, "resin", ResinSheet.DEFAULT).forGetter(Plant::resin)
         ).apply(instance, Plant::new));
 
         /** The {@code plant} object as a strain file carries it. */
-        static final MapCodec<Plant> FIELD = CODEC.optionalFieldOf("plant", DEFAULT);
+        static final MapCodec<Plant> FIELD = FileFields.written(CODEC, "plant", DEFAULT);
     }
 
     /** A plant strain's quality sheet: the base luck of its harvests and the odds of each quality gene a plant rolls. */
@@ -238,7 +239,7 @@ public record Strain(String translationKey, int color, int modelIndex,
         return plant.resin();
     }
 
-    /** A strain with no jar colour of its own: the shape every strain had before {@code jar_colour}. */
+    /** A strain with no jar colour of its own: the shape every strain had before {@code jar_color}. */
     public Strain(String translationKey, int color, int modelIndex,
                   Optional<Item> seedItem, Item buds, Optional<Block> wildFlower,
                   float greenOutFactor, int dosePerItem, List<SmokeEffect> smokeEffects,
@@ -360,7 +361,7 @@ public record Strain(String translationKey, int color, int modelIndex,
                 new Plant(plant.quality(), plant.resistances(), resin));
     }
 
-    /** The colour of its buds' pistils in a Stash Jar, RGB: its {@code jar_colour}, else its own {@link #color}. */
+    /** The colour of its buds' pistils in a Stash Jar, RGB: its {@code jar_color}, else its own {@link #color}. */
     public int jarColourOrDefault() {
         return jarColour.orElse(color);
     }
@@ -379,7 +380,7 @@ public record Strain(String translationKey, int color, int modelIndex,
     public static final ResourceKey<Registry<Strain>> REGISTRY_KEY =
             ResourceKey.createRegistryKey(Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "strain"));
 
-    public static final Codec<Strain> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    private static final Codec<Strain> FILE = RecordCodecBuilder.create(instance -> instance.group(
             Codec.STRING.fieldOf("translation_key").forGetter(Strain::translationKey),
             Codec.INT.fieldOf("color").forGetter(Strain::color),
             Codec.INT.optionalFieldOf("model_index", 0).forGetter(Strain::modelIndex),
@@ -393,17 +394,30 @@ public record Strain(String translationKey, int color, int modelIndex,
             Codec.INT.optionalFieldOf("dose_per_item", 1).forGetter(Strain::dosePerItem),
             SmokeEffect.CODEC.listOf().optionalFieldOf("effects", List.of()).forGetter(Strain::smokeEffects),
             Codec.FLOAT.optionalFieldOf("cough_factor", 1.0F).forGetter(Strain::coughFactor),
-            Chemotype.CODEC.optionalFieldOf("chemotype", Chemotype.THC_DOMINANT).forGetter(Strain::chemotype),
+            FileFields.written(Chemotype.CODEC, "chemotype", Chemotype.THC_DOMINANT).forGetter(Strain::chemotype),
             // By key, looked up when used: a strain naming a terpene the world does not define still
             // loads, and smokes plain.
             ResourceKey.codec(Terpene.REGISTRY_KEY).optionalFieldOf("terpene").forGetter(Strain::terpene),
             Codec.INT.optionalFieldOf("smoke_color").forGetter(Strain::smokeColor),
-            Potency.CODEC.optionalFieldOf("potency", Potency.DEFAULT).forGetter(Strain::potency),
-            Codec.INT.optionalFieldOf("jar_colour").forGetter(Strain::jarColour),
+            FileFields.written(Potency.CODEC, "potency", Potency.DEFAULT).forGetter(Strain::potency),
+            Codec.INT.optionalFieldOf("jar_color").forGetter(Strain::jarColour),
             // The sixteenth field, the most one RecordCodecBuilder group takes. What a plant rolls at planting
             // lives in the file's own "plant" object, and a field added later goes inside one of the objects.
             Plant.FIELD.forGetter(Strain::plant)
     ).apply(instance, Strain::new));
+
+    /**
+     * A strain file. Every key of 2.2 is written in full (see {@link FileFields}), but a strain that grows on no
+     * plant (hash, rosin) is written without a {@code plant} object, which it would never read.
+     */
+    public static final Codec<Strain> CODEC = Codec.of(new Encoder<>() {
+        @Override
+        public <T> DataResult<T> encode(Strain strain, DynamicOps<T> ops, T prefix) {
+            DataResult<T> written = FILE.encode(strain, ops, prefix);
+            boolean plant = strain.seedItem().isPresent() || strain.wildFlower().isPresent();
+            return plant ? written : written.map(file -> ops.remove(file, "plant"));
+        }
+    }, FILE);
 
     /**
      * How a <em>reference</em> to a strain is written — in the {@code smoke_contents} component, and

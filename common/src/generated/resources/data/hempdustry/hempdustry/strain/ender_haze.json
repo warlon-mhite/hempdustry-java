@@ -24,8 +24,9 @@
   "flower": "hempdustry:ender_haze_crop",
   "model_index": 11,
   "plant": {
-    "quality": {
+    "grow_quality": {
       "average": 45,
+      "base_luck": 0,
       "elite": 10,
       "good": 30,
       "poor": 15
@@ -34,6 +35,7 @@
       "average": 50,
       "low": 25,
       "rich": 15,
+      "texture": "even",
       "very_low": 5,
       "very_rich": 5
     },
@@ -45,9 +47,11 @@
     }
   },
   "potency": {
+    "base": 4,
     "extra_high": 2,
     "high": 20,
-    "low": 28
+    "low": 28,
+    "mid": 50
   },
   "seeds": "hempdustry:ender_haze_seeds",
   "terpene": "hempdustry:terpinolene",

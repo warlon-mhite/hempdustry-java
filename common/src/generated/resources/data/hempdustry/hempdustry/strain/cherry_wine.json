@@ -18,10 +18,18 @@
   "green_out_factor": 0.0,
   "model_index": 12,
   "plant": {
+    "grow_quality": {
+      "average": 50,
+      "base_luck": 0,
+      "elite": 5,
+      "good": 25,
+      "poor": 20
+    },
     "resin": {
       "average": 30,
       "low": 10,
       "rich": 45,
+      "texture": "even",
       "very_rich": 15
     },
     "resistances": {
@@ -32,8 +40,11 @@
     }
   },
   "potency": {
+    "base": 4,
+    "extra_high": 0,
     "high": 10,
-    "low": 40
+    "low": 40,
+    "mid": 50
   },
   "seeds": "hempdustry:cherry_wine_seeds",
   "terpene": "hempdustry:geraniol",

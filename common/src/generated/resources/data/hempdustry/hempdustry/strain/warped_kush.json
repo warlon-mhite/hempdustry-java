@@ -1,5 +1,6 @@
 {
   "buds": "hempdustry:warped_kush_buds",
+  "chemotype": "thc_dominant",
   "color": 3526836,
   "effects": [
     {
@@ -20,9 +21,11 @@
   "flower": "hempdustry:warped_kush_crop",
   "model_index": 8,
   "plant": {
-    "quality": {
+    "grow_quality": {
+      "average": 50,
       "base_luck": 2,
       "elite": 10,
+      "good": 25,
       "poor": 15
     },
     "resin": {
@@ -39,8 +42,11 @@
     }
   },
   "potency": {
+    "base": 4,
     "extra_high": 5,
-    "low": 20
+    "high": 25,
+    "low": 20,
+    "mid": 50
   },
   "seeds": "hempdustry:warped_kush_seeds",
   "terpene": "hempdustry:eucalyptol",

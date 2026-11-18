@@ -148,9 +148,9 @@ public record SmokeContents(List<Entry> entries) {
      */
     public record Entry(Holder<Strain> strain, int count, Chemotype stamp, int potency, BudTier tier) {
         /**
-         * {@code chemotype} is optional and left out when THC-dominant, and {@code potency} when 0, so
-         * every entry 2.1 wrote reads as what it was, and a THC-dominant load of mid buds written now is
-         * byte for byte what 2.1 would write.
+         * {@code chemotype} is optional and left out when THC-dominant, and {@code band_offset} (the
+         * {@link #potency} below) when 0, so every entry 2.1 wrote reads as what it was, and a THC-dominant
+         * load of mid buds written now is byte for byte what 2.1 would write.
          *
          * <p>{@code potency} is the sum of the band offsets ({@link PotencyBand#offset}) of a plant's buds
          * in the entry: a high bud and a mid one are +1, two low ones -2. Buds of different bands load
@@ -163,7 +163,7 @@ public record SmokeContents(List<Entry> entries) {
                 Strain.ENTRY_CODEC.fieldOf("strain").forGetter(Entry::strain),
                 Codec.INT.fieldOf("count").forGetter(Entry::count),
                 Chemotype.CODEC.optionalFieldOf("chemotype", Chemotype.THC_DOMINANT).forGetter(Entry::stamp),
-                Codec.INT.optionalFieldOf("potency", 0).forGetter(Entry::potency),
+                Codec.INT.optionalFieldOf("band_offset", 0).forGetter(Entry::potency),
                 BudTier.CODEC.optionalFieldOf("tier", BudTier.DANK).forGetter(Entry::tier)
         ).apply(instance, Entry::new));
 

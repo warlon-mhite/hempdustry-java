@@ -342,7 +342,7 @@ public final class StashJarGameTest {
                 "three equal shares of five pieces are " + Arrays.toString(StashPieces.share(new int[] {10, 10, 10}, 5)));
         ServerLevel level = context.getLevel();
         var strains = level.registryAccess().lookupOrThrow(Strain.REGISTRY_KEY);
-        // With no jar_colour of their own, the built-in strains' pistils take their strain colour.
+        // With no jar_color of their own, the built-in strains' pistils take their strain colour.
         int purple = strains.getOrThrow(ModStrains.INDICA).value().color();
         int lemon = strains.getOrThrow(ModStrains.SATIVA).value().color();
         // A strain's high-band buds and its plain ones are one share.
@@ -366,15 +366,15 @@ public final class StashJarGameTest {
         context.succeed();
     }
 
-    /** A strain file without {@code jar_colour} still loads, its pistils its own colour; one with it keeps it. */
+    /** A strain file without {@code jar_color} still loads, its pistils its own colour; one with it keeps it. */
     public static void aStrainsJarColourIsOptional(GameTestHelper context) {
         String plain = "{\"translation_key\":\"x\",\"color\":1,\"buds\":\"minecraft:wheat\"}";
         Strain without = Strain.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(plain)).getOrThrow();
         context.assertTrue(without.jarColour().isEmpty() && without.jarColourOrDefault() == 1,
-                "a strain file without jar_colour (color 1) reads " + without.jarColourOrDefault());
+                "a strain file without jar_color (color 1) reads " + without.jarColourOrDefault());
         Strain with = Strain.CODEC.parse(JsonOps.INSTANCE,
-                JsonParser.parseString(plain.replace("}", ",\"jar_colour\":4660}"))).getOrThrow();
-        context.assertTrue(with.jarColourOrDefault() == 4660, "jar_colour 4660 reads " + with.jarColourOrDefault());
+                JsonParser.parseString(plain.replace("}", ",\"jar_color\":4660}"))).getOrThrow();
+        context.assertTrue(with.jarColourOrDefault() == 4660, "jar_color 4660 reads " + with.jarColourOrDefault());
         context.succeed();
     }
 

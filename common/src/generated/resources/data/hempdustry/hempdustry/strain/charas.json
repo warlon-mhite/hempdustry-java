@@ -1,5 +1,6 @@
 {
   "buds": "hempdustry:charas",
+  "chemotype": "thc_dominant",
   "color": 2826520,
   "effects": [
     {
@@ -18,5 +19,12 @@
     }
   ],
   "model_index": 4,
+  "potency": {
+    "base": 4,
+    "extra_high": 0,
+    "high": 25,
+    "low": 25,
+    "mid": 50
+  },
   "translation_key": "hempdustry.strain.charas"
 }

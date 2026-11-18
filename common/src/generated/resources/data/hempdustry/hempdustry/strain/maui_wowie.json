@@ -1,5 +1,6 @@
 {
   "buds": "hempdustry:maui_wowie_buds",
+  "chemotype": "thc_dominant",
   "color": 16740175,
   "effects": [
     {
@@ -29,6 +30,13 @@
   "flower": "hempdustry:maui_wowie_flower",
   "model_index": 16,
   "plant": {
+    "grow_quality": {
+      "average": 50,
+      "base_luck": 0,
+      "elite": 5,
+      "good": 25,
+      "poor": 20
+    },
     "resin": {
       "average": 45,
       "low": 35,
@@ -42,6 +50,13 @@
       "mildew": "very_resistant",
       "overwatering": "very_resistant"
     }
+  },
+  "potency": {
+    "base": 4,
+    "extra_high": 0,
+    "high": 25,
+    "low": 25,
+    "mid": 50
   },
   "seeds": "hempdustry:maui_wowie_seeds",
   "terpene": "hempdustry:ocimene",
