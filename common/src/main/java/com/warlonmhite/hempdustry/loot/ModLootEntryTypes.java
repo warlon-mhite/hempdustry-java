@@ -48,6 +48,10 @@ public class ModLootEntryTypes {
     public static final LootItemFunctionType<SetResinFunction> SET_RESIN = Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE,
             Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "set_resin"), new LootItemFunctionType<>(SetResinFunction.CODEC));
 
+    /** {@code hempdustry:roll_genetics}: a bud found as loot rolls a grown bud's band, tier and resin from its strain. */
+    public static final LootItemFunctionType<RollGeneticsFunction> ROLL_GENETICS = Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE,
+            Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "roll_genetics"), new LootItemFunctionType<>(RollGeneticsFunction.CODEC));
+
     public static void registerLootEntryTypes() {
         Hempdustry.LOGGER.info("Registering Loot Entry Types for " + Hempdustry.MOD_ID);
     }

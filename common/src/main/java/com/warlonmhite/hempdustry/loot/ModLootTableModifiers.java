@@ -489,7 +489,8 @@ public class ModLootTableModifiers {
                     Strain value = strain.value();
                     if (value.seedItem().filter(from(ModCrops.Home.CITY)).isPresent()) {
                         pool.add(LootItem.lootTableItem(value.buds())
-                                .apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 3))));
+                                .apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 3)))
+                                .apply(RollGeneticsFunction.rollGenetics()));
                     }
                 }
                 table.addPool(pool);
@@ -523,7 +524,8 @@ public class ModLootTableModifiers {
                     Strain value = strain.value();
                     if (value.seedItem().filter(from(ModCrops.Home.OCEAN)).isPresent()) {
                         pool.add(LootItem.lootTableItem(value.buds())
-                                .apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 3))));
+                                .apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 3)))
+                                .apply(RollGeneticsFunction.rollGenetics()));
                     }
                 }
                 table.addPool(pool);
@@ -535,7 +537,8 @@ public class ModLootTableModifiers {
                     Strain value = strain.value();
                     if (value.seedItem().filter(from(ModCrops.Home.NETHER)).isPresent()) {
                         pool.add(LootItem.lootTableItem(value.buds())
-                                .apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 3))));
+                                .apply(SetItemCountFunction.setCount(UniformGenerator.between(1, 3)))
+                                .apply(RollGeneticsFunction.rollGenetics()));
                     }
                 }
                 table.addPool(pool);
