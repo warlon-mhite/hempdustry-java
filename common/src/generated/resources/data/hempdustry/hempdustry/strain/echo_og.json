@@ -20,7 +20,7 @@
   "green_out_factor": 0.0,
   "model_index": 15,
   "plant": {
-    "quality": {
+    "grow_quality": {
       "average": 46,
       "base_luck": 2,
       "elite": 10,
@@ -31,6 +31,7 @@
       "average": 35,
       "low": 40,
       "rich": 10,
+      "texture": "even",
       "very_low": 15
     },
     "resistances": {
@@ -41,8 +42,11 @@
     }
   },
   "potency": {
+    "base": 4,
     "extra_high": 5,
-    "low": 20
+    "high": 25,
+    "low": 20,
+    "mid": 50
   },
   "seeds": "hempdustry:echo_og_seeds",
   "terpene": "hempdustry:borneol",

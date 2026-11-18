@@ -328,7 +328,7 @@ public final class PotencyGameTest {
         // Written to a stack, a mid load is what 2.1 wrote; a high one keeps its band.
         Tag mid = SmokeContents.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE),
                 SmokeContents.of(kush, 2)).getOrThrow();
-        context.assertTrue(!mid.toString().contains("potency"), "a mid load wrote its band: " + mid);
+        context.assertTrue(!mid.toString().contains("band_offset"), "a mid load wrote its band: " + mid);
         SmokeContents highLoad = SmokeContents.of(kush, 2, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT, PotencyBand.HIGH);
         Tag high = SmokeContents.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), highLoad).getOrThrow();
         context.assertValueEqual(highLoad,

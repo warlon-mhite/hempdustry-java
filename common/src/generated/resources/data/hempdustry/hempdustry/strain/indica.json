@@ -1,5 +1,6 @@
 {
   "buds": "hempdustry:indica_buds",
+  "chemotype": "thc_dominant",
   "color": 11893759,
   "effects": [
     {
@@ -15,10 +16,18 @@
   "flower": "hempdustry:indica_flower",
   "model_index": 1,
   "plant": {
+    "grow_quality": {
+      "average": 50,
+      "base_luck": 0,
+      "elite": 5,
+      "good": 25,
+      "poor": 20
+    },
     "resin": {
       "average": 25,
       "low": 5,
       "rich": 50,
+      "texture": "even",
       "very_rich": 20
     },
     "resistances": {
@@ -27,6 +36,13 @@
       "mildew": "weak",
       "overwatering": "resistant"
     }
+  },
+  "potency": {
+    "base": 4,
+    "extra_high": 0,
+    "high": 25,
+    "low": 25,
+    "mid": 50
   },
   "seeds": "hempdustry:indica_seeds",
   "terpene": "hempdustry:linalool",

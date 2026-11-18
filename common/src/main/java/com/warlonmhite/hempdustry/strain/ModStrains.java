@@ -165,6 +165,7 @@ public class ModStrains {
         // Checked once, at startup: a datapack is exactly where a clashing index comes from, and the
         // registry is read only when the world opens — /reload keeps the strains it has.
         Services.EVENTS.onServerStarted(server -> validateModelIndices(server.registryAccess()));
+        Services.EVENTS.onServerStarted(StrainOverrides::report);
         Hempdustry.LOGGER.info("Registering Strains for " + Hempdustry.MOD_ID);
     }
 

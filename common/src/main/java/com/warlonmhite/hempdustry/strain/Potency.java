@@ -26,11 +26,11 @@ public record Potency(int base, int low, int mid, int high, int extraHigh) {
     public static final Potency DEFAULT = new Potency(DEFAULT_BASE, 25, 50, 25, 0);
 
     public static final Codec<Potency> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.intRange(1, 64).optionalFieldOf("base", DEFAULT.base).forGetter(Potency::base),
-            Codec.intRange(0, 1000).optionalFieldOf("low", DEFAULT.low).forGetter(Potency::low),
-            Codec.intRange(0, 1000).optionalFieldOf("mid", DEFAULT.mid).forGetter(Potency::mid),
-            Codec.intRange(0, 1000).optionalFieldOf("high", DEFAULT.high).forGetter(Potency::high),
-            Codec.intRange(0, 1000).optionalFieldOf("extra_high", DEFAULT.extraHigh).forGetter(Potency::extraHigh)
+            FileFields.written(Codec.intRange(1, 64), "base", DEFAULT.base).forGetter(Potency::base),
+            FileFields.written(Codec.intRange(0, 1000), "low", DEFAULT.low).forGetter(Potency::low),
+            FileFields.written(Codec.intRange(0, 1000), "mid", DEFAULT.mid).forGetter(Potency::mid),
+            FileFields.written(Codec.intRange(0, 1000), "high", DEFAULT.high).forGetter(Potency::high),
+            FileFields.written(Codec.intRange(0, 1000), "extra_high", DEFAULT.extraHigh).forGetter(Potency::extraHigh)
     ).apply(instance, Potency::new));
 
     /** A sheet at the default base with these odds. */

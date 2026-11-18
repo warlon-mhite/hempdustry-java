@@ -1,5 +1,6 @@
 {
   "buds": "hempdustry:white_widow_buds",
+  "chemotype": "thc_dominant",
   "color": 15330532,
   "effects": [
     {
@@ -24,8 +25,9 @@
   "flower": "hempdustry:white_widow_flower",
   "model_index": 13,
   "plant": {
-    "quality": {
+    "grow_quality": {
       "average": 48,
+      "base_luck": 0,
       "elite": 6,
       "good": 28,
       "poor": 18
@@ -44,8 +46,11 @@
     }
   },
   "potency": {
+    "base": 4,
     "extra_high": 5,
-    "low": 20
+    "high": 25,
+    "low": 20,
+    "mid": 50
   },
   "seeds": "hempdustry:white_widow_seeds",
   "terpene": "hempdustry:nerolidol",

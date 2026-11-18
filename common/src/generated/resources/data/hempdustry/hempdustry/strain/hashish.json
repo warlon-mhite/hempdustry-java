@@ -1,5 +1,6 @@
 {
   "buds": "hempdustry:hashish",
+  "chemotype": "thc_dominant",
   "color": 7031343,
   "effects": [
     {
@@ -18,5 +19,12 @@
     }
   ],
   "model_index": 3,
+  "potency": {
+    "base": 4,
+    "extra_high": 0,
+    "high": 25,
+    "low": 25,
+    "mid": 50
+  },
   "translation_key": "hempdustry.strain.hashish"
 }

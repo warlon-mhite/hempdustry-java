@@ -1,5 +1,6 @@
 {
   "buds": "hempdustry:sativa_buds",
+  "chemotype": "thc_dominant",
   "color": 13095242,
   "effects": [
     {
@@ -18,7 +19,10 @@
   "flower": "hempdustry:sativa_flower",
   "model_index": 2,
   "plant": {
-    "quality": {
+    "grow_quality": {
+      "average": 50,
+      "base_luck": 0,
+      "elite": 5,
       "good": 20,
       "poor": 25
     },
@@ -26,6 +30,7 @@
       "average": 40,
       "low": 40,
       "rich": 10,
+      "texture": "even",
       "very_low": 10
     },
     "resistances": {
@@ -34,6 +39,13 @@
       "mildew": "resistant",
       "overwatering": "weak"
     }
+  },
+  "potency": {
+    "base": 4,
+    "extra_high": 0,
+    "high": 25,
+    "low": 25,
+    "mid": 50
   },
   "seeds": "hempdustry:sativa_seeds",
   "terpene": "hempdustry:limonene",

@@ -17,7 +17,9 @@
   "green_out_factor": 2.0,
   "model_index": 9,
   "plant": {
-    "quality": {
+    "grow_quality": {
+      "average": 50,
+      "base_luck": 0,
       "elite": 2,
       "good": 18,
       "poor": 30
@@ -36,6 +38,8 @@
     }
   },
   "potency": {
+    "base": 4,
+    "extra_high": 0,
     "high": 10,
     "low": 50,
     "mid": 40

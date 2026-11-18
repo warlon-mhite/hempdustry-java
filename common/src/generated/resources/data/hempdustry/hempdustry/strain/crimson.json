@@ -1,5 +1,6 @@
 {
   "buds": "hempdustry:crimson_buds",
+  "chemotype": "thc_dominant",
   "color": 15218255,
   "effects": [
     {
@@ -16,9 +17,11 @@
   "flower": "hempdustry:crimson_crop",
   "model_index": 10,
   "plant": {
-    "quality": {
+    "grow_quality": {
+      "average": 50,
       "base_luck": 2,
       "elite": 10,
+      "good": 25,
       "poor": 15
     },
     "resin": {
@@ -35,8 +38,11 @@
     }
   },
   "potency": {
+    "base": 4,
     "extra_high": 5,
-    "low": 20
+    "high": 25,
+    "low": 20,
+    "mid": 50
   },
   "seeds": "hempdustry:crimson_seeds",
   "terpene": "hempdustry:caryophyllene",

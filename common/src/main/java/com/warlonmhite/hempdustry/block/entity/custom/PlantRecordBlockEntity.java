@@ -94,8 +94,8 @@ import org.jetbrains.annotations.Nullable;
  * (the same loot context), it answers the same tier.
  */
 public class PlantRecordBlockEntity extends BlockEntity {
-    private static final String POTENCY_KEY = "potency";
-    private static final String QUALITY_KEY = "quality";
+    private static final String POTENCY_KEY = "potency_band";
+    private static final String QUALITY_KEY = "quality_gene";
     private static final String OPEN_SKY_KEY = "open_sky";
     private static final String RESISTANCES_KEY = "resistances";
     private static final String RESIN_KEY = "resin";

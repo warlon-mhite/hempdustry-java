@@ -1,5 +1,6 @@
 {
   "buds": "hempdustry:schwag",
+  "chemotype": "thc_dominant",
   "color": 9202236,
   "cough_factor": 0.5,
   "effects": [
@@ -15,6 +16,13 @@
     }
   ],
   "green_out_factor": 0.0,
+  "potency": {
+    "base": 4,
+    "extra_high": 0,
+    "high": 25,
+    "low": 25,
+    "mid": 50
+  },
   "smoke_color": 11049582,
   "translation_key": "hempdustry.strain.schwag"
 }

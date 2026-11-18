@@ -12,8 +12,8 @@ import net.minecraft.util.RandomSource;
  * record and stand on no Hydro Tray, so theirs is +2; Beldía, a hardy landrace grown for the sieve,
  * has −1. The odds are weights in the order poor, average, good, elite; they need not add up to 100.
  *
- * <p>Written in a strain's file as {@code "quality": {"base_luck": 0, "poor": 20, "average": 50,
- * "good": 25, "elite": 5}}; every key is optional, and a strain with no {@code quality} reads as
+ * <p>Written in a strain's file as {@code "grow_quality": {"base_luck": 0, "poor": 20, "average": 50,
+ * "good": 25, "elite": 5}}; every key is optional, and a strain with no {@code grow_quality} reads as
  * {@link #DEFAULT}.
  */
 public record GrowQuality(int baseLuck, int poor, int average, int good, int elite) {
@@ -22,11 +22,11 @@ public record GrowQuality(int baseLuck, int poor, int average, int good, int eli
     public static final GrowQuality DEFAULT = new GrowQuality(0, 20, 50, 25, 5);
 
     public static final Codec<GrowQuality> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            Codec.intRange(-64, 64).optionalFieldOf("base_luck", DEFAULT.baseLuck).forGetter(GrowQuality::baseLuck),
-            Codec.intRange(0, 1000).optionalFieldOf("poor", DEFAULT.poor).forGetter(GrowQuality::poor),
-            Codec.intRange(0, 1000).optionalFieldOf("average", DEFAULT.average).forGetter(GrowQuality::average),
-            Codec.intRange(0, 1000).optionalFieldOf("good", DEFAULT.good).forGetter(GrowQuality::good),
-            Codec.intRange(0, 1000).optionalFieldOf("elite", DEFAULT.elite).forGetter(GrowQuality::elite)
+            FileFields.written(Codec.intRange(-64, 64), "base_luck", DEFAULT.baseLuck).forGetter(GrowQuality::baseLuck),
+            FileFields.written(Codec.intRange(0, 1000), "poor", DEFAULT.poor).forGetter(GrowQuality::poor),
+            FileFields.written(Codec.intRange(0, 1000), "average", DEFAULT.average).forGetter(GrowQuality::average),
+            FileFields.written(Codec.intRange(0, 1000), "good", DEFAULT.good).forGetter(GrowQuality::good),
+            FileFields.written(Codec.intRange(0, 1000), "elite", DEFAULT.elite).forGetter(GrowQuality::elite)
     ).apply(instance, GrowQuality::new));
 
     /** The weight of {@code gene} among the four. */

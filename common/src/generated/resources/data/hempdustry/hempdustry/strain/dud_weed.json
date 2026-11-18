@@ -6,7 +6,9 @@
   "green_out_factor": 0.0,
   "model_index": 14,
   "plant": {
-    "quality": {
+    "grow_quality": {
+      "average": 50,
+      "base_luck": 0,
       "elite": 2,
       "good": 18,
       "poor": 30
@@ -14,6 +16,7 @@
     "resin": {
       "average": 8,
       "low": 12,
+      "texture": "even",
       "very_low": 80
     },
     "resistances": {
@@ -24,6 +27,8 @@
     }
   },
   "potency": {
+    "base": 4,
+    "extra_high": 0,
     "high": 0,
     "low": 60,
     "mid": 40

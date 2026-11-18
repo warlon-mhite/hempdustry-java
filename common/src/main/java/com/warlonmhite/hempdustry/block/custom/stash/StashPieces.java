@@ -20,7 +20,7 @@ import java.util.Map;
  * out by each strain's part of what is inside.
  *
  * <p>A piece is a bud: a green body with a few pistils in its strain's colour ({@link Strain#jarColourOrDefault},
- * the strain's own {@code color} unless its file names a {@code jar_colour}). The body green is one for every
+ * the strain's own {@code color} unless its file names a {@code jar_color}). The body green is one for every
  * strain, so a jar reads as a jar of weed and the strains tell themselves apart by their pistils. Schwag is
  * brown through and through, pistils and all; an item a pack put in the tag that grew on no strain is a
  * bud with the plain orange pistils most bud art has.
