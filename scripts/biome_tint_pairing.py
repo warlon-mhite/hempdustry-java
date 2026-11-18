@@ -53,14 +53,86 @@ def registered_blocks():
         sys.exit("no client.blockColor(...) or client.blockTint(...) call in HempdustryClient")
     names = set()
     for start in calls:
-        depth, i = 0, source.index("(", start)
-        for i in range(i, len(source)):
-            depth += (source[i] == "(") - (source[i] == ")")
-            if depth == 0:
-                break
-        args = source[start:i]
+        args = source[start:closing(source, source.index("(", start))]
         args = args[args.rfind("}") + 1:]
+        args += helper_bodies(source, args)
         names |= {name.lower() for name in re.findall(r"ModBlocks\.([A-Z0-9_]+)\b(?!\.)", args)}
+        names |= crop_list_blocks(args)
+    return names
+
+
+def closing(source, open_at):
+    """Index of the bracket that closes the one at ``open_at`` (any of ``(`` or ``{``)."""
+    pair = {"(": ")", "{": "}"}[source[open_at]]
+    depth = 0
+    for i in range(open_at, len(source)):
+        depth += (source[i] == source[open_at]) - (source[i] == pair)
+        if depth == 0:
+            return i
+    sys.exit(f"unbalanced {source[open_at]} in {CLIENT.name}")
+
+
+def helper_bodies(source, args):
+    """The bodies of HempdustryClient's own no-argument methods a block list calls (``biomeTinted()``).
+
+    A block list built in a helper is read where it is built; the call alone names no block.
+    """
+    bodies = ""
+    for name in re.findall(r"(?<![\w.])([a-z]\w*)\(\)", args):
+        method = re.search(r"static\s+[\w<>\[\]]+\s+" + name + r"\(\)\s*\{", source)
+        if method:
+            bodies += " " + source[method.end() - 1:closing(source, method.end() - 1)]
+    return bodies
+
+
+# Where the crop list lives since the crops stopped being named one by one: one entry per crop, its
+# blocks and its Tint. Read here, so a block list drawn from it is checked as one that names them.
+CROP_LIST = CLIENT.parent / "block" / "ModCrops.java"
+CROP_LIST_TARGETS = {"crop": r"Crop::crop", "flower": r"\.flower\(\)", "potted": r"\.potted\(\)"}
+
+
+def crop_entries():
+    """Every ModCrops.ALL entry as {"crop", "flower", "potted": block id or None, "tint": Tint name}."""
+    source = CROP_LIST.read_text(encoding="utf-8")
+    entries = []
+    for chunk in source.split("new Crop(")[1:]:
+        blocks = re.findall(r"ModBlocks\.([A-Z0-9_]+)", chunk.split("Home.")[0])
+        tint = re.search(r"Tint\.([A-Z_]+)", chunk)
+        if not blocks or not tint:
+            sys.exit(f"cannot read a crop entry of {CROP_LIST.name}: {chunk[:80]!r}")
+        wild = re.search(r"wild\(ModBlocks\.(\w+), ModBlocks\.(\w+)", chunk)
+        bare = re.search(r"new Wild\(ModBlocks\.(\w+), Optional\.empty\(\)", chunk)
+        entries.append({
+            "crop": blocks[0].lower(),
+            "flower": (wild or bare).group(1).lower() if (wild or bare) else None,
+            "potted": wild.group(2).lower() if wild else None,
+            "tint": tint.group(1),
+        })
+    if not entries:
+        sys.exit(f"no crop entry read in {CROP_LIST.name}")
+    return entries
+
+
+def crop_list_blocks(args):
+    """The blocks a block list takes from the crop list: each ``ModCrops.ALL.stream()`` pipeline, read
+    for the Tints it keeps and the blocks it maps to (the crop, its wild plant, its potted one).
+
+    A pipeline this cannot read stops the check: a list it guessed at would check nothing.
+    """
+    pipelines = args.split("ModCrops.ALL.stream()")[1:]
+    if not pipelines:
+        return set()
+    entries = crop_entries()
+    names = set()
+    for pipeline in pipelines:
+        tints = set(re.findall(r"ModCrops\.Tint\.([A-Z_]+)", pipeline))
+        targets = [target for target, pattern in CROP_LIST_TARGETS.items() if re.search(pattern, pipeline)]
+        if not tints or not targets:
+            sys.exit(f"cannot read which crops a block list of {CLIENT.name} takes: "
+                     f"ModCrops.ALL.stream(){pipeline[:120]!r}")
+        for entry in entries:
+            if entry["tint"] in tints:
+                names |= {entry[target] for target in targets if entry[target]}
     return names
 
 

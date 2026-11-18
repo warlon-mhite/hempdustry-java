@@ -1,6 +1,6 @@
 package com.warlonmhite.hempdustry;
 
-import java.util.ArrayList;
+import com.warlonmhite.hempdustry.block.ModCrops;
 import com.warlonmhite.hempdustry.block.custom.stash.StashPieces;
 import com.warlonmhite.hempdustry.item.custom.StashJarItem;
 import com.warlonmhite.hempdustry.client.item.StashPieceTintSource;
@@ -33,8 +33,10 @@ import com.warlonmhite.hempdustry.screen.ModScreenHandlers;
 import com.warlonmhite.hempdustry.screen.custom.DecarboxylatorScreen;
 import com.warlonmhite.hempdustry.screen.custom.HempPressScreen;
 import com.warlonmhite.hempdustry.screen.custom.InfuserScreen;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.model.object.boat.BoatModel;
@@ -128,6 +130,8 @@ public class HempdustryClient {
      * does the blend, so the value that leaves here is a well-formed colour.
      */
     private static void registerBlockColors(ClientRegistration client) {
+        Set<Block> drawnInItsOwnColours = ModCrops.ALL.stream().filter(crop -> crop.tint() == ModCrops.Tint.LIGHT_ONLY)
+                .map(ModCrops.Crop::crop).collect(Collectors.toUnmodifiableSet());
         client.blockTint(List.of(new BlockTintSource() {
             @Override
             public int color(BlockState state) {
@@ -138,12 +142,7 @@ public class HempdustryClient {
             public int colorInWorld(BlockState state, BlockAndTintGetter view, BlockPos pos) {
                 return biomeTint(BiomeColors.getAverageGrassColor(view, pos));
             }
-        }), ModBlocks.INDICA_FLOWER, ModBlocks.SATIVA_FLOWER, ModBlocks.DITCHWEED, ModBlocks.CHERRY_WINE_FLOWER,
-                ModBlocks.POTTED_INDICA_FLOWER, ModBlocks.POTTED_SATIVA_FLOWER, ModBlocks.POTTED_DITCHWEED,
-                ModBlocks.POTTED_CHERRY_WINE_FLOWER,
-                // A crop, but one with no light record for the crops' source below to read: it
-                // takes the biome and nothing else, like the wild plants it is kin to.
-                ModBlocks.RUDERALIS_CROP);
+        }), biomeTinted());
         // The crops take the same biome tint, then show the light they grew under: a lamp-grown
         // plant a shade deeper. A STRESSED plant is not tinted at all — it has textures of its own,
         // because a tint is a multiply and a multiply cannot bleach Purple Kush's dark flowers; the
@@ -164,8 +163,7 @@ public class HempdustryClient {
                 // Widow too: a multiply cannot make white out of grey in a green biome, so its colour
                 // is baked in, as vanilla's pale oak leaves' is. Maui Wowie too: it grows under the sea, where
                 // the land's grass colour means nothing, and its pale aqua is drawn in.
-                int tint = state.is(ModBlocks.BELDIA_CROP) || state.is(ModBlocks.WHITE_WIDOW_CROP)
-                        || state.is(ModBlocks.MAUI_WOWIE_CROP)
+                int tint = drawnInItsOwnColours.contains(state.getBlock())
                         ? NO_TINT : biomeTint(BiomeColors.getAverageGrassColor(view, pos));
                 GrowLight light = state.getValue(GrowLight.PROPERTY);
                 return light.artificial() && light != GrowLight.STRESSED
@@ -176,15 +174,31 @@ public class HempdustryClient {
             public Set<Property<?>> relevantProperties() {
                 return Set.of(GrowLight.PROPERTY);
             }
-        }), ModBlocks.INDICA_CROP, ModBlocks.SATIVA_CROP, ModBlocks.BELDIA_CROP,
-                ModBlocks.INDUSTRIAL_HEMP_CROP, ModBlocks.CHERRY_WINE_CROP, ModBlocks.WHITE_WIDOW_CROP,
-                ModBlocks.DUD_WEED_CROP, ModBlocks.MAUI_WOWIE_CROP);
+        }), ModCrops.ALL.stream().filter(crop -> crop.tint() == ModCrops.Tint.BIOME_AND_LIGHT
+                || crop.tint() == ModCrops.Tint.LIGHT_ONLY).map(ModCrops.Crop::crop).toArray(Block[]::new));
 
         // A packed bong set down shows its load on tint index 1. A block tint can ask the world and
         // not the stack, so it is one dried-bud green whatever the strain; the strain's own colour
         // is the hand's, where the item definition has the stack to read.
         client.blockTint(List.of(state -> NO_TINT, state -> PLACED_LOAD),
                 ModBlocks.DEVICE_BLOCKS.values().toArray(Block[]::new));
+    }
+
+    /**
+     * What takes the biome's grass colour and nothing else: the wild plants of the crops tinted by their
+     * biome, standing and potted, and the crops with no light record for the crops' source to read
+     * (Ruderalis), which take the biome like the wild plants they are kin to.
+     */
+    private static Block[] biomeTinted() {
+        List<Block> blocks = new ArrayList<>();
+        ModCrops.ALL.stream().filter(crop -> crop.tint() == ModCrops.Tint.BIOME_AND_LIGHT)
+                .flatMap(crop -> crop.wild().stream()).forEach(wild -> {
+                    blocks.add(wild.flower());
+                    wild.potted().ifPresent(blocks::add);
+                });
+        ModCrops.ALL.stream().filter(crop -> crop.tint() == ModCrops.Tint.BIOME_ONLY).map(ModCrops.Crop::crop)
+                .forEach(blocks::add);
+        return blocks.toArray(Block[]::new);
     }
 
     private static final int PLACED_LOAD = 0xFF6F8F3A;

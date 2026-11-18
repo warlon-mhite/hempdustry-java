@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.datagen;
 
+import com.warlonmhite.hempdustry.block.ModCrops;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.strain.Chemotype;
@@ -34,19 +35,7 @@ public class ModItemTagProvider extends FabricTagsProvider.ItemTagsProvider {
     @Override
     protected void addTags(HolderLookup.Provider wrapperLookup) {
         valueLookupBuilder(ModTags.Items.HEMP_SEEDS)
-                .add(ModItems.INDICA_SEEDS)
-                .add(ModItems.SATIVA_SEEDS)
-                .add(ModItems.BELDIA_SEEDS)
-                .add(ModItems.INDUSTRIAL_HEMP_SEEDS)
-                .add(ModItems.WARPED_KUSH_SEEDS)
-                .add(ModItems.RUDERALIS_SEEDS)
-                .add(ModItems.CRIMSON_SEEDS)
-                .add(ModItems.ENDER_HAZE_SEEDS)
-                .add(ModItems.CHERRY_WINE_SEEDS)
-                .add(ModItems.WHITE_WIDOW_SEEDS)
-                .add(ModItems.DUD_WEED_SEEDS)
-                .add(ModItems.ECHO_OG_SEEDS)
-                .add(ModItems.MAUI_WOWIE_SEEDS);
+                .addAll(ModCrops.ALL.stream().map(ModCrops.Crop::seeds));
 
         // Grown only where the world puts them, never in another mod's pot machine: White Widow (its light leak
         // and timer are the strain) and Maui Wowie (the sea is its home).
@@ -300,18 +289,7 @@ public class ModItemTagProvider extends FabricTagsProvider.ItemTagsProvider {
         // means a stripped-down Fabric API that omits one cannot take the whole tag down with it
         // (one unresolvable *required* entry drops every other entry in the file).
         valueLookupBuilder(ModTags.Conventional.HEMP_CROPS)
-                .add(ModItems.INDICA_BUDS)
-                .add(ModItems.SATIVA_BUDS)
-                .add(ModItems.BELDIA_BUDS)
-                .add(ModItems.WARPED_KUSH_BUDS)
-                .add(ModItems.RUDERALIS_BUDS)
-                .add(ModItems.CRIMSON_BUDS)
-                .add(ModItems.ENDER_HAZE_BUDS)
-                .add(ModItems.CHERRY_WINE_BUDS)
-                .add(ModItems.WHITE_WIDOW_BUDS)
-                .add(ModItems.DUD_WEED_BUDS)
-                .add(ModItems.ECHO_OG_BUDS)
-                .add(ModItems.MAUI_WOWIE_BUDS)
+                .addAll(ModCrops.ALL.stream().flatMap(crop -> crop.buds().stream()))
                 .add(ModItems.HEMP_LEAF);
         valueLookupBuilder(ConventionalItemTags.CROPS)
                 .addOptionalTag(ModTags.Conventional.HEMP_CROPS);

@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry;
 
+import com.warlonmhite.hempdustry.block.ModCrops;
 import com.warlonmhite.hempdustry.advancement.ModCriteria;
 import com.warlonmhite.hempdustry.balance.DeviceStats;
 import com.warlonmhite.hempdustry.balance.EdibleBundle;
@@ -97,19 +98,13 @@ public class Hempdustry {
 		ModWorldGeneration.generateModWorldGeneration();
 
 		registration.compostable(ModItems.HEMP_BRICK, 0.05f);
-		registration.compostable(ModItems.INDICA_SEEDS, 0.3f);
-		registration.compostable(ModItems.SATIVA_SEEDS, 0.3f);
-		registration.compostable(ModItems.BELDIA_SEEDS, 0.3f);
-		registration.compostable(ModItems.INDUSTRIAL_HEMP_SEEDS, 0.3f);
-		registration.compostable(ModItems.WARPED_KUSH_SEEDS, 0.3f);
-		registration.compostable(ModItems.RUDERALIS_SEEDS, 0.3f);
-		registration.compostable(ModItems.CRIMSON_SEEDS, 0.3f);
-		registration.compostable(ModItems.ENDER_HAZE_SEEDS, 0.3f);
-		registration.compostable(ModItems.CHERRY_WINE_SEEDS, 0.3f);
-		registration.compostable(ModItems.WHITE_WIDOW_SEEDS, 0.3f);
-		registration.compostable(ModItems.DUD_WEED_SEEDS, 0.3f);
-		registration.compostable(ModItems.ECHO_OG_SEEDS, 0.3f);
-		registration.compostable(ModItems.MAUI_WOWIE_SEEDS, 0.3f);
+		// Every crop's seeds at vanilla's seed rate, its buds at 0.5 (the leaf and stem's dried plant
+		// matter), its wild plant at the 0.65 vanilla gives every small flower.
+		for (ModCrops.Crop crop : ModCrops.ALL) {
+			registration.compostable(crop.seeds(), 0.3f);
+			crop.buds().ifPresent(buds -> registration.compostable(buds, 0.5f));
+			crop.wild().ifPresent(wild -> registration.compostable(wild.flower(), 0.65f));
+		}
 		registration.compostable(ModItems.HEMP_FIBER, 0.3f);
 		// Woven cloth, so it sits with the armour at 0.5 rather than with the loose fibre at 0.3.
 		registration.compostable(ModItems.HEMP_CANVAS, 0.5f);
@@ -117,18 +112,6 @@ public class Hempdustry {
 		registration.compostable(ModItems.HEMP_LEAF, 0.3f);
 		registration.compostable(ModItems.HEMP_STEM, 0.5f);
 		registration.compostable(ModItems.RETTED_HEMP_STEM, 0.5f);
-		registration.compostable(ModItems.INDICA_BUDS, 0.5f);
-		registration.compostable(ModItems.SATIVA_BUDS, 0.5f);
-		registration.compostable(ModItems.BELDIA_BUDS, 0.5f);
-		registration.compostable(ModItems.WARPED_KUSH_BUDS, 0.5f);
-		registration.compostable(ModItems.RUDERALIS_BUDS, 0.5f);
-		registration.compostable(ModItems.CRIMSON_BUDS, 0.5f);
-		registration.compostable(ModItems.ENDER_HAZE_BUDS, 0.5f);
-		registration.compostable(ModItems.CHERRY_WINE_BUDS, 0.5f);
-		registration.compostable(ModItems.WHITE_WIDOW_BUDS, 0.5f);
-		registration.compostable(ModItems.DUD_WEED_BUDS, 0.5f);
-		registration.compostable(ModItems.ECHO_OG_BUDS, 0.5f);
-		registration.compostable(ModItems.MAUI_WOWIE_BUDS, 0.5f);
 		// The two cannabutter-chain intermediates. Composting them is a ridiculous use of a fuelled
 		// oven, which is exactly why it should be allowed: everything else organic in the mod goes in
 		// the composter, and a lone pair of items that bounce off it reads as an oversight. They sit
@@ -148,12 +131,6 @@ public class Hempdustry {
 		registration.compostable(ModItems.HEMP_HAREM_PANTS, 0.5f);
 		registration.compostable(ModItems.FLIP_FLOPS, 0.5f);
 		// 0.65 is what vanilla gives every small flower; ours are plants too and had been missed.
-		registration.compostable(ModBlocks.INDICA_FLOWER, 0.65f);
-		registration.compostable(ModBlocks.CHERRY_WINE_FLOWER, 0.65f);
-		registration.compostable(ModBlocks.WHITE_WIDOW_FLOWER, 0.65f);
-		registration.compostable(ModBlocks.MAUI_WOWIE_FLOWER, 0.65f);
-		registration.compostable(ModBlocks.SATIVA_FLOWER, 0.65f);
-		registration.compostable(ModBlocks.DITCHWEED, 0.65f);
 		registration.compostable(ModBlocks.HEMPCRETE_POWDER_BLOCK, 0.85f);
 		// The two storage blocks. Vanilla puts every compacted plant block a tier above the item it
 		// is made from -- dried kelp 0.3 to the dried kelp block's 0.5, wheat 0.65 to hay's 0.85 --
@@ -203,20 +180,14 @@ public class Hempdustry {
 	}
 
 	private static void registerFlammables(Registration registration) {
-		registration.flammable(ModBlocks.INDICA_CROP, 10, 25);
-		registration.flammable(ModBlocks.INDICA_FLOWER, 20, 40);
-		registration.flammable(ModBlocks.CHERRY_WINE_FLOWER, 20, 40);
-		registration.flammable(ModBlocks.WHITE_WIDOW_FLOWER, 20, 40);
-		registration.flammable(ModBlocks.SATIVA_CROP, 10, 25);
-		registration.flammable(ModBlocks.BELDIA_CROP, 10, 25);
-		registration.flammable(ModBlocks.CHERRY_WINE_CROP, 10, 25);
-		registration.flammable(ModBlocks.WHITE_WIDOW_CROP, 10, 25);
-		registration.flammable(ModBlocks.DUD_WEED_CROP, 10, 25);
-		registration.flammable(ModBlocks.ECHO_OG_CROP, 10, 25);
-		registration.flammable(ModBlocks.SATIVA_FLOWER, 20, 40);
-		registration.flammable(ModBlocks.INDUSTRIAL_HEMP_CROP, 10, 25);
-		registration.flammable(ModBlocks.RUDERALIS_CROP, 10, 25);
-		registration.flammable(ModBlocks.DITCHWEED, 20, 40);
+		// A crop burns as vanilla's crops do not (they never catch): a field of dry hemp is tinder. Its wild
+		// plant burns as vanilla's flowers. Not the Nether's, the End's or the sea's.
+		for (ModCrops.Crop crop : ModCrops.ALL) {
+			if (crop.burns()) {
+				registration.flammable(crop.crop(), 10, 25);
+				crop.wild().ifPresent(wild -> registration.flammable(wild.flower(), 20, 40));
+			}
+		}
 		registration.flammable(ModBlocks.HEMP_BALE, 50, 10);
 		// Vanilla leaves parity, exactly (30/60). Nothing about hemp foliage argues for a
 		// different number than oak foliage, and a leaf block that burns unlike every other

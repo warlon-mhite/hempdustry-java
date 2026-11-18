@@ -4,6 +4,8 @@ import net.minecraft.core.Registry;
 import net.minecraft.data.tags.TagAppender;
 import net.minecraft.tags.TagKey;
 
+import java.util.stream.Stream;
+
 /**
  * A tag builder that takes the blocks and items themselves, as the tag providers' value-lookup
  * builder did up to 1.21.11. Since 26.2 a tag provider takes registry keys only; this hands each
@@ -30,6 +32,11 @@ public final class ValueTagAppender<T> {
         for (T value : values) {
             add(value);
         }
+        return this;
+    }
+
+    public ValueTagAppender<T> addAll(Stream<? extends T> values) {
+        values.forEach(this::add);
         return this;
     }
 
