@@ -114,6 +114,22 @@ public enum ResinStep implements StringRepresentable {
         return stack;
     }
 
+    /**
+     * {@link #stamp(ItemStack, ResinStep)} for a bud of a strain of {@code texture}: its {@link #legacy} step is
+     * written too when a bud with nothing written would sieve otherwise. Only a strain a datapack adds to
+     * {@code #hempdustry:siftable/resinous} that is not dry meets it: its very rich buds sieve at its texture's
+     * rate, and left unwritten they would take the tag's double one. Returns the stack.
+     */
+    public static ItemStack stamp(ItemStack stack, ResinStep step, ResinTexture texture) {
+        ResinStep legacy = legacy(stack);
+        if (step == legacy && step.sieveFactor(texture) == legacy.sieve) {
+            stack.remove(ModComponents.RESIN_STEP);
+        } else {
+            stack.set(ModComponents.RESIN_STEP, step);
+        }
+        return stack;
+    }
+
     /** Translation key of the line the player reads, e.g. {@code hempdustry.resin.very_rich}. */
     public String getTranslationKey() {
         return "hempdustry.resin." + name;

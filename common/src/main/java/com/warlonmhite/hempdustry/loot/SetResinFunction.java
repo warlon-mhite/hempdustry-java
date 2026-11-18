@@ -4,6 +4,8 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
 import com.warlonmhite.hempdustry.strain.ResinStep;
+import com.warlonmhite.hempdustry.strain.ResinTexture;
+import com.warlonmhite.hempdustry.strain.Strain;
 import java.util.Optional;
 import java.util.Set;
 import net.minecraft.core.Holder;
@@ -53,7 +55,9 @@ public final class SetResinFunction extends LootItemConditionalFunction {
         if (!(blockEntity instanceof PlantRecordBlockEntity record)) {
             return stack;
         }
-        return ResinStep.stamp(stack, record.resin());
+        ResinTexture texture = Strain.fromBuds(context.getLevel().registryAccess(), stack.getItem())
+                .map(strain -> strain.value().resin().texture()).orElse(ResinTexture.EVEN);
+        return ResinStep.stamp(stack, record.resin(), texture);
     }
 
     /** The function as a loot table builder takes it. */
