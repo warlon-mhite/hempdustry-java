@@ -85,6 +85,7 @@ public final class HempdustryGameTests {
         register("every_coloured_bong_is_a_bong", GlassBongGameTest::everyColouredBongIsABong);
         register("every_packing_row_is_a_real_craft", ViewerGameTest::everyPackingRowIsARealCraft);
         register("every_viewer_note_fits_its_page", ViewerGameTest::everyViewerNoteFitsItsPage);
+        register("every_recipe_of_ours_reaches_a_client", ViewerGameTest::everyRecipeOfOursReachesAClient);
         register("the_shipped_balance_is_the_built_in_one", BalanceGameTest::theShippedBalanceIsTheBuiltInOne);
         register("bong_stands_and_comes_back_whole", BongPlacementGameTest::bongStandsAndComesBackWhole);
         register("bong_is_drawn_not_clicked", BongRipGameTest::bongIsDrawnNotClicked);

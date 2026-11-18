@@ -152,6 +152,18 @@ public class ModRecipes {
         // Scorched hemp is vanilla smelting under a serializer of ours, which Fabric sends a client only
         // when asked: without this a viewer on Fabric shows no furnace row for it at all.
         Services.REGISTRATION.syncRecipes(RecipeType.SMELTING, STAMPED_SMELTING);
+        // Our crafting recipes too. Fabric asks by serializer, and a viewer there opts in only
+        // vanilla's own, so without these the edibles, bhang, hemp milk and every stamped craft (the
+        // hash bars, the leaves, charas) craft but show on no page. Packing and the Stash Jar's
+        // upgrades are sent as NeoForge sends them, with the rest of the crafting type: special
+        // recipes the viewers skip, drawing their rows from ViewerRecipes instead.
+        Services.REGISTRATION.syncRecipes(RecipeType.CRAFTING, INFUSED_SHAPED);
+        Services.REGISTRATION.syncRecipes(RecipeType.CRAFTING, INFUSED_SHAPELESS);
+        Services.REGISTRATION.syncRecipes(RecipeType.CRAFTING, CONTAINER_CARRIED);
+        Services.REGISTRATION.syncRecipes(RecipeType.CRAFTING, STAMPED_SHAPED);
+        Services.REGISTRATION.syncRecipes(RecipeType.CRAFTING, STAMPED_SHAPELESS);
+        Services.REGISTRATION.syncRecipes(RecipeType.CRAFTING, PACKING);
+        Services.REGISTRATION.syncRecipes(RecipeType.CRAFTING, STASH_JAR_UPGRADE);
         PackingRecipe.trackServerRegistries();
         Services.EVENTS.onServerStarted(DecarboxylatingRecipe::reportOverrides);
     }
