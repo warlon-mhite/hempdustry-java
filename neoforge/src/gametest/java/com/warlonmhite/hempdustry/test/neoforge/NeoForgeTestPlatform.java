@@ -7,6 +7,8 @@ import com.warlonmhite.hempdustry.api.AfterSmokeEvent;
 import com.warlonmhite.hempdustry.api.AllowSmokeEvent;
 import com.warlonmhite.hempdustry.test.TestPlatform;
 import net.minecraft.resources.RegistryDataLoader;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.ItemLike;
@@ -16,6 +18,7 @@ import net.minecraft.world.level.block.FireBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.event.level.block.CropGrowEvent;
 import net.neoforged.neoforge.registries.DataPackRegistriesHooks;
 import net.neoforged.neoforge.registries.datamaps.builtin.Compostable;
@@ -65,6 +68,11 @@ public final class NeoForgeTestPlatform implements TestPlatform {
         FireBlock fire = (FireBlock) Blocks.FIRE;
         BlockState state = block.defaultBlockState();
         return new Flammability(fire.getIgniteOdds(state), fire.getBurnOdds(state));
+    }
+
+    @Override
+    public ServerPlayer fakePlayer(ServerLevel level) {
+        return FakePlayerFactory.getMinecraft(level);
     }
 
     @Override

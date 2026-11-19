@@ -8,7 +8,10 @@ import net.fabricmc.fabric.api.event.registry.DynamicRegistries;
 import net.fabricmc.fabric.api.registry.FlammableBlockRegistry;
 import net.fabricmc.fabric.api.registry.FuelRegistry;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.fabric.api.entity.FakePlayer;
 import net.minecraft.resources.RegistryDataLoader;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
@@ -57,6 +60,11 @@ public final class FabricTestPlatform implements TestPlatform {
         // Fabric calls them burn and spread: the odds of catching fire, and of burning away.
         FlammableBlockRegistry.Entry entry = FlammableBlockRegistry.getDefaultInstance().get(block);
         return entry == null ? new Flammability(0, 0) : new Flammability(entry.getBurnChance(), entry.getSpreadChance());
+    }
+
+    @Override
+    public ServerPlayer fakePlayer(ServerLevel level) {
+        return FakePlayer.get(level);
     }
 
     @Override

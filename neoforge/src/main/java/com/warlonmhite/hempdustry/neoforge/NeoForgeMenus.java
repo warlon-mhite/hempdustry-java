@@ -34,15 +34,30 @@ public final class NeoForgeMenus implements Menus {
 
     @Override
     public <D> void open(ServerPlayer player, MenuProvider provider, D data) {
-        if (player.connection.hasChannel(AdvancedOpenScreenPayload.TYPE)) {
+        if (player.isFakePlayer()) {
+            // Another mod's machine clicking with NeoForge's fake player -- a Create deployer. Nobody
+            // is there to see a screen, and NeoForge's fake player opens none; asking its connection
+            // about channels would throw, because there is no network behind it at all.
+            return;
+        }
+        if (canReceiveData(player)) {
             player.openMenu(new WithData<>(provider, data), buffer -> {
             });
         } else {
-            // A connection that never agreed NeoForge's channels -- a game test's mock player, another
-            // mod's fake player -- has no NeoForge client at the far end to build the screen from the
-            // data, and NeoForge refuses to send it. It gets the same menu, the vanilla way.
+            // A connection that never agreed NeoForge's channels -- a game test's mock player, a fake
+            // player of another mod's own making -- has no NeoForge client at the far end to build the
+            // screen from the data, and NeoForge refuses to send it. It gets the same menu, the vanilla way.
             player.openMenu(provider);
         }
+    }
+
+    /**
+     * Whether a NeoForge client is at the other end of {@code player}'s connection. A connection with
+     * no channel is never one: NeoForge reads the answer off the channel and throws without it.
+     */
+    private static boolean canReceiveData(ServerPlayer player) {
+        return player.connection.getConnection().channel() != null
+                && player.connection.hasChannel(AdvancedOpenScreenPayload.TYPE);
     }
 
     @SuppressWarnings("unchecked")

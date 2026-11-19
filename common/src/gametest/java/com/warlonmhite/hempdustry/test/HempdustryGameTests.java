@@ -64,6 +64,7 @@ public final class HempdustryGameTests {
             DataFixerGameTest.class,
             DatapackStrainGameTest.class,
             DefoliationGameTest.class,
+            FakePlayerUseGameTest.class,
             FrozenSurfaceGameTest.class,
             FurnitureGameTest.class,
             GlassBongGameTest.class,
