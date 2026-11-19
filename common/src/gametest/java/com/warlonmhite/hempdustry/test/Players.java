@@ -2,11 +2,14 @@ package com.warlonmhite.hempdustry.test;
 
 import com.mojang.authlib.GameProfile;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.Connection;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -43,14 +46,40 @@ final class Players {
 
     /** As {@link #survival(GameTestHelper)}, joined to {@code level} instead (another dimension). */
     static ServerPlayer survival(GameTestHelper context, ServerLevel level) {
+        return watched(context, level).player();
+    }
+
+    /** A survival player whose packets from the server a test can read back ({@link Watched#sent}). */
+    static Watched watched(GameTestHelper context) {
+        return watched(context, context.getLevel());
+    }
+
+    private static Watched watched(GameTestHelper context, ServerLevel level) {
         CommonListenerCookie cookie = CommonListenerCookie.createInitial(
                 new GameProfile(UUID.randomUUID(), "test-mock-player"), false);
         ServerPlayer player = new ServerPlayer(level.getServer(), level, cookie.gameProfile(), cookie.clientInformation());
         Connection connection = new Connection(PacketFlow.SERVERBOUND);
-        new EmbeddedChannel(connection);
+        EmbeddedChannel channel = new EmbeddedChannel(connection);
         level.getServer().getPlayerList().placeNewPlayer(connection, player, cookie);
         player.setGameMode(GameType.SURVIVAL);
-        return player;
+        return new Watched(player, channel);
+    }
+
+    /**
+     * A test player and the channel under its connection: with no serializer in the pipeline, every
+     * packet the server sends it waits there as the packet object itself.
+     */
+    record Watched(ServerPlayer player, EmbeddedChannel channel) {
+        /** Every packet sent since the last call, oldest first; reading them clears them. */
+        List<Packet<?>> sent() {
+            List<Packet<?>> out = new ArrayList<>();
+            for (Object message = channel.readOutbound(); message != null; message = channel.readOutbound()) {
+                if (message instanceof Packet<?> packet) {
+                    out.add(packet);
+                }
+            }
+            return out;
+        }
     }
 
     /** The server's half of a right-click on the top of {@code pos}: what the interaction manager answers. */
