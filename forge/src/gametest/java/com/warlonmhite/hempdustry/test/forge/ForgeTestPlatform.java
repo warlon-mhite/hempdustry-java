@@ -4,9 +4,11 @@ import net.minecraftforge.registries.DataPackRegistriesHooks;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.ForgeHooks;
+import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraft.world.level.block.ComposterBlock;
+import com.mojang.authlib.GameProfile;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.api.AfterEatEvent;
 import com.warlonmhite.hempdustry.api.AfterInfuseEvent;
@@ -15,6 +17,8 @@ import com.warlonmhite.hempdustry.api.AllowSmokeEvent;
 import com.warlonmhite.hempdustry.test.TestPlatform;
 import com.google.gson.JsonElement;
 import net.minecraft.resources.RegistryDataLoader;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -75,6 +79,11 @@ public final class ForgeTestPlatform implements TestPlatform {
         FireBlock fire = (FireBlock) Blocks.FIRE;
         BlockState state = block.defaultBlockState();
         return new Flammability(fire.getIgniteOdds(state), fire.getBurnOdds(state));
+    }
+
+    @Override
+    public ServerPlayer fakePlayer(ServerLevel level, GameProfile profile) {
+        return FakePlayerFactory.get(level, profile);
     }
 
     @Override

@@ -64,6 +64,7 @@ public final class HempdustryGameTests {
             CropGrowthGameTest.class,
             DatapackStrainGameTest.class,
             DefoliationGameTest.class,
+            FakePlayerUseGameTest.class,
             FrozenSurfaceGameTest.class,
             FurnitureGameTest.class,
             GlassBongGameTest.class,
