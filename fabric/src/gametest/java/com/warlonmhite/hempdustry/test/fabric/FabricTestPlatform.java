@@ -4,11 +4,14 @@ import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.api.HempdustryEvents;
 import com.warlonmhite.hempdustry.test.HempdustryGameTests;
 import com.warlonmhite.hempdustry.test.TestPlatform;
+import net.fabricmc.fabric.api.entity.FakePlayer;
 import net.fabricmc.fabric.api.event.registry.DynamicRegistries;
 import net.fabricmc.fabric.api.registry.FlammableBlockRegistry;
 import net.fabricmc.fabric.impl.recipe.sync.RecipeSyncImpl;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.resources.RegistryDataLoader;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
@@ -58,6 +61,11 @@ public final class FabricTestPlatform implements TestPlatform {
         // What Fabric's recipe sync sends: every recipe of a serializer someone opted in, by anyone
         // (a recipe viewer opts in vanilla's own).
         return RecipeSyncImpl.isSynced(recipe.value().getSerializer());
+    }
+
+    @Override
+    public ServerPlayer fakePlayer(ServerLevel level) {
+        return FakePlayer.get(level);
     }
 
     @Override

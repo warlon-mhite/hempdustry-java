@@ -156,6 +156,7 @@ public final class HempdustryGameTests {
         register("the_garments_take_dye_and_wash_out", HempOutfitGameTest::theGarmentsTakeDyeAndWashOut);
         register("a_full_outfit_eases_the_harsh_smoke", HempOutfitGameTest::aFullOutfitEasesTheHarshSmoke);
         register("the_press_pours_out_of_its_back", HempPressGameTest::thePressPoursOutOfItsBack);
+        register("a_fake_player_can_click_every_machine", FakePlayerUseGameTest::aFakePlayerCanClickEveryMachine);
         register("a_press_behind_another_presses_what_it_pours",
                 HempPressGameTest::aPressBehindAnotherPressesWhatItPours);
         register("no_two_recipes_take_the_same_ingredients",
