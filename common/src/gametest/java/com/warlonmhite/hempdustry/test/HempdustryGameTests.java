@@ -222,6 +222,7 @@ public final class HempdustryGameTests {
                 TallPlantBreakGameTest::aTopAnExplosionReachesTakesTheRootAsTheExplosion);
         register("a_player_breaking_any_block_harvests_the_plant_once",
                 TallPlantBreakGameTest::aPlayerBreakingAnyBlockHarvestsThePlantOnce);
+        register("a_fake_players_smoke_stays_with_it", FakePlayerUseGameTest::aFakePlayersSmokeStaysWithIt);
     }
 
     /** Registers {@code test} as {@code name}, which must have a {@code test_instance} JSON of its own. */

@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test.neoforge;
 
+import com.mojang.authlib.GameProfile;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.api.AfterEatEvent;
 import com.warlonmhite.hempdustry.api.AfterInfuseEvent;
@@ -11,6 +12,8 @@ import com.warlonmhite.hempdustry.test.TestPlatform;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.RegistryDataLoader;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.ItemLike;
@@ -20,6 +23,7 @@ import net.minecraft.world.level.block.FireBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.event.level.block.CropGrowEvent;
 import net.neoforged.neoforge.registries.DataPackRegistriesHooks;
 import net.neoforged.neoforge.registries.datamaps.builtin.Compostable;
@@ -73,6 +77,11 @@ public final class NeoForgeTestPlatform implements TestPlatform {
         Identifier id = BuiltInRegistries.RECIPE_TYPE.getKey(type);
         return id != null && id.getNamespace().equals("minecraft")
                 || ((NeoForgeRegistration) Services.REGISTRATION).sendsRecipes(type);
+    }
+
+    @Override
+    public ServerPlayer fakePlayer(ServerLevel level, GameProfile profile) {
+        return FakePlayerFactory.get(level, profile);
     }
 
     @Override
