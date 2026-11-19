@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
+import com.mojang.authlib.GameProfile;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.api.HempdustryEvents;
 import com.warlonmhite.hempdustry.test.HempdustryGameTests;
@@ -74,6 +75,11 @@ public final class FabricTestPlatform implements TestPlatform {
     @Override
     public ServerPlayer fakePlayer(ServerLevel level) {
         return FakePlayer.get(level);
+    }
+
+    @Override
+    public ServerPlayer fakePlayer(ServerLevel level, GameProfile profile) {
+        return FakePlayer.get(level, profile);
     }
 
     @Override
