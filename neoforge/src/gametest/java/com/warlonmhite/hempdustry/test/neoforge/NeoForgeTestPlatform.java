@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test.neoforge;
 
+import com.mojang.authlib.GameProfile;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.api.AfterEatEvent;
 import com.warlonmhite.hempdustry.api.AfterInfuseEvent;
@@ -81,6 +82,11 @@ public final class NeoForgeTestPlatform implements TestPlatform {
     @Override
     public ServerPlayer fakePlayer(ServerLevel level) {
         return FakePlayerFactory.getMinecraft(level);
+    }
+
+    @Override
+    public ServerPlayer fakePlayer(ServerLevel level, GameProfile profile) {
+        return FakePlayerFactory.get(level, profile);
     }
 
     @Override
