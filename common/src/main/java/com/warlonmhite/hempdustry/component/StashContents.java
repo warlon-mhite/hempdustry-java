@@ -29,7 +29,8 @@ import java.util.function.Predicate;
 
 /**
  * What a Stash Jar holds ({@code hempdustry:stash_contents}): an ordered list of entries, the last one
- * put in first, as a vanilla bundle keeps its stacks.
+ * put in first, as a vanilla bundle keeps its stacks. A jar's room is counted in slots of {@link #SLOT}:
+ * each entry fills whole slots, so mixing strains is possible and costs room.
  *
  * <h2>The jar blends</h2>
  *
@@ -44,7 +45,7 @@ import java.util.function.Predicate;
  * (a name from an anvil, another mod's data) is kept exactly as it is, an entry of its own.
  *
  * <p>Not vanilla's {@code bundle_contents}, because a bundle is measured in weight and holds one stack's
- * worth at most. A jar is measured in items, and how many is the jar's, not the component's: the same
+ * worth at most. A jar is measured in slots of items, and how many is the jar's, not the component's: the same
  * list fits a Stash Jar, a Gilded one or a Diamond one, so an upgrade only changes the item around it.
  *
  * <p>The selected entry is the one the inventory's scroll menu points at. Like the bundle's it is never
@@ -60,6 +61,15 @@ public final class StashContents {
 
     /** No entry selected. */
     public static final int NONE = -1;
+
+    /**
+     * Places in one of a jar's slots: a chest's stack, which buds already stack to. A jar's room is
+     * counted in slots, and an entry takes as many whole slots as its items fill ({@link #slotsOf}), so
+     * one lone bud of a strain holds a slot as one item holds a chest slot. What a slot buys over a chest
+     * is that 64 buds of one strain in any tier, band and resin share it. A capacity is the jar's slots
+     * times this.
+     */
+    public static final int SLOT = 64;
 
     private final List<Entry> entries;
     private final int selected;
@@ -140,6 +150,29 @@ public final class StashContents {
         int onLastRow = stacks % 4;
         int gaps = onLastRow == 0 ? 0 : 4 - onLastRow;
         return Math.min(stacks, available - gaps);
+    }
+
+    /** The slots {@code count} items of one entry fill. */
+    public static int slotsOf(int count) {
+        return Math.ceilDiv(count, SLOT);
+    }
+
+    /** The slots every entry fills together. */
+    public int usedSlots() {
+        return usedSlots(entries);
+    }
+
+    private static int usedSlots(List<Entry> entries) {
+        int used = 0;
+        for (Entry entry : entries) {
+            used += slotsOf(entry.count());
+        }
+        return used;
+    }
+
+    /** How many of a jar of {@code capacity} items' slots no entry fills: the room left for another kind. */
+    public int freeSlots(int capacity) {
+        return Math.max(0, capacity / SLOT - usedSlots());
     }
 
     /** How full a jar of {@code capacity} items is, 0 to 1. */
@@ -385,15 +418,35 @@ public final class StashContents {
         }
 
         /**
-         * Puts as much of {@code stack} in as {@code capacity} leaves room for, shrinking it by what
-         * went in, and returns that many. Refuses anything {@link #storable} refuses. The items blend into
-         * their strain's entry, which then moves to the front as a bundle's stack does, or start one there.
+         * Puts as much of {@code stack} in as a jar of {@code capacity} items has room for ({@link #room}),
+         * shrinking it by what went in, and returns that many. Refuses anything {@link #storable} refuses.
+         * The items blend into their strain's entry, which then moves to the front as a bundle's stack does,
+         * or start one there.
          */
         public int insert(ItemStack stack, int capacity) {
+            return add(stack, Math.min(stack.getCount(), room(stack, capacity)));
+        }
+
+        /**
+         * How many items of {@code stack}'s kind a jar of {@code capacity} items still takes: what is left
+         * of the last slot its entry fills, plus a whole slot for each slot no entry fills. So a strain fills
+         * its own slot before asking for another, and a new kind is refused once every slot is taken, by
+         * hand, hopper and pipe alike. Nothing for what {@link #storable} refuses.
+         */
+        public int room(ItemStack stack, int capacity) {
             if (!storable(stack)) {
                 return 0;
             }
-            return add(stack, Math.min(stack.getCount(), capacity - count));
+            ItemStack key = keyOf(stack);
+            long own = 0;
+            for (Entry entry : entries) {
+                if (ItemStack.isSameItemSameComponents(entry.item(), key)) {
+                    own = (long) slotsOf(entry.count()) * SLOT - entry.count();
+                    break;
+                }
+            }
+            long free = Math.max(0L, (long) (capacity / SLOT) - usedSlots(entries));
+            return (int) Math.min(Integer.MAX_VALUE, own + free * SLOT);
         }
 
         /**

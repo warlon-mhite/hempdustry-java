@@ -1,6 +1,7 @@
 package com.warlonmhite.hempdustry.block;
 
 import com.warlonmhite.hempdustry.block.custom.stash.StashJarBlock;
+import com.warlonmhite.hempdustry.component.StashContents;
 import com.warlonmhite.hempdustry.item.custom.StashJarItem;
 
 import com.warlonmhite.hempdustry.Hempdustry;
@@ -630,14 +631,15 @@ public class ModBlocks {
             new Item.Properties().stacksTo(1));
 
     /**
-     * The Stash Jars: a bundle for buds that stands as a block, three sizes of one jar. 64, 128 and 256
-     * items, the upgrades a ring of gold and then of diamonds around the jar ({@code StashJarUpgradeRecipe}).
+     * The Stash Jars: a bundle for buds that stands as a block, three sizes of one jar. 2, 4 and 8 slots of
+     * 64 ({@code StashContents.SLOT}), the upgrades a ring of gold and then of diamonds around the jar
+     * ({@code StashJarUpgradeRecipe}).
      * Glass: its sound, and as quick to break, but it drops itself with its contents whatever breaks it,
      * the shulker box's rule rather than glass's; a piston breaks it, as it breaks a shulker box.
      */
-    public static final Block STASH_JAR = registerStashJar("stash_jar", 64);
-    public static final Block GILDED_STASH_JAR = registerStashJar("gilded_stash_jar", 128);
-    public static final Block DIAMOND_STASH_JAR = registerStashJar("diamond_stash_jar", 256);
+    public static final Block STASH_JAR = registerStashJar("stash_jar", 2 * StashContents.SLOT);
+    public static final Block GILDED_STASH_JAR = registerStashJar("gilded_stash_jar", 4 * StashContents.SLOT);
+    public static final Block DIAMOND_STASH_JAR = registerStashJar("diamond_stash_jar", 8 * StashContents.SLOT);
 
     private static Block registerStashJar(String name, int capacity) {
         return registerBlockWithItem(name, settings -> new StashJarBlock(settings, capacity),

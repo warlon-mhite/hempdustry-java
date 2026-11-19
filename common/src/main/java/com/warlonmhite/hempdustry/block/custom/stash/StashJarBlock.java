@@ -70,7 +70,10 @@ public class StashJarBlock extends BaseEntityBlock implements SimpleWaterloggedB
         registerDefaultState(defaultBlockState().setValue(StashFill.PROPERTY, StashFill.EMPTY).setValue(BlockStateProperties.WATERLOGGED, false));
     }
 
-    /** Items this jar holds, every item one, whatever its stack size. */
+    /**
+     * Items this jar holds, every item one, whatever its stack size: its slots of
+     * {@link StashContents#SLOT}, each kind inside filling whole slots.
+     */
     public int capacity() {
         return capacity;
     }

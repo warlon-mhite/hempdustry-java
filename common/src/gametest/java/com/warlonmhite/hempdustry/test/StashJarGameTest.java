@@ -65,35 +65,49 @@ import java.util.Map;
  */
 public final class StashJarGameTest {
     private static final Map<Block, Integer> CAPACITY = Map.of(
-            ModBlocks.STASH_JAR, 64, ModBlocks.GILDED_STASH_JAR, 128, ModBlocks.DIAMOND_STASH_JAR, 256);
+            ModBlocks.STASH_JAR, 128, ModBlocks.GILDED_STASH_JAR, 256, ModBlocks.DIAMOND_STASH_JAR, 512);
 
-    /** Each jar holds its capacity in items whatever their kinds, one entry per kind, does not stack, and gives the last kind in back first. */
+    /**
+     * Each jar holds its slots of 64 in items, one strain filling all of them or one kind a slot each,
+     * one entry per kind, does not stack, and gives the last kind in back first.
+     */
     public static void aJarHoldsItsCapacityLastInFirstOut(GameTestHelper context) {
+        List<Item> kinds = List.of(ModItems.INDICA_BUDS, ModItems.SATIVA_BUDS, ModItems.SCHWAG, ModItems.BELDIA_BUDS,
+                ModItems.WARPED_KUSH_BUDS, ModItems.RUDERALIS_BUDS, ModItems.CRIMSON_BUDS, ModItems.ENDER_HAZE_BUDS,
+                ModItems.CHERRY_WINE_BUDS, ModItems.WHITE_WIDOW_BUDS, ModItems.DUD_WEED_BUDS, ModItems.ECHO_OG_BUDS,
+                ModItems.MAUI_WOWIE_BUDS);
         for (Map.Entry<Block, Integer> jar : CAPACITY.entrySet()) {
             Item item = jar.getKey().asItem();
-            context.assertTrue(item instanceof StashJarItem held && held.capacity() == jar.getValue(),
-                    item + " does not hold " + jar.getValue());
+            int capacity = jar.getValue();
+            int slots = capacity / StashContents.SLOT;
+            context.assertTrue(item instanceof StashJarItem held && held.capacity() == capacity,
+                    item + " does not hold " + capacity);
             context.assertTrue(new ItemStack(item).getMaxStackSize() == 1, item + " stacks");
-            StashContents.Mutable stash = StashContents.EMPTY.mutable();
-            int in = 0;
-            for (Item bud : List.of(ModItems.INDICA_BUDS, ModItems.SATIVA_BUDS, ModItems.SCHWAG, ModItems.INDICA_BUDS)) {
-                in += stash.insert(new ItemStack(bud, 64), jar.getValue());
+            // One strain fills every slot.
+            StashContents.Mutable one = StashContents.EMPTY.mutable();
+            int in = one.insert(new ItemStack(ModItems.INDICA_BUDS, capacity + 10), capacity);
+            context.assertTrue(in == capacity && one.toImmutable().size() == 1,
+                    item + " took " + in + " Purple Kush, not its " + capacity);
+            // One kind a slot: as many kinds as slots, and not one more.
+            StashContents.Mutable mixed = StashContents.EMPTY.mutable();
+            for (int i = 0; i < slots; i++) {
+                context.assertTrue(mixed.insert(new ItemStack(kinds.get(i), 64), capacity) == 64,
+                        item + " refused its kind number " + (i + 1) + " of " + slots);
             }
-            in += stash.insert(new ItemStack(ModItems.SATIVA_BUDS, 64), jar.getValue());
-            context.assertTrue(in == Math.min(jar.getValue(), 320) && stash.count() == jar.getValue(),
-                    item + " took " + in + " items, not its " + jar.getValue());
-            context.assertTrue(stash.insert(new ItemStack(ModItems.INDICA_BUDS), jar.getValue()) == 0,
+            context.assertTrue(mixed.count() == capacity && mixed.insert(new ItemStack(kinds.get(slots)), capacity) == 0,
+                    "a full " + item + " took one more kind");
+            context.assertTrue(mixed.insert(new ItemStack(ModItems.INDICA_BUDS), capacity) == 0,
                     "a full " + item + " took one more bud");
-            long kinds = stash.toImmutable().entries().stream().map(entry -> entry.item().getItem()).distinct().count();
-            context.assertTrue(stash.toImmutable().size() == kinds, item + " kept " + stash.toImmutable().size()
-                    + " entries for " + kinds + " kinds");
+            long distinct = mixed.toImmutable().entries().stream().map(entry -> entry.item().getItem()).distinct().count();
+            context.assertTrue(mixed.toImmutable().size() == distinct, item + " kept " + mixed.toImmutable().size()
+                    + " entries for " + distinct + " kinds");
         }
         StashContents.Mutable order = StashContents.EMPTY.mutable();
-        order.insert(new ItemStack(ModItems.INDICA_BUDS, 5), 64);
-        order.insert(new ItemStack(ModItems.SCHWAG, 3), 64);
-        order.insert(new ItemStack(ModItems.SATIVA_BUDS, 2), 64);
+        order.insert(new ItemStack(ModItems.INDICA_BUDS, 5), 512);
+        order.insert(new ItemStack(ModItems.SCHWAG, 3), 512);
+        order.insert(new ItemStack(ModItems.SATIVA_BUDS, 2), 512);
         // A kind already inside joins its entry, which comes to the front.
-        order.insert(new ItemStack(ModItems.SCHWAG, 1), 64);
+        order.insert(new ItemStack(ModItems.SCHWAG, 1), 512);
         List<ItemStack> out = new ArrayList<>();
         for (ItemStack next = order.removeOne(); !next.isEmpty(); next = order.removeOne()) {
             out.add(next);
@@ -102,6 +116,56 @@ public final class StashJarGameTest {
                         && out.get(1).is(ModItems.SATIVA_BUDS) && out.get(2).is(ModItems.INDICA_BUDS),
                 "the jar gave back " + out + ", not the last stack in first");
         context.succeed();
+    }
+
+    /**
+     * Room is counted in slots of 64: a lone bud holds a slot, a strain fills its own slot before asking
+     * for another, a schwag chemotype and a stack kept exact each take slots of their own, and once every
+     * slot holds something a new kind is refused by hand and by hopper, which goes on to its next slot.
+     */
+    public static void aJarCountsItsRoomInSlots(GameTestHelper context) {
+        int stashJar = 2 * StashContents.SLOT;
+        StashContents.Mutable lone = StashContents.EMPTY.mutable();
+        lone.insert(new ItemStack(ModItems.INDICA_BUDS, 1), stashJar);
+        lone.insert(new ItemStack(ModItems.SATIVA_BUDS, 1), stashJar);
+        context.assertTrue(lone.insert(new ItemStack(ModItems.SCHWAG, 1), stashJar) == 0,
+                "a Stash Jar holding one bud each of two strains took a third kind");
+        context.assertTrue(lone.room(new ItemStack(ModItems.INDICA_BUDS), stashJar) == 63,
+                "a strain holding one slot with one bud has room for " + lone.room(new ItemStack(ModItems.INDICA_BUDS), stashJar));
+        context.assertTrue(lone.insert(new ItemStack(ModItems.INDICA_BUDS, 64), stashJar) == 63 && lone.count() == 65,
+                "a strain did not fill its own slot, and only that");
+        context.assertTrue(lone.toImmutable().freeSlots(stashJar) == 0 && lone.toImmutable().usedSlots() == 2,
+                "64 Purple Kush and 1 Lemon Haze fill " + lone.toImmutable().usedSlots() + " slots");
+
+        StashContents.Mutable schwag = StashContents.EMPTY.mutable();
+        schwag.insert(new ItemStack(ModItems.SCHWAG, 1), stashJar);
+        schwag.insert(Chemotype.stamp(new ItemStack(ModItems.SCHWAG, 1), Chemotype.CBD_DOMINANT), stashJar);
+        context.assertTrue(schwag.toImmutable().size() == 2 && schwag.insert(new ItemStack(ModItems.INDICA_BUDS), stashJar) == 0,
+                "schwag of two chemotypes did not take a slot each");
+
+        ItemStack named = new ItemStack(ModItems.INDICA_BUDS, 3);
+        named.set(DataComponents.CUSTOM_NAME, Component.literal("Grandpa's"));
+        StashContents.Mutable exact = StashContents.EMPTY.mutable();
+        exact.insert(named, stashJar);
+        exact.insert(new ItemStack(ModItems.INDICA_BUDS, 3), stashJar);
+        context.assertTrue(exact.toImmutable().size() == 2 && exact.insert(new ItemStack(ModItems.SATIVA_BUDS), stashJar) == 0,
+                "a stack kept exact did not take a slot of its own");
+
+        // A hopper holding a third kind first and a strain already inside second moves the second.
+        ServerLevel level = context.getLevel();
+        BlockPos jarPos = place(context, new BlockPos(2, 2, 2), ModBlocks.STASH_JAR,
+                stash(ModItems.INDICA_BUDS, 1, ModItems.SATIVA_BUDS, 1));
+        context.setBlock(jarPos.above(), Blocks.HOPPER.defaultBlockState().setValue(HopperBlock.FACING, Direction.DOWN));
+        HopperBlockEntity hopper = (HopperBlockEntity) level.getBlockEntity(context.absolutePos(jarPos.above()));
+        hopper.setItem(0, new ItemStack(ModItems.SCHWAG, 2));
+        hopper.setItem(1, new ItemStack(ModItems.SATIVA_BUDS, 2));
+        context.runAfterDelay(40, () -> {
+            StashContents in = ((StashJarBlockEntity) level.getBlockEntity(context.absolutePos(jarPos))).contents();
+            context.assertTrue(in.count() == 4 && in.size() == 2, "a hopper above a jar with no free slot left " + in);
+            context.assertTrue(hopper.getItem(0).is(ModItems.SCHWAG) && hopper.getItem(0).getCount() == 2,
+                    "a hopper put a third kind into a two-slot jar, or lost it: " + hopper.getItem(0));
+            context.succeed();
+        });
     }
 
     /** Only the tag goes in: every bud of a plant and schwag, never a leaf, a stick, a bundle or another jar. */
@@ -323,9 +387,9 @@ public final class StashJarGameTest {
         ServerLevel level = context.getLevel();
         BlockPos pos = context.absolutePos(place(context, new BlockPos(3, 2, 3), ModBlocks.STASH_JAR, StashContents.EMPTY));
         StashJarBlockEntity jar = (StashJarBlockEntity) level.getBlockEntity(pos);
-        jar.insert(new ItemStack(ModItems.INDICA_BUDS, 22));
+        jar.insert(new ItemStack(ModItems.INDICA_BUDS, 44));
         context.assertTrue(level.getBlockState(pos).getValue(StashFill.PROPERTY) == StashFill.MID,
-                "22 buds in a Stash Jar stand as " + level.getBlockState(pos).getValue(StashFill.PROPERTY));
+                "44 buds in a Stash Jar stand as " + level.getBlockState(pos).getValue(StashFill.PROPERTY));
         jar.removeLast();
         context.assertTrue(level.getBlockState(pos).getValue(StashFill.PROPERTY) == StashFill.EMPTY,
                 "an emptied jar still stands as " + level.getBlockState(pos).getValue(StashFill.PROPERTY));
@@ -347,9 +411,9 @@ public final class StashJarGameTest {
         ItemStack high = new ItemStack(ModItems.INDICA_BUDS, 10);
         high.set(ModComponents.POTENCY_BAND, PotencyBand.HIGH);
         StashContents.Mutable mix = StashContents.EMPTY.mutable();
-        mix.insert(new ItemStack(ModItems.INDICA_BUDS, 20), 64);
-        mix.insert(new ItemStack(ModItems.SATIVA_BUDS, 20), 64);
-        mix.insert(high, 64);
+        mix.insert(new ItemStack(ModItems.INDICA_BUDS, 20), Integer.MAX_VALUE);
+        mix.insert(new ItemStack(ModItems.SATIVA_BUDS, 20), Integer.MAX_VALUE);
+        mix.insert(high, Integer.MAX_VALUE);
         StashPieces.Colours colours = mix.toImmutable().pieceColours(64, level.registryAccess());
         context.assertTrue(Arrays.equals(colours.pistils(), new int[] {purple, purple, purple, lemon, lemon}),
                 "30 Purple Kush and 20 Lemon Haze show pistils " + hex(colours.pistils()));
@@ -388,14 +452,21 @@ public final class StashJarGameTest {
                 "a Stash Jar did not stand on the floor");
         StashJarBlockEntity jar = (StashJarBlockEntity) level.getBlockEntity(context.absolutePos(jarPos));
 
-        jar.setContents(stash(ModItems.SATIVA_BUDS, 60));
-        Players.click(context, player, jarPos, new ItemStack(ModItems.INDICA_BUDS, 10));
-        context.assertTrue(jar.contents().count() == 64 && player.getMainHandItem().getCount() == 6,
+        jar.setContents(stash(ModItems.SATIVA_BUDS, 124));
+        Players.click(context, player, jarPos, new ItemStack(ModItems.SATIVA_BUDS, 10));
+        context.assertTrue(jar.contents().count() == 128 && player.getMainHandItem().getCount() == 6,
                 "ten buds clicked into a jar with room for four left " + jar.contents().count() + " inside and "
                         + player.getMainHandItem().getCount() + " in hand");
+        jar.setContents(stash(ModItems.SATIVA_BUDS, 60));
+        Players.click(context, player, jarPos, new ItemStack(ModItems.INDICA_BUDS, 10));
+        Players.click(context, player, jarPos, new ItemStack(ModItems.SCHWAG, 10));
+        context.assertTrue(jar.contents().count() == 70 && player.getMainHandItem().getCount() == 10,
+                "a third kind clicked into a two-slot jar left " + jar.contents().count() + " inside and "
+                        + player.getMainHandItem().getCount() + " in hand");
+        jar.setContents(stash(ModItems.SATIVA_BUDS, 124, ModItems.INDICA_BUDS, 4));
 
         Players.click(context, player, jarPos, new ItemStack(Items.STICK));
-        context.assertTrue(jar.contents().count() == 64 && player.getMainHandItem().is(Items.STICK),
+        context.assertTrue(jar.contents().count() == 128 && player.getMainHandItem().is(Items.STICK),
                 "a click holding a stick took something out of the jar");
         Players.click(context, player, jarPos, new ItemStack(Items.DIRT));
         context.assertTrue(level.getBlockState(context.absolutePos(jarPos.above())).is(Blocks.DIRT),
@@ -610,12 +681,12 @@ public final class StashJarGameTest {
         ItemStack named = bud(4, BudTier.EPIC, PotencyBand.MID);
         named.set(DataComponents.CUSTOM_NAME, Component.literal("Grandma's"));
         StashContents.Mutable exact = StashContents.EMPTY.mutable();
-        exact.insert(named.copy(), 64);
-        exact.insert(bud(4, BudTier.MIDS, PotencyBand.MID), 64);
-        exact.insert(named.copy(), 64);
+        exact.insert(named.copy(), Integer.MAX_VALUE);
+        exact.insert(bud(4, BudTier.MIDS, PotencyBand.MID), Integer.MAX_VALUE);
+        exact.insert(named.copy(), Integer.MAX_VALUE);
         ItemStack namedMids = bud(4, BudTier.MIDS, PotencyBand.MID);
         namedMids.set(DataComponents.CUSTOM_NAME, Component.literal("Grandma's"));
-        exact.insert(namedMids.copy(), 64);
+        exact.insert(namedMids.copy(), Integer.MAX_VALUE);
         StashContents kept = exact.toImmutable();
         ItemStack namedOut = kept.entries().get(1).parts().getFirst();
         ItemStack namedMidsOut = kept.entries().getFirst().parts().getFirst();

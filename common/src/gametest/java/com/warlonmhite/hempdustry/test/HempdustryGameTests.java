@@ -291,6 +291,7 @@ public final class HempdustryGameTests {
         register("the_space_cake_carries_both_tiers", StampedMatterGameTest::theSpaceCakeCarriesBothTiers);
         register("the_ovens_comparator_reads_a_2_1_oven", StampedMatterGameTest::theOvensComparatorReadsA21Oven);
         register("a_jar_holds_its_capacity_last_in_first_out", StashJarGameTest::aJarHoldsItsCapacityLastInFirstOut);
+        register("a_jar_counts_its_room_in_slots", StashJarGameTest::aJarCountsItsRoomInSlots);
         register("a_jar_takes_only_buds_and_schwag", StashJarGameTest::aJarTakesOnlyBudsAndSchwag);
         register("the_upgrade_keeps_the_stash", StashJarGameTest::theUpgradeKeepsTheStash);
         register("a_jar_always_drops_itself_whole", StashJarGameTest::aJarAlwaysDropsItselfWhole);

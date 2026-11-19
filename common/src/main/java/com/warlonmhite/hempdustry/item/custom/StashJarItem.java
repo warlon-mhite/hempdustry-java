@@ -72,7 +72,7 @@ public class StashJarItem extends BlockItem {
         ItemStack other = slot.getItem();
         StashContents.Mutable contents = contentsOf(self).mutable();
         if (action == ClickAction.PRIMARY && !other.isEmpty()) {
-            int room = capacity() - contents.count();
+            int room = contents.room(other, capacity());
             ItemStack taken = StashContents.storable(other) && room > 0
                     ? slot.safeTake(other.getCount(), room, player) : ItemStack.EMPTY;
             if (!taken.isEmpty() && contents.insert(taken, capacity()) > 0) {
