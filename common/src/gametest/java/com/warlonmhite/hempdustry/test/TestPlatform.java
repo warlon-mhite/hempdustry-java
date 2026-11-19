@@ -6,6 +6,8 @@ import net.minecraft.core.Direction;
 import com.warlonmhite.hempdustry.platform.Services;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.RegistryDataLoader;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
@@ -63,6 +65,9 @@ public interface TestPlatform {
      * writes down what each carried. Registered the first time it is asked for, and kept.
      */
     AddonProbe addonProbe();
+
+    /** The loader's fake player in {@code level}: the hand another mod's machine clicks with. */
+    ServerPlayer fakePlayer(ServerLevel level);
 
     /** What the addon events carried, as another mod's listener would have heard it. */
     final class AddonProbe {
