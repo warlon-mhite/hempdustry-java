@@ -162,7 +162,10 @@ public class StashJarBlock extends BaseEntityBlock implements SimpleWaterloggedB
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
+        // The jar's nose is the whole jar's, read before anything leaves it.
+        StashNose nose = StashNose.of(jar.contents());
         ItemStack out = jar.removeLast();
+        TerpenePuff.release((ServerLevel) level, pos, nose, out);
         player.setItemInHand(InteractionHand.MAIN_HAND, out);
         level.playSound(null, pos, SoundEvents.BUNDLE_REMOVE_ONE, SoundSource.BLOCKS, 0.8F,
                 0.8F + level.getRandom().nextFloat() * 0.4F);

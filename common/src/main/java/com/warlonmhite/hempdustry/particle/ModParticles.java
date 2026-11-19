@@ -26,6 +26,23 @@ public class ModParticles {
     public static final ParticleType<ColorParticleOption> TERPENE_VAPOUR = registerColored("terpene_vapour");
     public static final ParticleType<ColorParticleOption> TERPENE_AROMA = registerColored("terpene_aroma");
 
+    /**
+     * A Stash Jar opened by hand: one emitter that plays a whole puff on the client, from a sour reek to
+     * an epic aroma ({@link TerpenePuffOption}). Not always shown: the opener's particle setting decides.
+     */
+    public static final ParticleType<TerpenePuffOption> TERPENE_PUFF = Registry.register(BuiltInRegistries.PARTICLE_TYPE,
+            Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "terpene_puff"), new ParticleType<TerpenePuffOption>(false) {
+                @Override
+                public MapCodec<TerpenePuffOption> codec() {
+                    return TerpenePuffOption.CODEC;
+                }
+
+                @Override
+                public StreamCodec<? super RegistryFriendlyByteBuf, TerpenePuffOption> streamCodec() {
+                    return TerpenePuffOption.STREAM_CODEC;
+                }
+            });
+
     private static SimpleParticleType registerParticle(String name, SimpleParticleType type) {
         return Registry.register(BuiltInRegistries.PARTICLE_TYPE, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name), type);
     }
