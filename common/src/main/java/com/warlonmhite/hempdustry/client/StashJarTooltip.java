@@ -15,6 +15,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -41,6 +42,8 @@ public final class StashJarTooltip implements ClientTooltipComponent {
     private static final Component FULL = Component.translatable("item.minecraft.bundle.full");
     private static final Component EMPTY = Component.translatable("item.minecraft.bundle.empty");
     private static final Component EMPTY_DESCRIPTION = Component.translatable("item.hempdustry.stash_jar.empty.description");
+    private static final Component NO_FREE_SLOT = Component.translatable("item.hempdustry.stash_jar.no_free_slot")
+            .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
 
     private final StashContents contents;
     private final int capacity;
@@ -49,9 +52,14 @@ public final class StashJarTooltip implements ClientTooltipComponent {
     public StashJarTooltip(StashJarItem.StashTooltip tooltip) {
         this.contents = tooltip.contents();
         this.capacity = tooltip.capacity();
-        this.lines = contents.entries().subList(0, contents.shown()).stream()
+        List<Component> lines = new ArrayList<>(contents.entries().subList(0, contents.shown()).stream()
                 .map(entry -> (Component) StashJarItem.entryLine(entry).copy().withStyle(ChatFormatting.GRAY))
-                .toList();
+                .toList());
+        // Room left, but only for what is already inside: every slot holds some kind.
+        if (!contents.isEmpty() && contents.count() < capacity && contents.freeSlots(capacity) == 0) {
+            lines.add(NO_FREE_SLOT);
+        }
+        this.lines = List.copyOf(lines);
     }
 
     @Override
