@@ -173,6 +173,27 @@ public final class RawWritesGameTest {
     }
 
     /**
+     * The same click on a mildewed or sulfured root: the seedling it leaves is a new plant, clean, as one broken
+     * and planted again would be. Kept, a grow room under a click harvest would never be rid of mildew.
+     */
+    public static void aReplantingAgeWrittenOnTheRootLeavesNoMildew(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        for (Block crop : CROPS) {
+            for (Mildew was : List.of(Mildew.MILDEWED, Mildew.SULFURED)) {
+                ground(context, wetFarmland());
+                place(context, crop, root(crop, IndicaCropBlock.MAX_AGE, GrowLight.NATURAL, false, false, false)
+                        .setValue(Mildew.PROPERTY, was));
+                BlockPos at = context.absolutePos(CROP);
+                world.setBlockAndUpdate(at, world.getBlockState(at).setValue(BlockStateProperties.AGE_7, 0));
+                Mildew now = context.getBlockState(CROP).getValue(Mildew.PROPERTY);
+                context.assertTrue(now == Mildew.CLEAN, name(crop) + " " + was.getSerializedName()
+                        + ", set back to age 0 on its root, is still " + now.getSerializedName());
+            }
+        }
+        context.succeed();
+    }
+
+    /**
      * A right-click harvest that replants a ripe crop by setting its age back on the block clicked, keeping
      * every other property. On a block above the root that pays nothing, since the plant's loot is the root's,
      * and must not leave a seedling segment inside a ripe plant.
