@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test.fabric;
 
+import com.mojang.authlib.GameProfile;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.api.HempdustryEvents;
 import com.warlonmhite.hempdustry.test.HempdustryGameTests;
@@ -65,6 +66,11 @@ public final class FabricTestPlatform implements TestPlatform {
     @Override
     public ServerPlayer fakePlayer(ServerLevel level) {
         return FakePlayer.get(level);
+    }
+
+    @Override
+    public ServerPlayer fakePlayer(ServerLevel level, GameProfile profile) {
+        return FakePlayer.get(level, profile);
     }
 
     @Override

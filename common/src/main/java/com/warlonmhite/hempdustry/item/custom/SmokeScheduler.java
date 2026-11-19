@@ -3,6 +3,7 @@ package com.warlonmhite.hempdustry.item.custom;
 import com.warlonmhite.hempdustry.platform.Services;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
@@ -107,17 +108,43 @@ public final class SmokeScheduler {
 
     /** Schedules an exhale puff of {@code particle} for {@code player} in {@code delayTicks} ticks. */
     public static void schedule(Player player, ParticleOptions particle, int delayTicks) {
+        if (!waitsOnTheServer(player)) {
+            if (player.level() instanceof ServerLevel world) {
+                Smoking.spawnExhale(world, player, particle);
+            }
+            return;
+        }
         PENDING.add(new Pending(player.getUUID(), particle, Math.max(1, delayTicks)));
     }
 
     /** Applies {@code effects} to {@code player} in {@code delayTicks} ticks, if they are still alive. */
     public static void scheduleEffects(Player player, List<MobEffectInstance> effects, int delayTicks) {
+        if (!waitsOnTheServer(player)) {
+            effects.forEach(effect -> player.addEffect(new MobEffectInstance(effect)));
+            return;
+        }
         PENDING_EFFECTS.add(new PendingEffects(player.getUUID(), List.copyOf(effects), Math.max(1, delayTicks)));
     }
 
     /** Schedules {@code sound} to play at {@code player}'s position in {@code delayTicks} ticks. */
     public static void scheduleSound(Player player, int delayTicks, SoundEvent sound) {
+        if (!waitsOnTheServer(player)) {
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundSource.PLAYERS, 1f, 1f);
+            return;
+        }
         PENDING_SOUNDS.add(new PendingSound(player.getUUID(), Math.max(1, delayTicks), sound));
+    }
+
+    /**
+     * Whether the server's player list holds this very player under its UUID, so that the UUID
+     * finds them again when the wait is over. Another mod's machine smokes as a fake player, which
+     * is in no list, and some fake players carry their owner's UUID (Create's deployer does): looked
+     * up later, the puff, the sound and the exhale's effects went to the owner, wherever they were.
+     * A player the list does not hold gets them at once, on itself.
+     */
+    private static boolean waitsOnTheServer(Player player) {
+        MinecraftServer server = player.level().getServer();
+        return server != null && server.getPlayerList().getPlayer(player.getUUID()) == player;
     }
 
     private static void tick(MinecraftServer server) {

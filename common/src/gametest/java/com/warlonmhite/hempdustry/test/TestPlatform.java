@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.mojang.authlib.GameProfile;
 import com.warlonmhite.hempdustry.platform.Services;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.RegistryDataLoader;
@@ -64,6 +65,12 @@ public interface TestPlatform {
 
     /** The loader's fake player in {@code level}: the hand another mod's machine clicks with. */
     ServerPlayer fakePlayer(ServerLevel level);
+
+    /**
+     * The loader's fake player in {@code level} under {@code profile}: a machine that borrows its
+     * owner's name and UUID, as Create's deployer does.
+     */
+    ServerPlayer fakePlayer(ServerLevel level, GameProfile profile);
 
     /** What the addon events carried, as another mod's listener would have heard it. */
     final class AddonProbe {
