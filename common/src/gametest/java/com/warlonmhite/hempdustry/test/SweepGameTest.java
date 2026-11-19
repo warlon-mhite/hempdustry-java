@@ -69,6 +69,8 @@ import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
 import net.minecraft.world.item.crafting.SingleItemRecipe;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
+import net.minecraft.world.item.crafting.SmithingRecipe;
+import net.minecraft.world.item.crafting.SmithingRecipeInput;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.Repairable;
@@ -859,6 +861,26 @@ public final class SweepGameTest {
                 for (ViewerRecipes.Upgrade row : ViewerRecipes.stashJarUpgrades(world.registryAccess())) {
                     grids(entry, 3, 3, new ArrayList<>(row.inputs()), everyChoice, samples, findings);
                 }
+            } else if (recipe instanceof SmithingRecipe smithing) {
+                // Template, base and addition, each slot's first choice, and with everyChoice one input per
+                // other item a slot takes.
+                List<List<ItemStack>> parts = List.of(
+                        smithing.templateIngredient().map(SweepGameTest::choices).orElse(List.of(ItemStack.EMPTY)),
+                        choices(smithing.baseIngredient()),
+                        smithing.additionIngredient().map(SweepGameTest::choices).orElse(List.of(ItemStack.EMPTY)));
+                if (parts.stream().anyMatch(List::isEmpty)) {
+                    findings.putIfAbsent(id.toString(), "has an ingredient nothing satisfies");
+                    continue;
+                }
+                samples.add(new Sample(entry, new SmithingRecipeInput(parts.get(0).getFirst(), parts.get(1).getFirst(),
+                        parts.get(2).getFirst())));
+                for (int i = 0; everyChoice && i < 3; i++) {
+                    for (ItemStack other : parts.get(i).subList(1, parts.get(i).size())) {
+                        ItemStack[] three = {parts.get(0).getFirst(), parts.get(1).getFirst(), parts.get(2).getFirst()};
+                        three[i] = other;
+                        samples.add(new Sample(entry, new SmithingRecipeInput(three[0], three[1], three[2])));
+                    }
+                }
             } else if (recipe instanceof SingleItemRecipe || recipe instanceof DecarboxylatingRecipe
                     || recipe instanceof PressingRecipe || recipe instanceof InfusingRecipe) {
                 for (Ingredient ingredient : recipe.placementInfo().ingredients()) {
@@ -908,6 +930,17 @@ public final class SweepGameTest {
     private static RecipeInput stacked(RecipeInput input) {
         if (input instanceof SingleRecipeInput single) {
             return single.item().getMaxStackSize() > 1 ? new SingleRecipeInput(single.item().copyWithCount(2)) : null;
+        }
+        if (input instanceof SmithingRecipeInput smithing) {
+            ItemStack[] three = {smithing.template(), smithing.base(), smithing.addition()};
+            boolean any = false;
+            for (int i = 0; i < 3; i++) {
+                if (!three[i].isEmpty() && three[i].getMaxStackSize() > 1) {
+                    three[i] = three[i].copyWithCount(2);
+                    any = true;
+                }
+            }
+            return any ? new SmithingRecipeInput(three[0], three[1], three[2]) : null;
         }
         CraftingInput grid = (CraftingInput) input;
         boolean any = false;

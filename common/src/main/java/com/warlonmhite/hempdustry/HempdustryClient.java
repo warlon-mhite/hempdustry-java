@@ -94,6 +94,7 @@ public class HempdustryClient {
         client.blockLayer(ModBlocks.STASH_JAR, ChunkSectionLayer.CUTOUT);
         client.blockLayer(ModBlocks.GILDED_STASH_JAR, ChunkSectionLayer.CUTOUT);
         client.blockLayer(ModBlocks.DIAMOND_STASH_JAR, ChunkSectionLayer.CUTOUT);
+        client.blockLayer(ModBlocks.NETHERITE_STASH_JAR, ChunkSectionLayer.CUTOUT);
         // The chains the Grow Lamp hangs from are see-through between the links.
         client.blockLayer(ModBlocks.GROW_LAMP, ChunkSectionLayer.CUTOUT);
         // The compost crumbs over the pot's soil are drawn with see-through pixels.
@@ -255,7 +256,7 @@ public class HempdustryClient {
                 }
             }
             return ARGB.opaque(pistils ? StashPieces.PLAIN_PISTILS : StashPieces.BUD_GREEN);
-        }, ModBlocks.STASH_JAR, ModBlocks.GILDED_STASH_JAR, ModBlocks.DIAMOND_STASH_JAR);
+        }, ModBlocks.STASH_JAR, ModBlocks.GILDED_STASH_JAR, ModBlocks.DIAMOND_STASH_JAR, ModBlocks.NETHERITE_STASH_JAR);
     }
 
     /**

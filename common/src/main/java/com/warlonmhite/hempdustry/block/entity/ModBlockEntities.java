@@ -60,12 +60,12 @@ public class ModBlockEntities {
                     Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "plant_record"),
                     Services.REGISTRATION.blockEntityType(PlantRecordBlockEntity::new, ModCrops.blocks()));
 
-    // A placed Stash Jar's contents, one type for the three jars.
+    // A placed Stash Jar's contents, one type for every jar.
     public static final BlockEntityType<StashJarBlockEntity> STASH_JAR =
             Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE,
                     Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "stash_jar"),
                     Services.REGISTRATION.blockEntityType(StashJarBlockEntity::new,
-                            ModBlocks.STASH_JAR, ModBlocks.GILDED_STASH_JAR, ModBlocks.DIAMOND_STASH_JAR));
+                            ModBlocks.STASH_JARS.toArray(Block[]::new)));
 
     // A Sifting Box's batch: what its levels are made of (see SiftingBoxBlockEntity).
     public static final BlockEntityType<SiftingBoxBlockEntity> SIFTING_BOX =

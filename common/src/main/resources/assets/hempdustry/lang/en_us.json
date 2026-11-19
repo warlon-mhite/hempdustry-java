@@ -426,6 +426,7 @@
   "block.hempdustry.stash_jar": "Stash Jar",
   "block.hempdustry.gilded_stash_jar": "Gilded Stash Jar",
   "block.hempdustry.diamond_stash_jar": "Diamond Stash Jar",
+  "block.hempdustry.netherite_stash_jar": "Netherite Stash Jar",
   "item.hempdustry.stash_jar.empty.description": "Can hold buds and schwag, mixed",
   "item.hempdustry.stash_jar.no_free_slot": "No slot left for another strain",
   "item.hempdustry.stash_jar.entry": "%s ×%s: %s",

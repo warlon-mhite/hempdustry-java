@@ -631,17 +631,31 @@ public class ModBlocks {
             new Item.Properties().stacksTo(1));
 
     /**
-     * The Stash Jars: a bundle for buds that stands as a block, three sizes of one jar. 2, 4 and 8 slots of
-     * 64 ({@code StashContents.SLOT}), the upgrades a ring of gold and then of diamonds around the jar
-     * ({@code StashJarUpgradeRecipe}).
+     * The Stash Jars: a bundle for buds that stands as a block, four sizes of one jar. 2, 4, 8 and 16 slots
+     * of 64 ({@code StashContents.SLOT}), the upgrades a ring of gold and then of diamonds around the jar
+     * ({@code StashJarUpgradeRecipe}), then netherite at the smithing table.
      * Glass: its sound, and as quick to break, but it drops itself with its contents whatever breaks it,
      * the shulker box's rule rather than glass's; a piston breaks it, as it breaks a shulker box.
      */
     public static final Block STASH_JAR = registerStashJar("stash_jar", 2 * StashContents.SLOT);
     public static final Block GILDED_STASH_JAR = registerStashJar("gilded_stash_jar", 4 * StashContents.SLOT);
     public static final Block DIAMOND_STASH_JAR = registerStashJar("diamond_stash_jar", 8 * StashContents.SLOT);
+    /**
+     * The Diamond jar taken to the smithing table, as diamond gear is: 16 slots, and its item survives fire
+     * and lava as netherite gear does. The stash comes along with the smithing recipe itself, which hands the
+     * base's components to the result.
+     */
+    public static final Block NETHERITE_STASH_JAR = registerStashJar("netherite_stash_jar", 16 * StashContents.SLOT,
+            new Item.Properties().stacksTo(1).fireResistant());
+
+    /** Every Stash Jar, smallest first. */
+    public static final List<Block> STASH_JARS = List.of(STASH_JAR, GILDED_STASH_JAR, DIAMOND_STASH_JAR, NETHERITE_STASH_JAR);
 
     private static Block registerStashJar(String name, int capacity) {
+        return registerStashJar(name, capacity, new Item.Properties().stacksTo(1));
+    }
+
+    private static Block registerStashJar(String name, int capacity, Item.Properties item) {
         return registerBlockWithItem(name, settings -> new StashJarBlock(settings, capacity),
                 BlockBehaviour.Properties.of()
                         .strength(0.3F)
@@ -649,7 +663,7 @@ public class ModBlocks {
                         .noOcclusion()
                         .pushReaction(PushReaction.DESTROY),
                 StashJarItem::new,
-                new Item.Properties().stacksTo(1));
+                item);
     }
 
     /**

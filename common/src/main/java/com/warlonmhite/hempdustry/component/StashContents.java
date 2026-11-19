@@ -46,7 +46,7 @@ import java.util.function.Predicate;
  *
  * <p>Not vanilla's {@code bundle_contents}, because a bundle is measured in weight and holds one stack's
  * worth at most. A jar is measured in slots of items, and how many is the jar's, not the component's: the same
- * list fits a Stash Jar, a Gilded one or a Diamond one, so an upgrade only changes the item around it.
+ * list fits every jar, Stash to Netherite, so an upgrade only changes the item around it.
  *
  * <p>The selected entry is the one the inventory's scroll menu points at. Like the bundle's it is never
  * saved and plays no part in equality, so selecting does not make two jars different.

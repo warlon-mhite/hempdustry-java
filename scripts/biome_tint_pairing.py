@@ -34,6 +34,7 @@ PARTLY_TINTED_ON_PURPOSE = {
     "stash_jar": "an empty Stash Jar shows no stash pieces, its only tinted faces",
     "gilded_stash_jar": "an empty Stash Jar shows no stash pieces, its only tinted faces",
     "diamond_stash_jar": "an empty Stash Jar shows no stash pieces, its only tinted faces",
+    "netherite_stash_jar": "an empty Stash Jar shows no stash pieces, its only tinted faces",
 }
 
 
