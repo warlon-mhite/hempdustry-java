@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "#minecraft:netherite_tool_materials",
+  "base": "hempdustry:diamond_stash_jar",
+  "result": {
+    "id": "hempdustry:netherite_stash_jar"
+  },
+  "template": "minecraft:netherite_upgrade_smithing_template"
+}

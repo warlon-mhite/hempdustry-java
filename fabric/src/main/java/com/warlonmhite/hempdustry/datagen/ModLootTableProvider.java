@@ -250,7 +250,7 @@ public class ModLootTableProvider extends FabricBlockLootSubProvider {
         // A Stash Jar drops itself with everything inside, whatever broke it, an explosion and a piston
         // included: the shulker box's table, with no explosion condition, so a stash is never lost.
         // Every component the block entity holds comes back, the contents and an anvil name.
-        for (Block jar : new Block[] {ModBlocks.STASH_JAR, ModBlocks.GILDED_STASH_JAR, ModBlocks.DIAMOND_STASH_JAR}) {
+        for (Block jar : ModBlocks.STASH_JARS) {
             add(jar, LootTable.lootTable().withPool(LootPool.lootPool()
                     .setRolls(ContextIntProviders.exactly(1))
                     .add(LootItem.lootTableItem(jar.asItem())

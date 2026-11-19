@@ -428,6 +428,7 @@
   "block.hempdustry.stash_jar": "Bocal à beuh",
   "block.hempdustry.gilded_stash_jar": "Bocal à beuh doré",
   "block.hempdustry.diamond_stash_jar": "Bocal à beuh en diamant",
+  "block.hempdustry.netherite_stash_jar": "Bocal à beuh en netherite",
   "item.hempdustry.stash_jar.empty.description": "Peut contenir des fleurs et de la Mauvaise Herbe, mélangées",
   "item.hempdustry.stash_jar.no_free_slot": "Plus de place pour une autre variété",
   "item.hempdustry.stash_jar.entry": "%s ×%s : %s",

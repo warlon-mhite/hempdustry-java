@@ -42,6 +42,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SmithingRecipeInput;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -67,17 +68,29 @@ import java.util.Map;
  */
 public final class StashJarGameTest {
     private static final Map<Block, Integer> CAPACITY = Map.of(
-            ModBlocks.STASH_JAR, 128, ModBlocks.GILDED_STASH_JAR, 256, ModBlocks.DIAMOND_STASH_JAR, 512);
+            ModBlocks.STASH_JAR, 128, ModBlocks.GILDED_STASH_JAR, 256, ModBlocks.DIAMOND_STASH_JAR, 512,
+            ModBlocks.NETHERITE_STASH_JAR, 1024);
 
     /**
      * Each jar holds its slots of 64 in items, one strain filling all of them or one kind a slot each,
      * one entry per kind, does not stack, and gives the last kind in back first.
      */
     public static void aJarHoldsItsCapacityLastInFirstOut(GameTestHelper context) {
-        List<Item> kinds = List.of(ModItems.INDICA_BUDS, ModItems.SATIVA_BUDS, ModItems.SCHWAG, ModItems.BELDIA_BUDS,
+        // Seventeen kinds, one more than the Netherite jar's slots: every bud, schwag of two chemotypes, and
+        // three stacks kept exact by a name.
+        List<ItemStack> kinds = new ArrayList<>();
+        for (Item bud : List.of(ModItems.INDICA_BUDS, ModItems.SATIVA_BUDS, ModItems.SCHWAG, ModItems.BELDIA_BUDS,
                 ModItems.WARPED_KUSH_BUDS, ModItems.RUDERALIS_BUDS, ModItems.CRIMSON_BUDS, ModItems.ENDER_HAZE_BUDS,
                 ModItems.CHERRY_WINE_BUDS, ModItems.WHITE_WIDOW_BUDS, ModItems.DUD_WEED_BUDS, ModItems.ECHO_OG_BUDS,
-                ModItems.MAUI_WOWIE_BUDS);
+                ModItems.MAUI_WOWIE_BUDS)) {
+            kinds.add(new ItemStack(bud));
+        }
+        kinds.add(Chemotype.stamp(new ItemStack(ModItems.SCHWAG), Chemotype.CBD_DOMINANT));
+        for (String name : List.of("Ma's", "Pa's", "Nan's")) {
+            ItemStack named = new ItemStack(ModItems.INDICA_BUDS);
+            named.set(DataComponents.CUSTOM_NAME, Component.literal(name));
+            kinds.add(named);
+        }
         for (Map.Entry<Block, Integer> jar : CAPACITY.entrySet()) {
             Item item = jar.getKey().asItem();
             int capacity = jar.getValue();
@@ -93,16 +106,15 @@ public final class StashJarGameTest {
             // One kind a slot: as many kinds as slots, and not one more.
             StashContents.Mutable mixed = StashContents.EMPTY.mutable();
             for (int i = 0; i < slots; i++) {
-                context.assertTrue(mixed.insert(new ItemStack(kinds.get(i), 64), capacity) == 64,
+                context.assertTrue(mixed.insert(kinds.get(i).copyWithCount(64), capacity) == 64,
                         item + " refused its kind number " + (i + 1) + " of " + slots);
             }
-            context.assertTrue(mixed.count() == capacity && mixed.insert(new ItemStack(kinds.get(slots)), capacity) == 0,
+            context.assertTrue(mixed.count() == capacity && mixed.insert(kinds.get(slots).copy(), capacity) == 0,
                     "a full " + item + " took one more kind");
             context.assertTrue(mixed.insert(new ItemStack(ModItems.INDICA_BUDS), capacity) == 0,
                     "a full " + item + " took one more bud");
-            long distinct = mixed.toImmutable().entries().stream().map(entry -> entry.item().typeHolder().value()).distinct().count();
-            context.assertTrue(mixed.toImmutable().size() == distinct, item + " kept " + mixed.toImmutable().size()
-                    + " entries for " + distinct + " kinds");
+            context.assertTrue(mixed.toImmutable().size() == slots, item + " kept " + mixed.toImmutable().size()
+                    + " entries for " + slots + " kinds");
         }
         StashContents.Mutable order = StashContents.EMPTY.mutable();
         order.insert(new ItemStack(ModItems.INDICA_BUDS, 5), 512);
@@ -209,7 +221,28 @@ public final class StashJarGameTest {
         List<ItemStack> gap = ring(Items.GOLD_INGOT, jar);
         gap.set(0, Items.IRON_INGOT.getDefaultInstance());
         context.assertTrue(craft(context, gap).isEmpty(), "seven gold and an iron ingot made something");
+
+        // Then the smithing table, as diamond gear goes: the stash and the name come along.
+        ItemStack netherite = smith(context, diamond, Items.NETHERITE_INGOT);
+        context.assertTrue(netherite.is(ModBlocks.NETHERITE_STASH_JAR.asItem())
+                        && netherite.getComponentsPatch().equals(diamond.getComponentsPatch()),
+                "a Diamond jar smithed with netherite made " + netherite + " " + netherite.getComponentsPatch());
+        context.assertTrue(smith(context, gilded, Items.NETHERITE_INGOT).isEmpty(), "a Gilded jar took netherite");
+        context.assertTrue(smith(context, diamond, Items.DIAMOND).isEmpty(), "a Diamond jar smithed with a diamond made something");
+        // Its item survives fire and lava as netherite gear does; the others burn like a bundle.
+        ItemEntity dropped = new ItemEntity(level, 0, 0, 0, netherite);
+        context.assertTrue(dropped.fireImmune(), "a dropped Netherite Stash Jar burns");
+        context.assertTrue(!new ItemEntity(level, 0, 0, 0, diamond).fireImmune(), "a dropped Diamond Stash Jar is fireproof");
         context.succeed();
+    }
+
+    private static ItemStack smith(GameTestHelper context, ItemStack base, Item addition) {
+        ServerLevel level = context.getLevel();
+        SmithingRecipeInput input = new SmithingRecipeInput(new ItemStack(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE),
+                base.copy(), new ItemStack(addition));
+        return level.recipeAccess().getRecipeFor(RecipeType.SMITHING, input, level)
+                .map(holder -> holder.value().assemble(input))
+                .orElse(ItemStack.EMPTY);
     }
 
     /** By hand, by explosion and by piston a jar drops itself with everything inside; creative keeps the shulker box's rule. */

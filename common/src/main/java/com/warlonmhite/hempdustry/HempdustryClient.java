@@ -237,7 +237,8 @@ public class HempdustryClient {
                 }
             });
         }
-        client.blockTint(pieces, ModBlocks.STASH_JAR, ModBlocks.GILDED_STASH_JAR, ModBlocks.DIAMOND_STASH_JAR);
+        client.blockTint(pieces, ModBlocks.STASH_JAR, ModBlocks.GILDED_STASH_JAR, ModBlocks.DIAMOND_STASH_JAR,
+                ModBlocks.NETHERITE_STASH_JAR);
     }
 
     /**

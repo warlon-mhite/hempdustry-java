@@ -39,6 +39,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.recipes.CustomCraftingRecipeBuilder;
 import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.data.recipes.SmithingTransformRecipeBuilder;
 import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
@@ -1006,6 +1007,13 @@ public class ModRecipeProvider extends FabricRecipeProvider {
         // One size up with its stash kept: a ring of eight gold ingots, then of diamonds around the
         // Gilded jar. Special, because the result carries the jar's contents (StashJarUpgradeRecipe).
         SpecialRecipeBuilder.special(StashJarUpgradeRecipe::new).save(output, id("stash_jar_upgrade"));
+        // Then netherite, the way diamond gear goes: vanilla's own smithing recipe, which hands the Diamond
+        // jar's components (its stash, a name) to the result, so the recipe book shows it like any other.
+        SmithingTransformRecipeBuilder.smithing(Ingredient.of(Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE),
+                        Ingredient.of(ModBlocks.DIAMOND_STASH_JAR), tag(ItemTags.NETHERITE_TOOL_MATERIALS),
+                        RecipeCategory.DECORATIONS, ModBlocks.NETHERITE_STASH_JAR.asItem())
+                .unlocks("has_netherite_ingot", has(ItemTags.NETHERITE_TOOL_MATERIALS))
+                .save(output, id("netherite_stash_jar_smithing"));
 
         // ---------------------------------------------------------------------
         // Hemp fiber armor set

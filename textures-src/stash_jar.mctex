@@ -2,7 +2,7 @@
 # and the placed jar's glass, stash and pistils. The pieces are grey on purpose: each body is
 # tinted bud green (schwag brown) and its pistils its strain's colour, a multiply, as vanilla
 # tints grass. Glass blues from vanilla's glass and glass
-# bottle, the lid from hemp_planks, the bands from vanilla's gold ingot and diamond.
+# bottle, the lid from hemp_planks, the bands from vanilla's gold ingot, diamond and netherite ingot.
 
 @palette default
 . = none
@@ -31,6 +31,12 @@ Q = 1C919A
 R = 20C5B5
 S = 4AEDD9
 T = D5FFF6
+# netherite trim, from vanilla's netherite ingot and block
+N = 271C1D
+U = 3C3232
+V = 4D494D
+W = 5A575A
+X = 737173
 # stash greys, multiplied by the strain's colour
 w = 7E7E7E
 x = BDBDBD
@@ -199,6 +205,25 @@ z = FFFFFF
 ..a........b.a..
 ..a.......b..a..
 ...PRSSRRRQQP...
+................
+
+# Netherite: the diamond jar's three bands in netherite, the foot two rows deep (heavier).
+@texture item/netherite_stash_jar_front 16x16 type=item
+................
+....o555555o....
+....NXWWWVUN....
+....o122221o....
+.....a....a.....
+...NWXWVVVVUN...
+..a.ed......ba..
+..ad.........a..
+..ad.........a..
+..a..........a..
+..a..........a..
+..a.........ba..
+..a........b.a..
+..NVWXWVVVVVUN..
+...NUVVUUUUUN...
 ................
 
 @texture block/stash_jar_glass 16x16 type=block
