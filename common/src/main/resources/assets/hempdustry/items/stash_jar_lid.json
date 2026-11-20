@@ -1,0 +1,10 @@
+{
+  "_comment": [
+    "Not an item. StashJarLidRenderer draws the Stash Jar lid through the item pipeline so it can lift when",
+    "the jar is opened; a client item definition is the one place vanilla looks a model up by id alone."
+  ],
+  "model": {
+    "type": "minecraft:model",
+    "model": "hempdustry:block/stash_jar_lid"
+  }
+}

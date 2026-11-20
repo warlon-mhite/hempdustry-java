@@ -37,8 +37,9 @@ SOURCES = [LAYOUT.resources, LAYOUT.generated]
 LANG = LAYOUT.resources / "assets/hempdustry/lang/en_us.json"
 
 # Client item definitions with no item behind them: the press renderer draws its platen and screw
-# through them, and nothing ever shows their name.
-UNNAMED = {"hemp_press_platen", "hemp_press_screw"}
+# through them, the Stash Jar's lid renderer its three lids, and nothing ever shows their name.
+UNNAMED = {"hemp_press_platen", "hemp_press_screw",
+           "stash_jar_lid", "diamond_stash_jar_lid", "netherite_stash_jar_lid"}
 
 
 def ids(folder):

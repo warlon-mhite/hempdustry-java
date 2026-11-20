@@ -326,6 +326,7 @@ public final class HempdustryGameTests {
         register("a_jar_blends_each_strain_honestly", StashJarGameTest::aJarBlendsEachStrainHonestly);
         register("a_jars_nose_is_the_whole_jar", StashPuffGameTest::aJarsNoseIsTheWholeJar);
         register("an_opened_jar_puffs_for_everyone_near", StashPuffGameTest::anOpenedJarPuffsForEveryoneNear);
+        register("a_hand_opening_a_jar_lifts_its_lid", StashPuffGameTest::aHandOpeningAJarLiftsItsLid);
         register("the_tier_table_is_vanillas_luck_grammar", TierGameTest::theTierTableIsVanillasLuckGrammar);
         register("a_plant_rolls_its_gene_and_knows_its_ceiling", TierGameTest::aPlantRollsItsGeneAndKnowsItsCeiling);
         register("grow_luck_adds_up", TierGameTest::growLuckAddsUp);

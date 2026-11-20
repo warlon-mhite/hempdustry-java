@@ -44,7 +44,8 @@ import org.jetbrains.annotations.Nullable;
  * when the block below goes, so a fire or an enderman under it never drops it into harm's way. It drops
  * itself with everything inside, as a shulker box does (the loot table copies the contents back onto
  * the item). No menu: a storable item clicked on it goes in, as many as fit; an empty hand takes out
- * the last stack put in; anything else in hand is that item's own use.
+ * the last stack put in, letting the jar's smell out ({@link TerpenePuff}); anything else in hand is that item's
+ * own use. A hand opening the jar, either way, lifts its lid for everyone near (a block event, as a chest's).
  *
  * <p>One block per tier, the capacity its own, so the item a jar drops is the jar it was.
  *
@@ -131,6 +132,8 @@ public class StashJarBlock extends BaseEntityBlock implements SimpleWaterloggedB
         // Creative takes no items out of the hand, as with any block it fills.
         ItemStack moving = player.hasInfiniteMaterials() ? stack.copy() : stack;
         if (jar.insert(moving) > 0) {
+            level.blockEvent(pos, this, StashJarBlockEntity.LID_EVENT,
+                    StashJarBlockEntity.lidMotion(StashJarBlockEntity.INSERTED, toward(player, pos)));
             level.playSound(null, pos, SoundEvents.BUNDLE_INSERT, SoundSource.BLOCKS, 0.8F,
                     0.8F + level.getRandom().nextFloat() * 0.4F);
             level.gameEvent(player, GameEvent.BLOCK_CHANGE, pos);
@@ -156,11 +159,18 @@ public class StashJarBlock extends BaseEntityBlock implements SimpleWaterloggedB
         StashNose nose = StashNose.of(jar.contents());
         ItemStack out = jar.removeLast();
         TerpenePuff.release((ServerLevel) level, pos, nose, out);
+        level.blockEvent(pos, this, StashJarBlockEntity.LID_EVENT,
+                StashJarBlockEntity.lidMotion(nose.ordinal(), toward(player, pos)));
         player.setItemInHand(InteractionHand.MAIN_HAND, out);
         level.playSound(null, pos, SoundEvents.BUNDLE_REMOVE_ONE, SoundSource.BLOCKS, 0.8F,
                 0.8F + level.getRandom().nextFloat() * 0.4F);
         level.gameEvent(player, GameEvent.BLOCK_CHANGE, pos);
         return InteractionResult.SUCCESS;
+    }
+
+    /** The side of the jar at {@code pos} that {@code player} stands on, so the lid lifts toward the opener. */
+    private static Direction toward(Player player, BlockPos pos) {
+        return Direction.getApproximateNearest(player.getX() - (pos.getX() + 0.5), 0.0, player.getZ() - (pos.getZ() + 0.5));
     }
 
     /**
