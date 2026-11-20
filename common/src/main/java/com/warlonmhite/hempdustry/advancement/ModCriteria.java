@@ -3,6 +3,7 @@ package com.warlonmhite.hempdustry.advancement;
 import com.warlonmhite.hempdustry.Hempdustry;
 import net.minecraft.advancements.triggers.PlayerTrigger;
 import net.minecraft.core.Registry;
+import net.minecraft.core.component.predicates.DataComponentPredicate;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 
@@ -37,6 +38,15 @@ public class ModCriteria {
             BuiltInRegistries.TRIGGER_TYPES,
             Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "hush_avoided_vibration"),
             new PlayerTrigger());
+
+    /**
+     * What a Stash Jar holds, as an item predicate reads it: vanilla's {@code bundle_contents} predicate in the
+     * jar's terms ({@link StashContentsPredicate}). Apothecary asks it for a jar holding each strain's buds.
+     */
+    public static final DataComponentPredicate.Type<StashContentsPredicate> STASH_CONTENTS = Registry.register(
+            BuiltInRegistries.DATA_COMPONENT_PREDICATE_TYPE,
+            Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "stash_contents"),
+            new DataComponentPredicate.ConcreteType<>(StashContentsPredicate.CODEC));
 
     public static void registerCriteria() {
         Hempdustry.LOGGER.info("Registering Advancement Criteria for " + Hempdustry.MOD_ID);

@@ -1,0 +1,32 @@
+{
+  "parent": "hempdustry:cherry_wine_strain",
+  "criteria": {
+    "has_white_widow_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": "hempdustry:white_widow_buds"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.hempdustry.white_widow_strain.description"
+    },
+    "icon": {
+      "id": "hempdustry:white_widow_buds"
+    },
+    "title": {
+      "translate": "advancements.hempdustry.white_widow_strain.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_white_widow_buds"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

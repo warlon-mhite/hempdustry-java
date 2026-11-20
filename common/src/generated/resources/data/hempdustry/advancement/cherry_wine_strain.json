@@ -1,0 +1,32 @@
+{
+  "parent": "hempdustry:strain_gauge",
+  "criteria": {
+    "has_cherry_wine_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": "hempdustry:cherry_wine_buds"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.hempdustry.cherry_wine_strain.description"
+    },
+    "icon": {
+      "id": "hempdustry:cherry_wine_buds"
+    },
+    "title": {
+      "translate": "advancements.hempdustry.cherry_wine_strain.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_cherry_wine_buds"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

@@ -1,5 +1,5 @@
 {
-  "parent": "hempdustry:hempdustry",
+  "parent": "hempdustry:indica_strain",
   "criteria": {
     "has_sativa_buds": {
       "conditions": {

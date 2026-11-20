@@ -1,0 +1,32 @@
+{
+  "parent": "hempdustry:white_widow_strain",
+  "criteria": {
+    "has_maui_wowie_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": "hempdustry:maui_wowie_buds"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.hempdustry.maui_wowie_strain.description"
+    },
+    "icon": {
+      "id": "hempdustry:maui_wowie_buds"
+    },
+    "title": {
+      "translate": "advancements.hempdustry.maui_wowie_strain.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_maui_wowie_buds"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

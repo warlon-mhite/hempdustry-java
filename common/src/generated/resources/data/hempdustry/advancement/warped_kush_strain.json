@@ -1,0 +1,32 @@
+{
+  "parent": "hempdustry:strain_gauge",
+  "criteria": {
+    "has_warped_kush_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": "hempdustry:warped_kush_buds"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.hempdustry.warped_kush_strain.description"
+    },
+    "icon": {
+      "id": "hempdustry:warped_kush_buds"
+    },
+    "title": {
+      "translate": "advancements.hempdustry.warped_kush_strain.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_warped_kush_buds"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

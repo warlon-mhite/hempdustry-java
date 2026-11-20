@@ -1,0 +1,32 @@
+{
+  "parent": "hempdustry:warped_kush_strain",
+  "criteria": {
+    "has_crimson_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": "hempdustry:crimson_buds"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.hempdustry.crimson_strain.description"
+    },
+    "icon": {
+      "id": "hempdustry:crimson_buds"
+    },
+    "title": {
+      "translate": "advancements.hempdustry.crimson_strain.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_crimson_buds"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
