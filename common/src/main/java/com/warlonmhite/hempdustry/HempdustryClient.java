@@ -30,6 +30,7 @@ import com.warlonmhite.hempdustry.block.entity.ModBlockEntities;
 import com.warlonmhite.hempdustry.client.render.HempBoatEntityRenderer;
 import com.warlonmhite.hempdustry.client.render.HempBedBlockEntityRenderer;
 import com.warlonmhite.hempdustry.client.render.HempPressBlockEntityRenderer;
+import com.warlonmhite.hempdustry.client.render.StashJarLidRenderer;
 import com.warlonmhite.hempdustry.client.render.ModEntityModelLayers;
 import com.warlonmhite.hempdustry.entity.ModEntities;
 import com.warlonmhite.hempdustry.particle.ModParticles;
@@ -125,6 +126,8 @@ public class HempdustryClient {
         client.blockEntityRenderer(ModBlockEntities.HEMP_PRESS, HempPressBlockEntityRenderer::new);
         // A bed has no block model: its block entity draws it, like every vanilla bed.
         client.blockEntityRenderer(ModBlockEntities.HEMP_BED, HempBedBlockEntityRenderer::new);
+        // A Stash Jar's lid lifts when a hand opens the jar, so a renderer draws it rather than the block model.
+        client.blockEntityRenderer(ModBlockEntities.STASH_JAR, StashJarLidRenderer::new);
 
         registerItemModelHooks(client);
         registerBlockColors(client);

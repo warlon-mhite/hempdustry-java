@@ -7,6 +7,7 @@ import com.warlonmhite.hempdustry.block.entity.ModBlockEntities;
 import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.component.StashContents;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.core.component.DataComponentMap;
@@ -56,6 +57,17 @@ public class StashJarBlockEntity extends BlockEntity {
     // Each handler is a snapshot participant of its own: a pipe that looked the jar up twice in one
     // transaction would hold two over the same contents, and a rollback could restore the wrong one.
     private Object transferHandler;
+    // On the client only: when a hand last opened this jar (game time) and how, for the lid's renderer.
+    private long lidOpenedAt = Long.MIN_VALUE;
+    private int lidMotion;
+
+    /**
+     * The block event a hand opening the jar sends, so every player near enough sees the lid lift
+     * (vanilla's 64 blocks, as a chest's lid). Its value is {@link #lidMotion(StashNose, Direction)}.
+     */
+    public static final int LID_EVENT = 1;
+    /** The lid's motion when buds go in rather than out: a quick lift, no smell to let out. */
+    public static final int INSERTED = 7;
 
     public StashJarBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.STASH_JAR, pos, state);
@@ -234,6 +246,38 @@ public class StashJarBlockEntity extends BlockEntity {
     public void removeComponentsFromTag(ValueOutput view) {
         super.removeComponentsFromTag(view);
         view.discard(CONTENTS);
+    }
+
+    /**
+     * The block event's value for a hand opening the jar from {@code toward} (the side the opener stands on):
+     * the motion in the low bits (a {@link StashNose} ordinal, or {@link #INSERTED}), the side above them.
+     */
+    public static int lidMotion(int motion, Direction toward) {
+        return motion | toward.get2DDataValue() << 3;
+    }
+
+    @Override
+    public boolean triggerEvent(int id, int param) {
+        if (id == LID_EVENT) {
+            // The server answers yes so the event goes out; the client keeps it for the renderer.
+            if (level != null && level.isClientSide()) {
+                lidOpenedAt = level.getGameTime();
+                lidMotion = param;
+            }
+            return true;
+        }
+        return super.triggerEvent(id, param);
+    }
+
+    /** Ticks since a hand last opened this jar, on the client, or a negative number if none ever did. */
+    public float lidTicks(float partialTick) {
+        return level == null || lidOpenedAt == Long.MIN_VALUE ? -1.0F
+                : (float) (level.getGameTime() - lidOpenedAt) + partialTick;
+    }
+
+    /** How the lid last moved: the event's value ({@link #lidMotion(int, Direction)}). */
+    public int lidMotion() {
+        return lidMotion;
     }
 
     /** A jar drops itself with its contents (the loot table); nothing spills. */
