@@ -49,6 +49,13 @@ repositories {
 		name = 'architectury'            // REI's other transitive dep, and where me.shedaniel.math lives
 		url = 'https://maven.architectury.dev/'
 	}
+	// The animation mods whose style the player animations take, each through its own API.
+	// Compile-only, by Modrinth version id (each loader's build of a mod shares one version number).
+	maven {
+		name = 'Modrinth'
+		url = 'https://api.modrinth.com/maven'
+		content { includeGroup('maven.modrinth') }
+	}
 	mavenCentral()
 }
 

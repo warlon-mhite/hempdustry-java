@@ -109,4 +109,26 @@ final class Players {
     static boolean breakAs(GameTestHelper context, ServerPlayer player, BlockPos pos) {
         return player.gameMode.destroyBlock(context.absolutePos(pos));
     }
+
+    /**
+     * A hit as a player takes one: the click, then the hold to the end of the draw, finished the way
+     * {@code LivingEntity#completeUsingItem} finishes it. Every smokeable draws, so a test that only
+     * clicked would leave the player mid-draw with nothing smoked. A click that started no draw (a
+     * refusal, a light put out under water) is returned as it was.
+     */
+    static InteractionResult smoke(ServerPlayer player, InteractionHand hand) {
+        InteractionResult result = player.gameMode.useItem(player, player.level(), player.getItemInHand(hand), hand);
+        finishDraw(player);
+        return result;
+    }
+
+    /** The end of the draw {@code player} is holding, if any: the hit, then letting go. */
+    static void finishDraw(ServerPlayer player) {
+        if (player.isUsingItem()) {
+            InteractionHand hand = player.getUsedItemHand();
+            ItemStack after = player.getUseItem().finishUsingItem(player.level(), player);
+            player.stopUsingItem();
+            player.setItemInHand(hand, after);
+        }
+    }
 }

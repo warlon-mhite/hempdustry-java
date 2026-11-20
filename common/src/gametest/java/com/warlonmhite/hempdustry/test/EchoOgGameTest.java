@@ -438,7 +438,7 @@ public final class EchoOgGameTest {
         pipe.set(ModComponents.CHARGES, DeviceType.PIPE.builtInBowl().hits());
         smoker.setItemInHand(InteractionHand.MAIN_HAND, pipe);
         smoker.getCooldowns().removeCooldown(BuiltInRegistries.ITEM.getKey(ModItems.WOODEN_PIPE));
-        smoker.gameMode.useItem(smoker, world, pipe, InteractionHand.MAIN_HAND);
+        Players.smoke(smoker, InteractionHand.MAIN_HAND);
         MobEffectInstance hush = smoker.getEffect(ModEffects.HUSH);
         context.assertTrue(hush != null && hush.getDuration() == length, "the hit did not give " + length + " ticks of Hush: " + hush);
         context.assertTrue(!smoker.hasEffect(MobEffects.HUNGER), "an Echo OG pipe gave Hunger");

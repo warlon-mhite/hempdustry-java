@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.neoforge.client;
 
+import com.warlonmhite.hempdustry.client.anim.Gestures;
+import com.warlonmhite.hempdustry.network.PlayerGesture;
+import net.neoforged.neoforge.client.network.event.RegisterClientPayloadHandlersEvent;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.neoforge.NeoForgeRecipes;
@@ -21,6 +24,8 @@ public final class HempdustryNeoForgeClient {
     public HempdustryNeoForgeClient(IEventBus modBus) {
         ((NeoForgeClientRegistration) ClientServices.CLIENT).listen(modBus);
         NeoForge.EVENT_BUS.addListener(RecipesReceivedEvent.class, event -> NeoForgeRecipes.received(event.getRecipeMap()));
+        modBus.addListener(RegisterClientPayloadHandlersEvent.class,
+                event -> event.register(PlayerGesture.TYPE, (payload, context) -> Gestures.receive(payload)));
         // NeoForge's armour hook draws the flip-flops in place of the boots layer.
         modBus.addListener(RegisterClientExtensionsEvent.class,
                 event -> event.registerItem(new FlipFlopsExtensions(), ModItems.FLIP_FLOPS));

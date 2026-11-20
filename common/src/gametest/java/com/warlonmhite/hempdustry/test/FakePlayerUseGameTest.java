@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.network.PlayerGesture;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.item.ModItems;
@@ -52,6 +53,19 @@ public final class FakePlayerUseGameTest {
         }
         context.succeed();
     }
+    /**
+     * A player gesture (a cough, a sniff at a jar) goes to everyone tracking the player and to the player, but a
+     * fake player's connection has no network channel under it, and NeoForge 21.11 throws on asking such a
+     * connection whether it took the gesture's channel. A machine that smokes coughs too.
+     */
+    public static void aFakePlayersGestureGoesNowhere(GameTestHelper context) {
+        ServerPlayer hand = TestPlatform.INSTANCE.fakePlayer(context.getLevel());
+        for (PlayerGesture.Kind kind : PlayerGesture.Kind.values()) {
+            PlayerGesture.send(hand, kind, true);
+        }
+        context.succeed();
+    }
+
     /** The pipe's exhale: {@code Smoking.EXHALE_DELAY_TICKS}, with no sound delay. */
     private static final int EXHALE_TICKS = 38;
 
@@ -73,9 +87,12 @@ public final class FakePlayerUseGameTest {
         pipe.set(ModComponents.CHARGES, DeviceType.PIPE.builtInBowl().hits());
         hand.setItemInHand(InteractionHand.MAIN_HAND, pipe);
         hand.getCooldowns().removeCooldown(BuiltInRegistries.ITEM.getKey(ModItems.WOODEN_PIPE));
-        // The deployer's own route: the item's use, straight on its fake player.
+        // The deployer's own route: the item's use, straight on its fake player, and when that began a
+        // draw, its end at once (Create's DeployerHandler finishes any use it started, then lets go).
         InteractionResult result = pipe.getItem().use(world, hand, InteractionHand.MAIN_HAND);
         context.assertTrue(result.consumesAction(), "the fake player could not smoke: " + result);
+        context.assertTrue(hand.isUsingItem(), "the pipe began no draw");
+        Players.finishDraw(hand);
         // No list holds it, so nothing could find it after a wait: what the exhale holds back lands now.
         context.assertTrue(hand.hasEffect(MobEffects.BLINDNESS), "the fake player's exhale did not land on itself");
 

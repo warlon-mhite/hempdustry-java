@@ -570,7 +570,7 @@ public final class MauiWowieGameTest {
         pipe.set(ModComponents.CHARGES, DeviceType.PIPE.builtInBowl().hits());
         smoker.setItemInHand(InteractionHand.MAIN_HAND, pipe);
         smoker.getCooldowns().removeCooldown(BuiltInRegistries.ITEM.getKey(ModItems.WOODEN_PIPE));
-        smoker.gameMode.useItem(smoker, smoker.level(), pipe, InteractionHand.MAIN_HAND);
+        Players.smoke(smoker, InteractionHand.MAIN_HAND);
     }
 
     private static MobEffectInstance find(List<MobEffectInstance> effects, Holder<net.minecraft.world.effect.MobEffect> effect) {

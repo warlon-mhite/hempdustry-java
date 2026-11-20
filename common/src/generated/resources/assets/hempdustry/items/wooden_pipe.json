@@ -1,25 +1,68 @@
 {
   "model": {
-    "type": "minecraft:condition",
-    "component": "hempdustry:smoke_contents",
-    "on_false": {
-      "type": "minecraft:model",
-      "model": "hempdustry:item/wooden_pipe"
-    },
-    "on_true": {
-      "type": "minecraft:model",
-      "model": "hempdustry:item/packed_pipe",
-      "tints": [
-        {
-          "type": "minecraft:constant",
-          "value": -1
+    "type": "minecraft:composite",
+    "models": [
+      {
+        "type": "minecraft:condition",
+        "component": "hempdustry:smoke_contents",
+        "on_false": {
+          "type": "minecraft:model",
+          "model": "hempdustry:item/wooden_pipe"
         },
-        {
-          "type": "hempdustry:strain",
-          "default": 16777215
-        }
-      ]
-    },
-    "property": "minecraft:has_component"
+        "on_true": {
+          "type": "minecraft:model",
+          "model": "hempdustry:item/packed_pipe",
+          "tints": [
+            {
+              "type": "minecraft:constant",
+              "value": -1
+            },
+            {
+              "type": "hempdustry:strain",
+              "default": 16777215
+            }
+          ]
+        },
+        "property": "minecraft:has_component"
+      },
+      {
+        "type": "minecraft:condition",
+        "on_false": {
+          "type": "minecraft:empty"
+        },
+        "on_true": {
+          "type": "minecraft:range_dispatch",
+          "entries": [
+            {
+              "model": {
+                "type": "minecraft:model",
+                "model": "hempdustry:item/pipe_ember_1"
+              },
+              "threshold": 0.25
+            },
+            {
+              "model": {
+                "type": "minecraft:model",
+                "model": "hempdustry:item/pipe_ember_2"
+              },
+              "threshold": 0.5
+            },
+            {
+              "model": {
+                "type": "minecraft:model",
+                "model": "hempdustry:item/pipe_ember_3"
+              },
+              "threshold": 0.75
+            }
+          ],
+          "fallback": {
+            "type": "minecraft:empty"
+          },
+          "property": "minecraft:use_duration",
+          "scale": 0.041666668
+        },
+        "property": "minecraft:using_item"
+      }
+    ]
   }
 }

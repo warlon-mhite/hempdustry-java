@@ -1,5 +1,11 @@
 package com.warlonmhite.hempdustry;
 
+import com.warlonmhite.hempdustry.client.anim.BodyPoses;
+import com.warlonmhite.hempdustry.client.anim.Gestures;
+import com.warlonmhite.hempdustry.client.anim.Style;
+import com.warlonmhite.hempdustry.client.anim.compat.ModelFeatures;
+import com.warlonmhite.hempdustry.client.anim.compat.NotEnoughAnimations;
+import com.warlonmhite.hempdustry.network.PlayerGesture;
 import com.warlonmhite.hempdustry.block.ModCrops;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,8 +30,8 @@ import com.warlonmhite.hempdustry.client.UpdateChecker;
 import com.warlonmhite.hempdustry.client.particle.AromaParticle;
 import com.warlonmhite.hempdustry.client.particle.TerpeneParticles;
 import com.warlonmhite.hempdustry.client.particle.TerpenePuffParticle;
-import com.warlonmhite.hempdustry.client.sound.BongDrawSoundInstance;
-import com.warlonmhite.hempdustry.item.custom.SmokingDeviceItem;
+import com.warlonmhite.hempdustry.client.sound.DrawSoundInstance;
+import com.warlonmhite.hempdustry.item.custom.Draw;
 import com.warlonmhite.hempdustry.block.entity.ModBlockEntities;
 import com.warlonmhite.hempdustry.client.render.HempBoatEntityRenderer;
 import com.warlonmhite.hempdustry.client.render.HempBedBlockEntityRenderer;
@@ -45,9 +51,14 @@ import net.minecraft.client.model.object.boat.BoatModel;
 import net.minecraft.client.renderer.BiomeColors;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
 import net.minecraft.util.ARGB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
 
 public class HempdustryClient {
+    /** How much further out the drawer's own wisp is set in first person, along the line of sight to the ember. */
+    private static final double FIRST_PERSON_WISP_DEPTH = 4.0;
 
     /** Everything the client registers, in order; each loader's client entry point calls it once. */
     public static void init() {
@@ -133,10 +144,53 @@ public class HempdustryClient {
         registerBlockColors(client);
         registerStashJarTints(client);
 
-        // A bong's bubbling is played here, per client, so it can stop when the drawer lets go.
-        SmokingDeviceItem.drawSound = drawer -> Minecraft.getInstance().getSoundManager()
-                .play(new BongDrawSoundInstance(drawer));
+        // A draw's sound is played here, per client, so it can stop when the drawer lets go.
+        Draw.sound = (drawer, sound) -> Minecraft.getInstance().getSoundManager()
+                .play(new DrawSoundInstance(drawer, sound));
+        // The drawer's own wisp: off the ember they see, in first person where the item is drawn in
+        // their view, otherwise where everyone else sees it. Half a block from the eyes a smoke puff
+        // would fill a quarter of the screen, so in first person it is set further out along the same
+        // line of sight: on the ember on screen, a quarter the size.
+        Draw.ownWisp = (drawer, litEnd) -> {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (drawer == minecraft.player && minecraft.level != null) {
+                boolean firstPerson = minecraft.options.getCameraType().isFirstPerson();
+                Vec3 at = litEnd.at(drawer, firstPerson);
+                double depth = firstPerson ? FIRST_PERSON_WISP_DEPTH : 1.0;
+                Vec3 eyes = drawer.getEyePosition();
+                at = eyes.add(at.subtract(eyes).scale(depth));
+                minecraft.level.addParticle(ParticleTypes.SMOKE, at.x, at.y, at.z, 0.0, 0.005 * depth, 0.0);
+            }
+        };
+
+        registerPlayerAnimations(client);
     }
+
+    /**
+     * The player animations: a draw, a cough, a sniff at a jar (no footbag on this game to kick). The poses
+     * themselves are drawn by the model and first-person mixins ({@code BodyPoses},
+     * {@code FirstPersonDraw}); this hooks in the moments that start them and the two animation mods
+     * whose style they take.
+     */
+    private static void registerPlayerAnimations(ClientRegistration client) {
+        client.onJoinWorld(() -> {
+            Gestures.clear();
+            BodyPoses.clear();
+            // At the first join rather than at start-up: on NeoForge this client starts before Not
+            // Enough Animations has made the instance its API registers with.
+            if (!animationModsHooked) {
+                animationModsHooked = true;
+                if (Style.notEnoughAnimations()) {
+                    NotEnoughAnimations.register();
+                }
+                if (Style.modelFeatures()) {
+                    ModelFeatures.register();
+                }
+            }
+        });
+    }
+
+    private static boolean animationModsHooked;
 
     /** Neutral white: multiplied into a texel it changes nothing, which is what "no tint" means. */
     private static final int NO_TINT = 0xFFFFFF;

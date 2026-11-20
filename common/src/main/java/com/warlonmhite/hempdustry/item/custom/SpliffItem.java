@@ -4,6 +4,7 @@ import com.warlonmhite.hempdustry.balance.DeviceStats;
 import com.warlonmhite.hempdustry.balance.GreenOut;
 import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.config.EffectPolicy;
+import com.warlonmhite.hempdustry.sound.ModSounds;
 import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
@@ -13,9 +14,11 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemUseAnimation;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.level.Level;
@@ -81,6 +84,10 @@ public class SpliffItem extends Item {
                                 .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)));
     }
 
+    /**
+     * Starts the draw; the hit lands in {@link #finishUsingItem} once it is complete, and letting go
+     * first spends nothing, the spliff included.
+     */
     @Override
     public InteractionResult use(Level world, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
@@ -93,25 +100,51 @@ public class SpliffItem extends Item {
         if (Smoking.putOut(world, player)) {
             return InteractionResult.CONSUME;
         }
-        if (!world.isClientSide()) {
-            // See SmokingDeviceItem: a vetoed hit must not burn the spliff.
-            if (!Smoking.allowed(player, stack, contents)) {
-                return InteractionResult.PASS;
-            }
-            DeviceStats stats = DeviceStats.spliff(world.registryAccess());
-            GreenOut greenOut = GreenOut.of(world.registryAccess());
-            boolean lockedOut = Smoking.takeHit(world, player, stack, contents, stats.durationTicks(),
-                    stats.coughOneIn(), stats.nauseaOneIn(),
-                    Smoking.greenOutChanceOneIn(greenOut, contents.thcDose(), stats.greenOutFactor()),
-                    ParticleTypes.CAMPFIRE_COSY_SMOKE);
-            // Marks the stack before it shrinks: what is left of it is what the player smoked
-            // from, and that is what the cooldown swipe should sit on.
-            Smoking.startCooldown(player, stack,
-                    EffectPolicy.cooldown(lockedOut ? greenOut.lockoutTicks() : stats.cooldownTicks()));
-            if (!player.getAbilities().instabuild) {
-                stack.shrink(1);
-            }
+        player.startUsingItem(hand);
+        return InteractionResult.CONSUME;
+    }
+
+    /**
+     * The end of a draw, and the hit. The veto is asked here and not when the draw began, so a
+     * listener still hears exactly one question per hit, and a vetoed hit must not burn the spliff.
+     */
+    @Override
+    public ItemStack finishUsingItem(ItemStack stack, Level world, LivingEntity user) {
+        SmokeContents contents = stack.getOrDefault(ModComponents.SMOKE_CONTENTS, SmokeContents.EMPTY);
+        if (world.isClientSide() || !(user instanceof Player player) || contents.isEmpty()
+                || Smoking.putOut(world, player) || !Smoking.allowed(player, stack, contents)) {
+            return stack;
         }
-        return InteractionResult.SUCCESS;
+        DeviceStats stats = DeviceStats.spliff(world.registryAccess());
+        GreenOut greenOut = GreenOut.of(world.registryAccess());
+        // The inhale is the draw's own sound, begun when the draw was.
+        boolean lockedOut = Smoking.takeDrawnHit(world, player, stack, contents, stats.durationTicks(),
+                stats.coughOneIn(), stats.nauseaOneIn(),
+                Smoking.greenOutChanceOneIn(greenOut, contents.thcDose(), stats.greenOutFactor()),
+                ParticleTypes.CAMPFIRE_COSY_SMOKE, Draw.SPLIFF_TICKS);
+        // Marks the stack before it shrinks: what is left of it is what the player smoked
+        // from, and that is what the cooldown swipe should sit on.
+        Smoking.startCooldown(player, stack,
+                EffectPolicy.cooldown(lockedOut ? greenOut.lockoutTicks() : stats.cooldownTicks()));
+        if (!player.getAbilities().instabuild) {
+            stack.shrink(1);
+        }
+        return stack;
+    }
+
+    // Overridden as SmokingDeviceItem does: no consumable component, so ItemStack asks the item.
+    @Override
+    public int getUseDuration(ItemStack stack, LivingEntity user) {
+        return Draw.SPLIFF_TICKS;
+    }
+
+    @Override
+    public ItemUseAnimation getUseAnimation(ItemStack stack) {
+        return ItemUseAnimation.NONE;
+    }
+
+    @Override
+    public void onUseTick(Level world, LivingEntity user, ItemStack stack, int remainingUseTicks) {
+        Draw.tick(world, user, getUseDuration(stack, user) - remainingUseTicks, ModSounds.SMOKING, Draw.LitEnd.SPLIFF);
     }
 }

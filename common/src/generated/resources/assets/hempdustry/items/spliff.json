@@ -1,23 +1,130 @@
 {
   "model": {
-    "type": "minecraft:range_dispatch",
-    "entries": [
+    "type": "minecraft:composite",
+    "models": [
       {
-        "model": {
-          "type": "minecraft:model",
-          "model": "hempdustry:item/spliff_indica"
-        },
-        "threshold": 1.0
-      },
-      {
-        "model": {
-          "type": "minecraft:model",
-          "model": "hempdustry:item/spliff_sativa"
-        },
-        "threshold": 2.0
-      },
-      {
-        "model": {
+        "type": "minecraft:range_dispatch",
+        "entries": [
+          {
+            "model": {
+              "type": "minecraft:model",
+              "model": "hempdustry:item/spliff_indica"
+            },
+            "threshold": 1.0
+          },
+          {
+            "model": {
+              "type": "minecraft:model",
+              "model": "hempdustry:item/spliff_sativa"
+            },
+            "threshold": 2.0
+          },
+          {
+            "model": {
+              "type": "minecraft:model",
+              "model": "hempdustry:item/spliff_tinted",
+              "tints": [
+                {
+                  "type": "minecraft:constant",
+                  "value": -1
+                },
+                {
+                  "type": "hempdustry:strain",
+                  "default": 16777215
+                }
+              ]
+            },
+            "threshold": 3.0
+          },
+          {
+            "model": {
+              "type": "minecraft:model",
+              "model": "hempdustry:item/spliff_beldia"
+            },
+            "threshold": 7.0
+          },
+          {
+            "model": {
+              "type": "minecraft:model",
+              "model": "hempdustry:item/spliff_warped_kush"
+            },
+            "threshold": 8.0
+          },
+          {
+            "model": {
+              "type": "minecraft:model",
+              "model": "hempdustry:item/spliff_ruderalis"
+            },
+            "threshold": 9.0
+          },
+          {
+            "model": {
+              "type": "minecraft:model",
+              "model": "hempdustry:item/spliff_crimson"
+            },
+            "threshold": 10.0
+          },
+          {
+            "model": {
+              "type": "minecraft:model",
+              "model": "hempdustry:item/spliff_ender_haze"
+            },
+            "threshold": 11.0
+          },
+          {
+            "model": {
+              "type": "minecraft:model",
+              "model": "hempdustry:item/spliff_cherry_wine"
+            },
+            "threshold": 12.0
+          },
+          {
+            "model": {
+              "type": "minecraft:model",
+              "model": "hempdustry:item/spliff_white_widow"
+            },
+            "threshold": 13.0
+          },
+          {
+            "model": {
+              "type": "minecraft:model",
+              "model": "hempdustry:item/spliff_dud_weed"
+            },
+            "threshold": 14.0
+          },
+          {
+            "model": {
+              "type": "minecraft:model",
+              "model": "hempdustry:item/spliff_echo_og"
+            },
+            "threshold": 15.0
+          },
+          {
+            "model": {
+              "type": "minecraft:model",
+              "model": "hempdustry:item/spliff_maui_wowie"
+            },
+            "threshold": 16.0
+          },
+          {
+            "model": {
+              "type": "minecraft:model",
+              "model": "hempdustry:item/spliff_tinted",
+              "tints": [
+                {
+                  "type": "minecraft:constant",
+                  "value": -1
+                },
+                {
+                  "type": "hempdustry:strain",
+                  "default": 16777215
+                }
+              ]
+            },
+            "threshold": 17.0
+          }
+        ],
+        "fallback": {
           "type": "minecraft:model",
           "model": "hempdustry:item/spliff_tinted",
           "tints": [
@@ -31,110 +138,46 @@
             }
           ]
         },
-        "threshold": 3.0
+        "property": "hempdustry:strain"
       },
       {
-        "model": {
-          "type": "minecraft:model",
-          "model": "hempdustry:item/spliff_beldia"
+        "type": "minecraft:condition",
+        "on_false": {
+          "type": "minecraft:empty"
         },
-        "threshold": 7.0
-      },
-      {
-        "model": {
-          "type": "minecraft:model",
-          "model": "hempdustry:item/spliff_warped_kush"
-        },
-        "threshold": 8.0
-      },
-      {
-        "model": {
-          "type": "minecraft:model",
-          "model": "hempdustry:item/spliff_ruderalis"
-        },
-        "threshold": 9.0
-      },
-      {
-        "model": {
-          "type": "minecraft:model",
-          "model": "hempdustry:item/spliff_crimson"
-        },
-        "threshold": 10.0
-      },
-      {
-        "model": {
-          "type": "minecraft:model",
-          "model": "hempdustry:item/spliff_ender_haze"
-        },
-        "threshold": 11.0
-      },
-      {
-        "model": {
-          "type": "minecraft:model",
-          "model": "hempdustry:item/spliff_cherry_wine"
-        },
-        "threshold": 12.0
-      },
-      {
-        "model": {
-          "type": "minecraft:model",
-          "model": "hempdustry:item/spliff_white_widow"
-        },
-        "threshold": 13.0
-      },
-      {
-        "model": {
-          "type": "minecraft:model",
-          "model": "hempdustry:item/spliff_dud_weed"
-        },
-        "threshold": 14.0
-      },
-      {
-        "model": {
-          "type": "minecraft:model",
-          "model": "hempdustry:item/spliff_echo_og"
-        },
-        "threshold": 15.0
-      },
-      {
-        "model": {
-          "type": "minecraft:model",
-          "model": "hempdustry:item/spliff_maui_wowie"
-        },
-        "threshold": 16.0
-      },
-      {
-        "model": {
-          "type": "minecraft:model",
-          "model": "hempdustry:item/spliff_tinted",
-          "tints": [
+        "on_true": {
+          "type": "minecraft:range_dispatch",
+          "entries": [
             {
-              "type": "minecraft:constant",
-              "value": -1
+              "model": {
+                "type": "minecraft:model",
+                "model": "hempdustry:item/spliff_ember_1"
+              },
+              "threshold": 0.25
             },
             {
-              "type": "hempdustry:strain",
-              "default": 16777215
+              "model": {
+                "type": "minecraft:model",
+                "model": "hempdustry:item/spliff_ember_2"
+              },
+              "threshold": 0.5
+            },
+            {
+              "model": {
+                "type": "minecraft:model",
+                "model": "hempdustry:item/spliff_ember_3"
+              },
+              "threshold": 0.75
             }
-          ]
+          ],
+          "fallback": {
+            "type": "minecraft:empty"
+          },
+          "property": "minecraft:use_duration",
+          "scale": 0.0625
         },
-        "threshold": 17.0
+        "property": "minecraft:using_item"
       }
-    ],
-    "fallback": {
-      "type": "minecraft:model",
-      "model": "hempdustry:item/spliff_tinted",
-      "tints": [
-        {
-          "type": "minecraft:constant",
-          "value": -1
-        },
-        {
-          "type": "hempdustry:strain",
-          "default": 16777215
-        }
-      ]
-    },
-    "property": "hempdustry:strain"
+    ]
   }
 }

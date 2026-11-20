@@ -64,6 +64,14 @@ dependencies {
 	// names, ships inside architectury rather than inside REI.
 	modCompileOnly "me.shedaniel:RoughlyEnoughItems-api-fabric:${rei_version}"
 	modCompileOnly "me.shedaniel:RoughlyEnoughItems-default-plugin-fabric:${rei_version}"
+	// The animation mods' APIs, for common's client/anim/compat, compile-only. Their NeoForge builds, as
+	// common has them: those speak Mojang's names, which is what this project compiles common's sources
+	// in. Their Fabric builds for 1.21.11 were made with a newer Loom than this one, which refuses to
+	// remap them. The shipped jar is remapped as a whole, so its calls into the mods name Minecraft's
+	// types in intermediary, as the mods' Fabric builds do; the mods' own names are the same on both.
+	compileOnly "maven.modrinth:not-enough-animations:${nea_neoforge_version}"
+	compileOnly "maven.modrinth:entity-model-features:${emf_neoforge_version}"
+	compileOnly "maven.modrinth:entitytexturefeatures:${etf_neoforge_version}"
 
 	//   ./gradlew :fabric:runClient                  # JEI on the runtime (default)
 	//   ./gradlew :fabric:runClient -Pviewer=rei     # REI instead

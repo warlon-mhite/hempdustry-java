@@ -6,6 +6,7 @@ import com.warlonmhite.hempdustry.balance.GreenOut;
 import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.config.EffectPolicy;
 import com.warlonmhite.hempdustry.item.ModItems;
+import com.warlonmhite.hempdustry.sound.ModSounds;
 import com.warlonmhite.hempdustry.strain.Chemotype;
 import com.warlonmhite.hempdustry.strain.ModStrains;
 import org.jetbrains.annotations.Nullable;
@@ -14,7 +15,6 @@ import java.util.function.Consumer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -23,7 +23,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -39,7 +38,6 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
-import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 
 /**
@@ -195,7 +193,7 @@ public class SmokingDeviceItem extends Item {
             if (!Smoking.allowed(player, stack, contents)) {
                 return InteractionResult.PASS;
             }
-            hit(world, player, stack, contents, hand, device.soundDelayTicks());
+            hit(world, player, stack, contents, hand, 0);
         }
         return InteractionResult.SUCCESS;
     }
@@ -210,16 +208,16 @@ public class SmokingDeviceItem extends Item {
         SmokeContents contents = contentsOf(stack);
         if (!world.isClientSide() && user instanceof Player player && !contents.isEmpty()
                 && !Smoking.putOut(world, player) && Smoking.allowed(player, stack, contents)) {
-            // The bubbling began with the draw, drawTicks ago, and the inhale's delay counts from there.
-            hit(world, player, stack, contents, user.getUsedItemHand(),
-                    Math.max(0, device.soundDelayTicks() - device.drawTicks()));
+            hit(world, player, stack, contents, user.getUsedItemHand(), device.drawTicks());
         }
         return stack;
     }
 
     // Overridden the way InstrumentItem overrides them: ItemStack asks the item, and Item's own
-    // answer comes from a consumable component this device does not have. 0 and NONE for every
-    // device that hits on the click, which is what they were before.
+    // answer comes from a consumable component this device does not have. The animation is NONE
+    // on purpose: the client draws a pose of its own for a smokeable being drawn, in both views,
+    // and none of vanilla's (the goat horn's, the bong's until 2.2) is left for another mod to
+    // read as eating or blowing a horn.
     @Override
     public int getUseDuration(ItemStack stack, LivingEntity user) {
         return device.drawTicks();
@@ -227,56 +225,41 @@ public class SmokingDeviceItem extends Item {
 
     @Override
     public ItemUseAnimation getUseAnimation(ItemStack stack) {
-        return device.drawTicks() > 0 ? ItemUseAnimation.TOOT_HORN : ItemUseAnimation.NONE;
+        return ItemUseAnimation.NONE;
     }
-
-    /**
-     * Starts a bong's bubbling on this client — set by {@code HempdustryClient}, a no-op on a
-     * dedicated server. Client-side because the bubbling has to stop the moment the drawer lets
-     * go, and only a sound instance that belongs to the client can stop itself (vanilla's elytra
-     * wind is the same shape). A sound the server sent would bubble on for three seconds after a
-     * draw that never became a hit.
-     */
-    public static Consumer<LivingEntity> drawSound = user -> {};
-
-    private static final int WISP_EVERY_TICKS = 5;
 
     @Override
     public void onUseTick(Level world, LivingEntity user, ItemStack stack, int remainingUseTicks) {
-        int drawn = getUseDuration(stack, user) - remainingUseTicks;
-        if (world.isClientSide()) {
-            // The first tick of a draw, on every client that can see it: a remote player's draw
-            // ticks here too, from the use flag the server syncs.
-            if (drawn == 0 && device == DeviceType.BONG) {
-                drawSound.accept(user);
-            }
-        } else if (drawn % WISP_EVERY_TICKS == 0 && world instanceof ServerLevel serverWorld) {
-            wisp(serverWorld, user);
-        }
+        // The bong's draw is its bubbling, and the inhale follows at the hit; the others inhale as
+        // they draw. A vaporizer's load is never lit, so it lets off no wisp.
+        Draw.tick(world, user, getUseDuration(stack, user) - remainingUseTicks,
+                device == DeviceType.BONG ? ModSounds.BONGHIT : ModSounds.SMOKING,
+                switch (device) {
+                    case VAPORIZER -> null;
+                    case BONG -> Draw.LitEnd.BONG;
+                    case PIPE -> Draw.LitEnd.PIPE;
+                });
     }
 
     /**
-     * A wisp off the lit bowl, about where the hand holds it — the draw you can see from across a
-     * room. Placed off the player's yaw rather than their look, so it stays at the bowl whether
-     * they are looking at their feet or the sky.
+     * One hit, spent: effects, cooldown, a charge and a point of durability, and the bowl's end.
+     *
+     * @param drawn how long the draw that ends in this hit lasted, {@code 0} for a hit on the click
      */
-    private static void wisp(ServerLevel world, LivingEntity user) {
-        boolean rightHand = (user.getUsedItemHand() == InteractionHand.MAIN_HAND) == (user.getMainArm() == HumanoidArm.RIGHT);
-        Vec3 forward = Vec3.directionFromRotation(0, user.getYRot());
-        Vec3 side = Vec3.directionFromRotation(0, user.getYRot() + (rightHand ? 90 : -90));
-        Vec3 bowl = user.getEyePosition().add(forward.scale(0.4)).add(side.scale(0.3)).add(0, -0.5, 0);
-        world.sendParticles(ParticleTypes.SMOKE, bowl.x, bowl.y, bowl.z, 1, 0.02, 0.02, 0.02, 0.005);
-    }
-
-    /** One hit, spent: effects, cooldown, a charge and a point of durability, and the bowl's end. */
     private void hit(Level world, Player player, ItemStack stack, SmokeContents contents,
-                     InteractionHand hand, int soundDelayTicks) {
+                     InteractionHand hand, int drawn) {
         DeviceStats stats = DeviceStats.of(world.registryAccess(), device);
         GreenOut greenOut = GreenOut.of(world.registryAccess());
-        boolean lockedOut = Smoking.takeHit(world, player, stack, contents, stats.durationTicks(),
-                stats.coughOneIn(), stats.nauseaOneIn(),
-                Smoking.greenOutChanceOneIn(greenOut, contents.thcDose(), stats.greenOutFactor()),
-                device.exhaleParticle(), soundDelayTicks);
+        int greenOutOdds = Smoking.greenOutChanceOneIn(greenOut, contents.thcDose(), stats.greenOutFactor());
+        // The bong's bubbling began with the draw and its inhale's delay counts from there; every
+        // other device's inhale is the draw's own sound, begun drawn ticks ago.
+        boolean lockedOut = device == DeviceType.BONG || drawn == 0
+                ? Smoking.takeHit(world, player, stack, contents, stats.durationTicks(),
+                        stats.coughOneIn(), stats.nauseaOneIn(), greenOutOdds,
+                        device.exhaleParticle(), Math.max(0, device.soundDelayTicks() - drawn))
+                : Smoking.takeDrawnHit(world, player, stack, contents, stats.durationTicks(),
+                        stats.coughOneIn(), stats.nauseaOneIn(), greenOutOdds,
+                        device.exhaleParticle(), drawn);
         Smoking.startCooldown(player, stack,
                 EffectPolicy.cooldown(lockedOut ? greenOut.lockoutTicks() : stats.cooldownTicks()));
 

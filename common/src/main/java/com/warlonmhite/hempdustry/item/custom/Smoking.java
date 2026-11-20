@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.item.custom;
 
+import com.warlonmhite.hempdustry.network.PlayerGesture;
 import com.warlonmhite.hempdustry.advancement.ModCriteria;
 import com.warlonmhite.hempdustry.balance.EdibleBundle;
 import com.warlonmhite.hempdustry.balance.GreenOut;
@@ -228,6 +229,28 @@ public final class Smoking {
             world.playSound(null, player.getX(), player.getY(), player.getZ(),
                     ModSounds.SMOKING, SoundSource.PLAYERS, 1f, 1f);
         }
+        return land(world, player, stack, contents, durationTicks, coughChanceOneIn, nauseaChanceOneIn,
+                greenOutChanceOneIn, exhaleParticle, EXHALE_DELAY_TICKS + soundDelayTicks);
+    }
+
+    /**
+     * A hit at the end of a draw whose inhale began with it, {@code inhaleTicksAgo} ago: each client
+     * that saw the draw started the sound ({@link Draw}), so none is played here, and the exhale
+     * still lines up with the one in the sound, {@code EXHALE_DELAY_TICKS} after it began.
+     */
+    public static boolean takeDrawnHit(Level world, Player player, ItemStack stack,
+                                       SmokeContents contents, int durationTicks, int coughChanceOneIn,
+                                       int nauseaChanceOneIn, int greenOutChanceOneIn,
+                                       ParticleOptions exhaleParticle, int inhaleTicksAgo) {
+        return land(world, player, stack, contents, durationTicks, coughChanceOneIn, nauseaChanceOneIn,
+                greenOutChanceOneIn, exhaleParticle, Math.max(0, EXHALE_DELAY_TICKS - inhaleTicksAgo));
+    }
+
+    /** Everything a hit does once its inhale is taken care of; the exhale comes {@code exhaleDelayTicks} later. */
+    private static boolean land(Level world, Player player, ItemStack stack,
+                                SmokeContents contents, int durationTicks, int coughChanceOneIn,
+                                int nauseaChanceOneIn, int greenOutChanceOneIn,
+                                ParticleOptions exhaleParticle, int exhaleDelayTicks) {
 
         // Every chance and every effect below goes through EffectPolicy, which is where the
         // server's config knobs are applied — once, rather than at each site that hands one out.
@@ -246,7 +269,7 @@ public final class Smoking {
             if (!world.isClientSide()) {
                 List<MobEffectInstance> exhaled = EffectPolicy.filter(contents.effects(durationTicks, true, ThreadLocalRandom.current()), contents.buffBonus());
                 if (!exhaled.isEmpty()) {
-                    SmokeScheduler.scheduleEffects(player, exhaled, EXHALE_DELAY_TICKS + soundDelayTicks);
+                    SmokeScheduler.scheduleEffects(player, exhaled, exhaleDelayTicks);
                 }
             }
         }
@@ -260,13 +283,14 @@ public final class Smoking {
         }
 
         if (!world.isClientSide()) {
-            SmokeScheduler.schedule(player, tinted(world, exhaleParticle, contents), EXHALE_DELAY_TICKS + soundDelayTicks);
+            SmokeScheduler.schedule(player, tinted(world, exhaleParticle, contents), exhaleDelayTicks);
         }
 
         int coughOdds = easedByOutfit(player, coughOneIn(coughChanceOneIn, contents));
         if (coughOdds > 0 && ThreadLocalRandom.current().nextInt(coughOdds) == 0) {
             world.playSound(null, player.getX(), player.getY(), player.getZ(),
                     ModSounds.COUGHING, SoundSource.PLAYERS, 1f, 1f);
+            PlayerGesture.send(player, PlayerGesture.Kind.COUGH, true);
         }
 
         // Nausea is its own roll and stays per-device, dose-independent — it is the "harsh smoke"

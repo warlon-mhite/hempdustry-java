@@ -1,5 +1,7 @@
 package com.warlonmhite.hempdustry.fabric;
 
+import com.warlonmhite.hempdustry.network.PlayerGesture;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.block.entity.ModBlockEntities;
 import net.fabricmc.api.ModInitializer;
@@ -11,6 +13,7 @@ public class HempdustryFabric implements ModInitializer {
     public void onInitialize() {
         Hempdustry.registerDynamicRegistries();
         Hempdustry.init();
+        PayloadTypeRegistry.playS2C().register(PlayerGesture.TYPE, PlayerGesture.CODEC);
         // Every other block entity of the mod is a container, which the transfer API wraps on its own;
         // the Stash Jar is not, so it says what it is.
         ItemStorage.SIDED.registerForBlockEntity((jar, side) -> jar.transferHandler(FabricStashJarStorage::new), ModBlockEntities.STASH_JAR);

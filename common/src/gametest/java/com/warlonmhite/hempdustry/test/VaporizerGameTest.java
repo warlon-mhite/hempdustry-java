@@ -260,7 +260,7 @@ public final class VaporizerGameTest {
             player.getCooldowns().removeCooldown(BuiltInRegistries.ITEM.getKey(device));
         }
         player.getCooldowns().removeCooldown(BuiltInRegistries.ITEM.getKey(ModItems.SPLIFF));
-        player.gameMode.useItem(player, world, player.getItemInHand(hand), hand);
+        Players.smoke(player, hand);
     }
 
     /** A 3x3 grid holding the device and {@code budCount} buds, as the crafting table would. */

@@ -97,6 +97,7 @@ public final class AddonEventGameTest {
     private static void smoke(GameTestHelper context, ServerPlayer player, ItemStack stack) {
         player.setItemInHand(InteractionHand.MAIN_HAND, stack);
         stack.getItem().use(context.getLevel(), player, InteractionHand.MAIN_HAND);
+        Players.finishDraw(player);
     }
 
     private static List<String> names(List<TestPlatform.Heard> heard) {

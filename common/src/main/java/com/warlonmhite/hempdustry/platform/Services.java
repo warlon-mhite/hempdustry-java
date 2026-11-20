@@ -20,6 +20,7 @@ public final class Services {
     public static final PlayerData PLAYER_DATA = load(PlayerData.class);
     public static final AddonEvents ADDON_EVENTS = load(AddonEvents.class);
     public static final Recipes RECIPES = load(Recipes.class);
+    public static final Network NETWORK = load(Network.class);
 
     private Services() {
     }

@@ -21,6 +21,11 @@ public final class FabricPlatform implements Platform {
     }
 
     @Override
+    public boolean isModLoaded(String id) {
+        return FabricLoader.getInstance().isModLoaded(id);
+    }
+
+    @Override
     public String modVersion() {
         return FabricLoader.getInstance()
                 .getModContainer(Hempdustry.MOD_ID)

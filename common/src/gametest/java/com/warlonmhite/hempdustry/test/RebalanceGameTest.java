@@ -341,6 +341,7 @@ public final class RebalanceGameTest {
     private static void smoke(GameTestHelper context, ServerPlayer player, ItemStack stack) {
         player.setItemInHand(InteractionHand.MAIN_HAND, stack);
         stack.getItem().use(context.getLevel(), player, InteractionHand.MAIN_HAND);
+        Players.finishDraw(player);
     }
 
     private static void smokeUntilClean(GameTestHelper context, ServerPlayer player, Item device,
