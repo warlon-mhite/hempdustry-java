@@ -23,6 +23,11 @@ public final class NeoForgePlatform implements Platform {
     }
 
     @Override
+    public boolean isModLoaded(String id) {
+        return ModList.get().isLoaded(id);
+    }
+
+    @Override
     public String modVersion() {
         return ModList.get().getModContainerById(Hempdustry.MOD_ID)
                 .map(container -> container.getModInfo().getVersion().toString())

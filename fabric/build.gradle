@@ -58,6 +58,10 @@ dependencies {
 	// names, ships inside architectury rather than inside REI.
 	compileOnly "me.shedaniel:RoughlyEnoughItems-api-fabric:${rei_version}"
 	compileOnly "me.shedaniel:RoughlyEnoughItems-default-plugin-fabric:${rei_version}"
+	// The animation mods' APIs, for common's client/anim/compat (compile-only).
+	compileOnly "maven.modrinth:not-enough-animations:${nea_fabric_version}"
+	compileOnly "maven.modrinth:entity-model-features:${emf_fabric_version}"
+	compileOnly "maven.modrinth:entitytexturefeatures:${etf_fabric_version}"
 	// ...which on 26.x it no longer is on Fabric: REI's Fabric api lists its dependencies for the
 	// runtime only, so the compile names the two the plugins see -- architectury (the FluidStack in
 	// EntryIngredients) and cloth's basic-math (me.shedaniel.math), at the versions REI depends on.

@@ -83,7 +83,7 @@ public final class SmokeUnderWaterGameTest {
             }
             context.assertTrue(smoker.hasEffect(MobEffects.SPEED), name + " did not light with the head above the water");
         }
-        context.assertTrue(drawn >= 1, "test setup: no device drew, so no draw was finished under water");
+        context.assertValueEqual(drawn, 4, "smokeables whose draw was finished under water");
 
         // One hiss a press: a held use key tries again every 4 ticks, and only a pause makes a new press.
         ServerPlayer diver = Players.survival(context);
@@ -93,14 +93,9 @@ public final class SmokeUnderWaterGameTest {
         context.succeed();
     }
 
-    /** Whether {@code item} is smoked by holding a draw, the hit landing when the draw is done. */
+    /** Whether {@code item} is smoked by holding a draw, the hit landing when the draw is done: every smokeable, since 2.2. */
     private static boolean draws(Item item) {
-        for (DeviceType device : DeviceType.values()) {
-            if (ModItems.devices().get(device) == item) {
-                return device.drawTicks() > 0;
-            }
-        }
-        return false;
+        return Smoking.isSmokeable(item);
     }
 
     private static ItemStack loaded(Item item, Holder<Strain> strain) {

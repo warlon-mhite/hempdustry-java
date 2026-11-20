@@ -1,5 +1,7 @@
 package com.warlonmhite.hempdustry.neoforge;
 
+import com.warlonmhite.hempdustry.network.PlayerGesture;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
 
 import com.warlonmhite.hempdustry.Hempdustry;
@@ -45,6 +47,9 @@ public final class HempdustryNeoForge {
             }
         });
         modBus.addListener(BlockEntityTypeAddBlocksEvent.class, registration::onAddBlocks);
+        // Optional, so a connection without the channel is not refused for it; NeoForgeNetwork never sends there.
+        modBus.addListener(RegisterPayloadHandlersEvent.class, event -> event.registrar("1").optional()
+                .playToClient(PlayerGesture.TYPE, PlayerGesture.CODEC));
         modBus.addListener(ModifyDefaultComponentsEvent.class, registration::onModifyDefaultComponents);
         modBus.addListener(RegisterCapabilitiesEvent.class, HempdustryNeoForge::exposeContainers);
         modBus.addListener(GatherDataEvent.Client.class, NeoForgeData::gather);

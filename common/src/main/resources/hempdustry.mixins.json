@@ -12,6 +12,7 @@
 		"ItemStackComponentizationFixMixin",
 		"EnderManMixin",
 		"ExperienceOrbAccessor",
+		"PlayerAttackMixin",
 		"PointOfInterestTypesAccessor",
 		"ReloadableServerRegistriesMixin",
 		"Schema1460Mixin",

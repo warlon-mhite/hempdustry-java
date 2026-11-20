@@ -131,7 +131,7 @@ public final class WhiteWidowGameTest {
         pipe.set(ModComponents.CHARGES, DeviceType.PIPE.builtInBowl().hits());
         smoker.setItemInHand(InteractionHand.MAIN_HAND, pipe);
         smoker.getCooldowns().removeCooldown(BuiltInRegistries.ITEM.getKey(ModItems.WOODEN_PIPE));
-        smoker.gameMode.useItem(smoker, world, pipe, InteractionHand.MAIN_HAND);
+        Players.smoke(smoker, InteractionHand.MAIN_HAND);
         for (Holder<MobEffect> effect : List.of(MobEffects.HEALTH_BOOST, MobEffects.HUNGER, MobEffects.WEAVING,
                 MobEffects.UNLUCK)) {
             context.assertTrue(smoker.hasEffect(effect), "a White Widow pipe gave no " + effect.getRegisteredName());

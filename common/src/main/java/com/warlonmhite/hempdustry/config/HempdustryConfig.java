@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.config;
 
+import net.minecraft.util.StringRepresentable;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -267,8 +268,12 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
      * @param ripeAroma          whether this client draws the wisps a ripe plant gives off. Vanilla's
      *                           Particles setting already thins them out or hides them with every
      *                           other ambient particle; this hides only these. See {@code RipeAroma}
+     * @param animations         how this client animates a player smoking, coughing, sniffing a jar or
+     *                           kicking a footbag: {@code auto} in the style of whatever animates the rest
+     *                           of the body (Not Enough Animations, Fresh Animations' player pack, or
+     *                           vanilla), {@code vanilla} always vanilla's rigid style, {@code off} not at all
      */
-    public record Client(boolean updateCheck, double biomeTintStrength, boolean ripeAroma) {
+    public record Client(boolean updateCheck, double biomeTintStrength, boolean ripeAroma, Animations animations) {
 
         /**
          * 0.35 is the whole point of the knob's existence: enough of the biome to stop a bright
@@ -276,17 +281,38 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
          * different plants and the gold pistils stay gold. A full 1.0 is vanilla's grass behaviour
          * and collapses both strains onto the same green.
          */
-        public static final Client DEFAULT = new Client(true, 0.35, true);
+        public static final Client DEFAULT = new Client(true, 0.35, true, Animations.AUTO);
 
         public static final Codec<Client> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.BOOL.fieldOf("updateCheck").forGetter(Client::updateCheck),
                 Codec.DOUBLE.fieldOf("biomeTintStrength").forGetter(Client::biomeTintStrength),
-                Codec.BOOL.fieldOf("ripeAroma").forGetter(Client::ripeAroma)
+                Codec.BOOL.fieldOf("ripeAroma").forGetter(Client::ripeAroma),
+                Animations.CODEC.fieldOf("animations").forGetter(Client::animations)
         ).apply(instance, Client::new));
 
         Client clamped() {
             return new Client(updateCheck,
-                    clampDouble("client.biomeTintStrength", biomeTintStrength, 0.0, 1.0), ripeAroma);
+                    clampDouble("client.biomeTintStrength", biomeTintStrength, 0.0, 1.0), ripeAroma, animations);
+        }
+
+        /** {@link Client#animations()}: whose style the player animations take, or none. */
+        public enum Animations implements StringRepresentable {
+            AUTO("auto"),
+            VANILLA("vanilla"),
+            OFF("off");
+
+            public static final Codec<Animations> CODEC = StringRepresentable.fromEnum(Animations::values);
+
+            private final String name;
+
+            Animations(String name) {
+                this.name = name;
+            }
+
+            @Override
+            public String getSerializedName() {
+                return name;
+            }
         }
     }
 

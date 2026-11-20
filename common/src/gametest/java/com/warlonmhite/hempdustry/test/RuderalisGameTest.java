@@ -201,7 +201,7 @@ public final class RuderalisGameTest {
         pipe.set(ModComponents.CHARGES, DeviceStats.bowl(world.registryAccess(), DeviceType.PIPE).hits());
         smoker.setItemInHand(InteractionHand.MAIN_HAND, pipe);
         smoker.getCooldowns().removeCooldown(BuiltInRegistries.ITEM.getKey(ModItems.WOODEN_PIPE));
-        smoker.gameMode.useItem(smoker, world, pipe, InteractionHand.MAIN_HAND);
+        Players.smoke(smoker, InteractionHand.MAIN_HAND);
         MobEffectInstance luck = smoker.getEffect(MobEffects.LUCK);
         context.assertTrue(luck != null && luck.getDuration() == pipeTicks && luck.getAmplifier() == 0,
                 "a pipe of Ruderalis did not give " + pipeTicks + " ticks of Luck I: " + luck);

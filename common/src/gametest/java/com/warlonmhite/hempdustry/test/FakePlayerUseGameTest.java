@@ -45,9 +45,12 @@ public final class FakePlayerUseGameTest {
         pipe.set(ModComponents.CHARGES, DeviceType.PIPE.builtInBowl().hits());
         hand.setItemInHand(InteractionHand.MAIN_HAND, pipe);
         hand.getCooldowns().removeCooldown(BuiltInRegistries.ITEM.getKey(ModItems.WOODEN_PIPE));
-        // The deployer's own route: the item's use, straight on its fake player.
+        // The deployer's own route: the item's use, straight on its fake player, and when that began a
+        // draw, its end at once (Create's DeployerHandler finishes any use it started, then lets go).
         InteractionResult result = pipe.getItem().use(world, hand, InteractionHand.MAIN_HAND);
         context.assertTrue(result.consumesAction(), "the fake player could not smoke: " + result);
+        context.assertTrue(hand.isUsingItem(), "the pipe began no draw");
+        Players.finishDraw(hand);
         // No list holds it, so nothing could find it after a wait: what the exhale holds back lands now.
         context.assertTrue(hand.hasEffect(MobEffects.BLINDNESS), "the fake player's exhale did not land on itself");
 

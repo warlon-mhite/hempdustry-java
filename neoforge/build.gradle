@@ -80,6 +80,10 @@ dependencies {
 	compileOnly "mezz.jei:jei-${minecraft_version}-neoforge-api:${jei_version}"
 	compileOnly "me.shedaniel:RoughlyEnoughItems-api-neoforge:${rei_version}"
 	compileOnly "me.shedaniel:RoughlyEnoughItems-default-plugin-neoforge:${rei_version}"
+	// The animation mods' APIs, for common's client/anim/compat (compile-only).
+	compileOnly "maven.modrinth:not-enough-animations:${nea_neoforge_version}"
+	compileOnly "maven.modrinth:entity-model-features:${emf_neoforge_version}"
+	compileOnly "maven.modrinth:entitytexturefeatures:${etf_neoforge_version}"
 
 	//   ./gradlew :neoforge:runClient                  # JEI on the runtime (default)
 	//   ./gradlew :neoforge:runClient -Pviewer=rei     # REI instead

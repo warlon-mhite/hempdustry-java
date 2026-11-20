@@ -613,7 +613,7 @@ public final class EnderHazeGameTest {
         pipe.set(ModComponents.CHARGES, DeviceType.PIPE.builtInBowl().hits());
         player.setItemInHand(InteractionHand.MAIN_HAND, pipe);
         player.getCooldowns().removeCooldown(BuiltInRegistries.ITEM.getKey(ModItems.WOODEN_PIPE));
-        player.gameMode.useItem(player, world, pipe, InteractionHand.MAIN_HAND);
+        Players.smoke(player, InteractionHand.MAIN_HAND);
     }
 
     private static boolean has(List<MobEffectInstance> effects, Holder<MobEffect> effect) {

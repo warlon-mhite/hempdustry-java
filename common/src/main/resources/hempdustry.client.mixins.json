@@ -4,7 +4,12 @@
 	"compatibilityLevel": "JAVA_21",
 	"client": [
 		"AbstractContainerScreenMixin",
-		"DrawContextMixin"
+		"AvatarRendererMixin",
+		"DrawContextMixin",
+		"FirstPersonHandsAndItemsRendererMixin",
+		"HumanoidModelMixin",
+		"ItemInHandLayerMixin",
+		"PlayerModelMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.fabric.client;
 
+import com.warlonmhite.hempdustry.client.anim.Gestures;
+import com.warlonmhite.hempdustry.network.PlayerGesture;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import com.warlonmhite.hempdustry.HempdustryClient;
 import com.warlonmhite.hempdustry.item.ModItems;
 import net.fabricmc.api.ClientModInitializer;
@@ -10,6 +13,7 @@ public class HempdustryFabricClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         HempdustryClient.init();
+        ClientPlayNetworking.registerGlobalReceiver(PlayerGesture.TYPE, (payload, context) -> Gestures.receive(payload));
         // Fabric's armour hook draws the flip-flops in place of the boots layer.
         ArmorRenderer.register(FlipFlopsRenderer::new, ModItems.FLIP_FLOPS);
     }

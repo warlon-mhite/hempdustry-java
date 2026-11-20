@@ -32,6 +32,8 @@ import net.minecraft.client.renderer.item.ItemModel;
 import net.minecraft.client.renderer.item.RangeSelectItemModel;
 import net.minecraft.client.renderer.item.SelectItemModel;
 import net.minecraft.client.renderer.item.properties.numeric.UseDuration;
+import net.minecraft.client.renderer.item.EmptyModel;
+import com.warlonmhite.hempdustry.item.custom.Draw;
 import net.minecraft.client.renderer.item.properties.select.DisplayContext;
 import net.minecraft.client.renderer.item.properties.select.TrimMaterialProperty;
 import net.minecraft.client.resources.model.sprite.Material;
@@ -243,8 +245,9 @@ public class ModModelProvider extends FabricModelProvider {
             }
         }
         spliffArt.sort(Comparator.comparingDouble(RangeSelectItemModel.Entry::threshold));
-        itemModelGenerator.itemModelOutput.accept(ModItems.SPLIFF, ItemModelUtils.rangeSelect(
-                new StrainModelIndexProperty(), strainTinted(spliffTinted), spliffArt));
+        itemModelGenerator.itemModelOutput.accept(ModItems.SPLIFF, withEmber(itemModelGenerator, "spliff",
+                ItemModelUtils.rangeSelect(new StrainModelIndexProperty(), strainTinted(spliffTinted), spliffArt),
+                Draw.SPLIFF_TICKS));
 
         // The devices share one packed texture, which they always did. The switch is on "packed at
         // all", so giving a strain its own packed art later is a range dispatch inside the packed
@@ -374,6 +377,9 @@ public class ModModelProvider extends FabricModelProvider {
                 ItemModelUtils.hasComponent(ModComponents.SMOKE_CONTENTS),
                 strainTinted(packedModel), ItemModelUtils.plainModel(emptyModel));
         String name = BuiltInRegistries.ITEM.getKey(item).getPath();
+        if (item == ModItems.WOODEN_PIPE) {
+            flat = withEmber(generator, "pipe", flat, DeviceType.PIPE.drawTicks());
+        }
         if (!ModBlocks.DEVICE_BLOCKS.containsKey(name)) {
             generator.itemModelOutput.accept(item, flat);
             return;
@@ -400,6 +406,25 @@ public class ModModelProvider extends FabricModelProvider {
                         packedInHand),
                 ItemModelUtils.plainModel(Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "block/" + name)));
         generator.itemModelOutput.accept(item, ItemModelGenerators.createFlatModelDispatch(flat, inHand));
+    }
+
+    /**
+     * {@code base} with its lit end brightening over a draw: an overlay at a quarter, a half and
+     * three quarters of it ({@code item/<name>_ember_1..3}), the bow's pulling grammar again, as the
+     * bong's draw stages are. Nothing over it while it is not being drawn.
+     */
+    private static ItemModel.Unbaked withEmber(ItemModelGenerators generator, String name, ItemModel.Unbaked base,
+                                               int drawTicks) {
+        RangeSelectItemModel.Entry[] stages = new RangeSelectItemModel.Entry[3];
+        for (int stage = 1; stage <= stages.length; stage++) {
+            Identifier overlay = ModelTemplates.FLAT_ITEM.create(
+                    Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "item/" + name + "_ember_" + stage),
+                    TextureMapping.layer0(texture(name + "_ember_" + stage)), generator.modelOutput);
+            stages[stage - 1] = ItemModelUtils.override(ItemModelUtils.plainModel(overlay), stage / (stages.length + 1f));
+        }
+        return ItemModelUtils.composite(base, ItemModelUtils.conditional(ItemModelUtils.isUsingItem(),
+                ItemModelUtils.rangeSelect(new UseDuration(false), 1f / drawTicks, new EmptyModel.Unbaked(), stages),
+                new EmptyModel.Unbaked()));
     }
 
     // The placed bong, hand-written once as block/bong_template.json and re-textured per glass.

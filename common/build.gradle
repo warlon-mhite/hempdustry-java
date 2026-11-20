@@ -38,6 +38,12 @@ dependencies {
 	compileOnly "mezz.jei:jei-${minecraft_version}-common-api:${jei_version}"
 	compileOnly "me.shedaniel:RoughlyEnoughItems-api-neoforge:${rei_version}"
 	compileOnly "me.shedaniel:RoughlyEnoughItems-default-plugin-neoforge:${rei_version}"
+
+	// The animation mods' APIs (client/anim/compat), compile-only as the viewers are: a player with
+	// neither never loads a line of it. Their Fabric builds here; the API is the same on each loader.
+	compileOnly "maven.modrinth:not-enough-animations:${nea_fabric_version}"
+	compileOnly "maven.modrinth:entity-model-features:${emf_fabric_version}"
+	compileOnly "maven.modrinth:entitytexturefeatures:${etf_fabric_version}"
 }
 
 // What the loaders' projects take from here: the sources, and the resources -- hand-written and

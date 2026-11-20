@@ -405,7 +405,7 @@ public final class AdvancementGameTest {
             player.getCooldowns().removeCooldown(BuiltInRegistries.ITEM.getKey(item));
         }
         player.setItemInHand(InteractionHand.MAIN_HAND, device);
-        player.gameMode.useItem(player, world, device, InteractionHand.MAIN_HAND);
+        Players.smoke(player, InteractionHand.MAIN_HAND);
     }
 
     /**

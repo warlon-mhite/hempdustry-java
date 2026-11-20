@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom.stash;
 
+import com.warlonmhite.hempdustry.network.PlayerGesture;
 import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
 import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.component.StashContents;
@@ -159,6 +160,8 @@ public class StashJarBlock extends BaseEntityBlock implements SimpleWaterloggedB
         StashNose nose = StashNose.of(jar.contents());
         ItemStack out = jar.removeLast();
         TerpenePuff.release((ServerLevel) level, pos, nose, out);
+        // The one who opened it leans in to the smell, for everyone who sees them.
+        PlayerGesture.send(player, PlayerGesture.Kind.SNIFF, true);
         level.blockEvent(pos, this, StashJarBlockEntity.LID_EVENT,
                 StashJarBlockEntity.lidMotion(nose.ordinal(), toward(player, pos)));
         player.setItemInHand(InteractionHand.MAIN_HAND, out);

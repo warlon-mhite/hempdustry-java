@@ -22,7 +22,7 @@ import net.minecraft.core.particles.ParticleTypes;
  */
 public enum DeviceType {
     //        registry base  packedModel        maxDmg bowl maxDose duration ench cooldown cough nausea delay draw spent  exhale particle
-    PIPE     ("wooden_pipe", "packed_pipe",       8,    2,    2,      700,   15,    60,      4,    50,    0,    0,    0,   ParticleTypes.CAMPFIRE_COSY_SMOKE),
+    PIPE     ("wooden_pipe", "packed_pipe",       8,    2,    2,      700,   15,    60,      4,    50,    0,   24,    0,   ParticleTypes.CAMPFIRE_COSY_SMOKE),
     BONG     ("bong",        "packed_bong",      24,    4,    3,     1000,   10,   100,      3,     5,   10,   30,    0,   ParticleTypes.CAMPFIRE_COSY_SMOKE),
     /**
      * The dry-herb vaporizer. Heat below combustion, so it is the mildest device in the mod and the
@@ -42,7 +42,7 @@ public enum DeviceType {
      *       time off a bong rotation.</li>
      * </ul>
      */
-    VAPORIZER("vaporizer",   "packed_vaporizer", 32,    2,    1,      800,    5,    60,     50,   200,    0,    0,    1,   ParticleTypes.CLOUD);
+    VAPORIZER("vaporizer",   "packed_vaporizer", 32,    2,    1,      800,    5,    60,     50,   200,    0,   32,    1,   ParticleTypes.CLOUD);
 
     private final String baseName;
     private final String packedModel;
@@ -142,16 +142,17 @@ public enum DeviceType {
     }
 
     /**
-     * How long the use key is held for one hit, or {@code 0} for a hit on the click. Only the bong
-     * draws: 30 ticks with the device raised to the mouth in vanilla's goat-horn pose
-     * ({@code ItemUseAnimation.TOOT_HORN}), its bubbling playing from the first tick and the hit landing
-     * on the last. Let go early and nothing is spent, as with a potion put down half-drunk.
+     * How long the use key is held for one hit. Every device draws: the hit lands on the last tick
+     * and letting go early spends nothing, as with a potion put down half-drunk. The bong's 30 ticks
+     * came first; the pipe's 24 and the vaporizer's 32 joined it, both under eating a steak, so that
+     * the mouth has time to meet the device. Instant use was only vanilla's habit for items with no
+     * use animation, never a choice made for these. The spliff's 16 is {@code SpliffItem}'s.
      *
-     * <p>A draw is a cost as well as a picture — a player ripping a bong is a player standing
-     * still with their hands full — which is the honest price of being the device that reaches
-     * level III. The pipe and vaporizer keep the click they always had; a new device declares
-     * its own draw here rather than being special-cased. {@link #soundDelayTicks()} is counted
-     * from the start of the draw, since that is when the bubbling starts.
+     * <p>A draw is a cost as well as a picture: a player taking a hit is a player slowed to a walk
+     * with a hand full, vanilla's price for eating, and the cooldowns are unchanged, so a smoke cycle
+     * grows by the draw alone. The bubbling (the bong) or the inhale (the others) starts with the
+     * draw, and {@link #soundDelayTicks()} is counted from there. A new device declares its own draw
+     * here rather than being special-cased.
      */
     public int drawTicks() {
         return drawTicks;

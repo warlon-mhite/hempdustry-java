@@ -15,6 +15,9 @@ public interface Platform {
     /** The folder every mod's config file goes in. */
     Path configDir();
 
+    /** Whether the mod {@code id} is loaded beside this one. */
+    boolean isModLoaded(String id);
+
     /** This mod's version, as the loader read it from the mod's manifest. */
     String modVersion();
 
