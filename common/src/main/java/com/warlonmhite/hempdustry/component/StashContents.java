@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.component;
 
+import com.warlonmhite.hempdustry.strain.internal.Resins;
+import com.warlonmhite.hempdustry.strain.internal.Bands;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.google.common.collect.ImmutableList;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -241,7 +244,7 @@ public final class StashContents {
      */
     public record Entry(ItemStack item, int count, int tierSum, int bandSum, int resinSum) {
         /**
-         * An absent sum reads Dank, Mid and the resin a bud with none written sieves as ({@link ResinStep#legacy});
+         * An absent sum reads Dank, Mid and the resin a bud with none written sieves as ({@link Resins#legacy});
          * an exact entry's sums are its item's own; a sum past the steps is held to them.
          */
         public static final Codec<Entry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -252,7 +255,7 @@ public final class StashContents {
                 Codec.INT.optionalFieldOf("resin_sum").forGetter(entry -> entry.blends() ? Optional.of(entry.resinSum) : Optional.empty())
         ).apply(instance, (item, count, tier, band, resin) -> of(item.copyWithCount(1), count,
                 tier.orElse(count * BudTier.DANK.rank()), band.orElse(PotencyBand.MID.offset()),
-                resin.orElseGet(() -> count * ResinStep.legacy(item.copyWithCount(1)).offset()))));
+                resin.orElseGet(() -> count * Resins.legacy(item.copyWithCount(1)).offset()))));
         public static final StreamCodec<RegistryFriendlyByteBuf, Entry> STREAM_CODEC = StreamCodec.composite(
                 ItemStack.STREAM_CODEC, Entry::item,
                 ByteBufCodecs.VAR_INT, Entry::count,
@@ -334,9 +337,9 @@ public final class StashContents {
                 int from = cuts[i];
                 int n = cuts[i + 1] - from;
                 if (n > 0) {
-                    parts.add(stamped(item, n, BudTier.ofRank(from < tierUp ? tier + 1 : tier),
+                    parts.add(stamped(item, n, Tiers.ofRank(from < tierUp ? tier + 1 : tier),
                             bandOf(from < bandUp ? band + 1 : band),
-                            ResinStep.ofOffset(from < resinUp ? resin + 1 : resin)));
+                            Resins.ofOffset(from < resinUp ? resin + 1 : resin)));
                 }
             }
             return parts;
@@ -382,9 +385,9 @@ public final class StashContents {
 
     private static ItemStack stamped(ItemStack key, int n, BudTier tier, PotencyBand band, ResinStep resin) {
         ItemStack stack = key.copyWithCount(n);
-        BudTier.stamp(stack, tier);
-        PotencyBand.stamp(stack, band);
-        ResinStep.stamp(stack, resin);
+        Tiers.stamp(stack, tier);
+        Bands.stamp(stack, band);
+        Resins.stamp(stack, resin);
         return stack;
     }
 

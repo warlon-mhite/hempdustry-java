@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.loot;
 
+import com.warlonmhite.hempdustry.strain.internal.Bands;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.warlonmhite.hempdustry.block.custom.HempLeavesBlock;
@@ -65,10 +66,10 @@ public final class SetPotencyFunction extends LootItemConditionalFunction {
         }
         if (stack.is(ModItems.HEMP_LEAF)) {
             PotencyBand band = record.band();
-            return band.marksLeaf() ? PotencyBand.stamp(stack, PotencyBand.HIGH) : stack;
+            return Bands.marksLeaf(band) ? Bands.stamp(stack, PotencyBand.HIGH) : stack;
         }
         if (isBud(stack, context.getLevel().registryAccess())) {
-            return PotencyBand.stamp(stack, record.band());
+            return Bands.stamp(stack, record.band());
         }
         return stack;
     }

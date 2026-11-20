@@ -241,7 +241,7 @@ public class ModItemTagProvider extends FabricTagProvider.ItemTagProvider {
             // Beldía's buds sit in their own tag below, at their own rate. A strain with no cannabinoids
             // has no resin worth the screen, and the box refuses it.
             if (strain.wildFlower().isPresent() && strain.buds() != ModItems.BELDIA_BUDS
-                    && strain.chemotype() != Chemotype.CANNABINOID_FREE) {
+                    && strain.traits().chemotype() != Chemotype.CANNABINOID_FREE) {
                 flower.add(strain.buds());
             }
         }

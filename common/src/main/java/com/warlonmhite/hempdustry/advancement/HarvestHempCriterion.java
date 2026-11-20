@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.advancement;
 
+import com.warlonmhite.hempdustry.strain.internal.Strains;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
@@ -44,7 +45,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * last moment); and the {@code bed} it grew in, a vanilla {@link BlockPredicate} tested against the
  * block under the LOWER segment — so a datapack can ask for a Hydro Tray, a Grow Pot, or a tray that
  * was fed, in the same vocabulary as {@code minecraft:location}; and the {@code strain} the plant is,
- * a key in the datapack strain registry, read off the plant's block ({@link Strain#ofPlant}) so a
+ * a key in the datapack strain registry, read off the plant's block ({@link Strains#ofPlant}) so a
  * strain a pack adds can be asked for exactly as the mod's own are; and {@code saw_night}, whether the plant stood
  * through a dark night while flowering, read off its plant record ({@link PlantRecordBlockEntity#sawNight}), so a
  * harvest can ask that a lamp went out at night and not that the plant was rushed through one day.
@@ -125,7 +126,7 @@ public class HarvestHempCriterion extends SimpleCriterionTrigger<HarvestHempCrit
                     && (this.sawNight.isEmpty() || this.sawNight.get() == sawNight)
                     && (this.light.isEmpty() || this.light.equals(light))
                     && (this.bed.isEmpty() || this.bed.get().matches(world, bedPos))
-                    && (this.strain.isEmpty() || Strain.ofPlant(plant, world.registryAccess())
+                    && (this.strain.isEmpty() || Strains.ofPlant(plant, world.registryAccess())
                             .filter(entry -> entry.is(this.strain.get())).isPresent());
         }
 

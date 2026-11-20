@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Bands;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.core.BlockPos;
 import com.warlonmhite.hempdustry.strain.PotencyBand;
@@ -50,7 +51,7 @@ public class HempLeavesBlock extends StampedBlock {
     public static ItemStack markBlockItem(ItemStack stack, PotencyBand band) {
         BlockItemStateProperties properties = stack.getOrDefault(DataComponents.BLOCK_STATE, BlockItemStateProperties.EMPTY);
         java.util.Map<String, String> kept = new java.util.HashMap<>(properties.properties());
-        if (band.marksLeaf()) {
+        if (Bands.marksLeaf(band)) {
             kept.put(HIGH_POTENCY.getName(), "true");
         } else {
             kept.remove(HIGH_POTENCY.getName());

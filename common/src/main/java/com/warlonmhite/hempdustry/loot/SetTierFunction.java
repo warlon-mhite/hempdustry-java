@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.loot;
 
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
@@ -52,9 +53,9 @@ public final class SetTierFunction extends LootItemConditionalFunction {
         }
         BlockEntity blockEntity = context.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
         if (!(blockEntity instanceof PlantRecordBlockEntity record)) {
-            return BudTier.stamp(stack, BudTier.MIDS);
+            return Tiers.stamp(stack, BudTier.MIDS);
         }
-        return BudTier.stamp(stack, record.harvestTier(context, context.getLevel(), record.getBlockState(),
+        return Tiers.stamp(stack, record.harvestTier(context, context.getLevel(), record.getBlockState(),
                 context.getOptionalParameter(LootContextParams.THIS_ENTITY)));
     }
 

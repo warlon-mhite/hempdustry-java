@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.item.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Bands;
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.strain.BudTier;
 import com.warlonmhite.hempdustry.strain.Chemotype;
@@ -27,14 +30,14 @@ public class StampedItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display,
                                 Consumer<Component> tooltip, TooltipFlag flag) {
-        tooltip.accept(Chemotype.of(stack).tooltipLine());
+        tooltip.accept(Chemotypes.tooltipLine(Chemotype.of(stack)));
         // A leaf of a high or extra-high plant: its one mark. Nothing else stamped carries a band, and
         // the leaf's prototype carries mid, so the question is the value, never whether it is there.
         if (PotencyBand.of(stack) != PotencyBand.MID) {
-            tooltip.accept(PotencyBand.of(stack).tooltipLine());
+            tooltip.accept(Bands.tooltipLine(PotencyBand.of(stack)));
         }
         if (this instanceof Resin) {
-            tooltip.accept(BudTier.of(stack).tooltipLine());
+            tooltip.accept(Tiers.tooltipLine(BudTier.of(stack)));
         }
         super.appendHoverText(stack, context, display, tooltip, flag);
     }

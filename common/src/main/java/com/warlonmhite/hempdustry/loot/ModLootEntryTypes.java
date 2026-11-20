@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.loot;
 
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -167,7 +168,7 @@ public class ModLootEntryTypes {
             }
             if (spoiled > 0) {
                 // Spoiled bud is still its plant's matter: schwag from a CBD plant is CBD schwag.
-                lootConsumer.accept(Chemotype.stamp(new ItemStack(into, spoiled),
+                lootConsumer.accept(Chemotypes.stamp(new ItemStack(into, spoiled),
                         Chemotype.ofMatter(stack, context.getLevel().registryAccess())));
                 stack.shrink(spoiled);
             }

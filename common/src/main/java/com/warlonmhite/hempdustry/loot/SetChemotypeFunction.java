@@ -98,7 +98,7 @@ public final class SetChemotypeFunction extends LootItemConditionalFunction {
             Optional<Holder.Reference<Strain>> loaded =
                     Strain.registry(context.getLevel().registryAccess()).get(strain.get());
             if (loaded.isPresent()) {
-                return Stamping.apply(stack, loaded.get().value().chemotype());
+                return Stamping.apply(stack, loaded.get().value().traits().chemotype());
             }
             return stack;
         }

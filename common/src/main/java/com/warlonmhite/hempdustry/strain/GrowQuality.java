@@ -2,7 +2,7 @@ package com.warlonmhite.hempdustry.strain;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.util.RandomSource;
+import java.util.Map;
 
 /**
  * A strain's quality sheet: the luck it brings to every harvest of its plants, and the odds of each
@@ -10,48 +10,33 @@ import net.minecraft.util.RandomSource;
  *
  * <p>{@code baseLuck} stands in for the care a strain cannot take: the Nether's plants keep no light
  * record and stand on no Hydro Tray, so theirs is +2; Beldía, a hardy landrace grown for the sieve,
- * has −1. The odds are weights in the order poor, average, good, elite; they need not add up to 100.
+ * has −1. The odds are a weight per gene; they need not add up to 100.
  *
  * <p>Written in a strain's file as {@code "grow_quality": {"base_luck": 0, "poor": 20, "average": 50,
- * "good": 25, "elite": 5}}; every key is optional, and a strain with no {@code grow_quality} reads as
- * {@link #DEFAULT}.
+ * "good": 25, "elite": 5}}; every key is optional (a gene left out reads as {@link #DEFAULT}'s weight), and
+ * a strain with no {@code grow_quality} reads as {@link #DEFAULT}.
+ *
+ * @param baseLuck the luck every harvest of the strain starts from
+ * @param weights  the weight of each gene, one entry per gene; a gene the map leaves out weighs nothing
  */
-public record GrowQuality(int baseLuck, int poor, int average, int good, int elite) {
+public record GrowQuality(int baseLuck, Map<QualityGene, Integer> weights) {
 
     /** Purple Kush's sheet, and any strain's that names none. */
-    public static final GrowQuality DEFAULT = new GrowQuality(0, 20, 50, 25, 5);
+    public static final GrowQuality DEFAULT = new GrowQuality(0,
+            Map.of(QualityGene.POOR, 20, QualityGene.AVERAGE, 50, QualityGene.GOOD, 25, QualityGene.ELITE, 5));
 
     public static final Codec<GrowQuality> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             FileFields.written(Codec.intRange(-64, 64), "base_luck", DEFAULT.baseLuck).forGetter(GrowQuality::baseLuck),
-            FileFields.written(Codec.intRange(0, 1000), "poor", DEFAULT.poor).forGetter(GrowQuality::poor),
-            FileFields.written(Codec.intRange(0, 1000), "average", DEFAULT.average).forGetter(GrowQuality::average),
-            FileFields.written(Codec.intRange(0, 1000), "good", DEFAULT.good).forGetter(GrowQuality::good),
-            FileFields.written(Codec.intRange(0, 1000), "elite", DEFAULT.elite).forGetter(GrowQuality::elite)
+            Keyed.codec(QualityGene.class, Codec.intRange(0, 1000), DEFAULT::weight, Keyed::always)
+                    .forGetter(GrowQuality::weights)
     ).apply(instance, GrowQuality::new));
 
-    /** The weight of {@code gene} among the four. */
-    public int weight(QualityGene gene) {
-        return switch (gene) {
-            case POOR -> poor;
-            case AVERAGE -> average;
-            case GOOD -> good;
-            case ELITE -> elite;
-        };
+    public GrowQuality {
+        weights = Keyed.complete(QualityGene.class, weights, gene -> 0);
     }
 
-    /** One plant's gene, drawn from the odds. A sheet whose odds are all zero is always average. */
-    public QualityGene roll(RandomSource random) {
-        int total = poor + average + good + elite;
-        if (total <= 0) {
-            return QualityGene.AVERAGE;
-        }
-        int pick = random.nextInt(total);
-        for (QualityGene gene : QualityGene.values()) {
-            pick -= weight(gene);
-            if (pick < 0) {
-                return gene;
-            }
-        }
-        return QualityGene.AVERAGE;
+    /** The weight of {@code gene}. */
+    public int weight(QualityGene gene) {
+        return weights.get(gene);
     }
 }

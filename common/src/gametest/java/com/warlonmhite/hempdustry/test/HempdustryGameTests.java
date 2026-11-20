@@ -221,6 +221,8 @@ public final class HempdustryGameTests {
         register("only_the_garments_take_a_trim", TagBackedBehaviourGameTest::onlyTheGarmentsTakeATrim);
         register("every_device_takes_unbreaking", TagBackedBehaviourGameTest::everyDeviceTakesUnbreaking);
         register("the_two_zero_api_still_answers", ApiBridgeGameTest::theTwoZeroApiStillAnswers);
+        register("the_two_one_constructors_read_the_default_traits", ApiBridgeGameTest::theTwoOneConstructorsReadTheDefaultTraits);
+        register("a_strain_with_no_id_smokes_like_its_twin", ApiBridgeGameTest::aStrainWithNoIdSmokesLikeItsTwin);
         register("a_hemp_bed_is_a_villagers_home", FurnitureGameTest::aHempBedIsAVillagersHome);
         register("the_bed_burns_the_wood_does_not", FurnitureGameTest::theBedBurnsTheWoodDoesNot);
         register("hempcrete_burns_no_longer_than_its_stems", FurnitureGameTest::hempcreteBurnsNoLongerThanItsStems);

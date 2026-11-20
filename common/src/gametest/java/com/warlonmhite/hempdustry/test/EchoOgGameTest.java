@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.mojang.serialization.JsonOps;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
@@ -408,9 +409,9 @@ public final class EchoOgGameTest {
     public static void echoOgSmokesQuiet(GameTestHelper context) {
         ServerLevel world = context.getLevel();
         Holder<Strain> echo = world.registryAccess().lookupOrThrow(Strain.REGISTRY_KEY).getOrThrow(ModStrains.ECHO_OG);
-        context.assertTrue(echo.value().chemotype() == Chemotype.CBG_DOMINANT, "Echo OG is not CBG-dominant");
-        context.assertTrue(!echo.value().chemotype().infusable(), "Echo OG's buds can become an edible");
-        context.assertValueEqual(Optional.of(Terpene.BORNEOL), echo.value().terpene(), "Echo OG's terpene");
+        context.assertTrue(echo.value().traits().chemotype() == Chemotype.CBG_DOMINANT, "Echo OG is not CBG-dominant");
+        context.assertTrue(!Chemotypes.infusable(echo.value().traits().chemotype()), "Echo OG's buds can become an edible");
+        context.assertValueEqual(Optional.of(Terpene.BORNEOL), echo.value().traits().terpene(), "Echo OG's terpene");
         context.assertTrue(echo.value().wildFlower().filter(f -> f == ModBlocks.ECHO_OG_CROP).isPresent(),
                 "Echo OG's wild plant is " + echo.value().wildFlower());
         context.assertTrue(world.recipeAccess().byKey(ResourceKey.create(Registries.RECIPE,

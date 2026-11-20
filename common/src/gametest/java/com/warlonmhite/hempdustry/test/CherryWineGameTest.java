@@ -1,5 +1,7 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.strain.internal.Dosing;
+import java.util.function.Predicate;
 import com.mojang.serialization.JsonOps;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.component.ModComponents;
@@ -114,9 +116,9 @@ public final class CherryWineGameTest {
     public static void cherryWineSmokesCbdOnly(GameTestHelper context) {
         ServerLevel world = context.getLevel();
         Holder<Strain> cherryWine = strain(world, ModStrains.CHERRY_WINE);
-        context.assertTrue(cherryWine.value().chemotype() == Chemotype.CBD_DOMINANT, "Cherry Wine is not CBD-dominant");
+        context.assertTrue(cherryWine.value().traits().chemotype() == Chemotype.CBD_DOMINANT, "Cherry Wine is not CBD-dominant");
         SmokeContents one = SmokeContents.of(cherryWine, 1);
-        context.assertValueEqual(0, one.thcDose(), "a Cherry Wine bud's THC dose");
+        context.assertValueEqual(0, Dosing.thcDose(one), "a Cherry Wine bud's THC dose");
 
         ServerPlayer smoker = Players.survival(context);
         smoke(smoker, world, cherryWine);

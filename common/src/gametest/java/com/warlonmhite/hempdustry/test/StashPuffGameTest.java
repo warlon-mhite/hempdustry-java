@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.strain.internal.Terpenes;
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.stash.StashNose;
 import com.warlonmhite.hempdustry.block.custom.stash.TerpenePuff;
@@ -51,7 +54,7 @@ public final class StashPuffGameTest {
         expect(context, "a jar of schwag", StashNose.ROTTEN, schwag(40));
         // Two schwag chemotypes are two kinds: schwag pays by its weight and as a kind.
         expect(context, "schwag of two chemotypes", StashNose.ROTTEN, schwag(10),
-                Chemotype.stamp(new ItemStack(ModItems.SCHWAG, 10), Chemotype.CBD_DOMINANT));
+                Chemotypes.stamp(new ItemStack(ModItems.SCHWAG, 10), Chemotype.CBD_DOMINANT));
         // Stale with no schwag to blame: three kinds of Mids.
         expect(context, "Mids of three strains", StashNose.STALE, buds(kush, 20, BudTier.MIDS),
                 buds(haze, 20, BudTier.MIDS), buds(ModItems.RUDERALIS_BUDS, 20, BudTier.MIDS));
@@ -89,8 +92,7 @@ public final class StashPuffGameTest {
 
         Players.click(context, opener.player(), jarPos, ItemStack.EMPTY);
         context.assertTrue(opener.player().getMainHandItem().is(ModItems.INDICA_BUDS), "an empty hand took nothing out");
-        int smoke = Strain.fromBuds(context.getLevel().registryAccess(), ModItems.INDICA_BUDS).orElseThrow().value()
-                .smokeTint(context.getLevel().registryAccess()).orElse(TerpenePuff.PLAIN);
+        int smoke = Terpenes.smokeTint(Strain.fromBuds(context.getLevel().registryAccess(), ModItems.INDICA_BUDS).orElseThrow().value(), context.getLevel().registryAccess()).orElse(TerpenePuff.PLAIN);
         TerpenePuffOption expected = new TerpenePuffOption(smoke, StashNose.EPIC);
         List<Packet<?>> openerSaw = opener.sent();
         List<Packet<?>> nearSaw = near.sent();
@@ -215,7 +217,7 @@ public final class StashPuffGameTest {
     }
 
     private static ItemStack buds(Item item, int count, BudTier tier) {
-        return BudTier.stamp(new ItemStack(item, count), tier);
+        return Tiers.stamp(new ItemStack(item, count), tier);
     }
 
     private static ItemStack schwag(int count) {

@@ -1,5 +1,7 @@
 package com.warlonmhite.hempdustry.item.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Dosing;
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.balance.DeviceStats;
 import com.warlonmhite.hempdustry.balance.GreenOut;
@@ -250,7 +252,7 @@ public class SmokingDeviceItem extends Item {
                      InteractionHand hand, int drawn) {
         DeviceStats stats = DeviceStats.of(world.registryAccess(), device);
         GreenOut greenOut = GreenOut.of(world.registryAccess());
-        int greenOutOdds = Smoking.greenOutChanceOneIn(greenOut, contents.thcDose(), stats.greenOutFactor());
+        int greenOutOdds = Smoking.greenOutChanceOneIn(greenOut, Dosing.thcDose(contents), stats.greenOutFactor());
         // The bong's bubbling began with the draw and its inhale's delay counts from there; every
         // other device's inhale is the draw's own sound, begun drawn ticks ago.
         boolean lockedOut = device == DeviceType.BONG || drawn == 0
@@ -317,7 +319,7 @@ public class SmokingDeviceItem extends Item {
                 .allMatch(entry -> ModStrains.isPlantMatter(entry.strain()))) {
             // Spent bud is still its plant's matter. A bowl is one material, so its primary entry
             // speaks for it.
-            ItemStack spent = Chemotype.stamp(new ItemStack(ModItems.SCORCHED_HEMP, yield),
+            ItemStack spent = Chemotypes.stamp(new ItemStack(ModItems.SCORCHED_HEMP, yield),
                     contents.entries().getFirst().chemotype());
             if (!player.addItem(spent)) {
                 player.drop(spent, false);

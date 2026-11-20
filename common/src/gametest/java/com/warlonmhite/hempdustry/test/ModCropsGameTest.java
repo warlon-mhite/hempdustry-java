@@ -129,14 +129,14 @@ public final class ModCropsGameTest {
             }
             seen++;
             Strain own = strain.get();
-            if (!PlantRecordBlockEntity.potencyOf(level, root).equals(own.potency())) {
-                findings.put(id, "rolls a potency band from " + PlantRecordBlockEntity.potencyOf(level, root) + ", not " + own.potency());
-            } else if (!PlantRecordBlockEntity.qualityOf(level, root).equals(own.quality())) {
-                findings.put(id, "rolls a quality gene from " + PlantRecordBlockEntity.qualityOf(level, root) + ", not " + own.quality());
-            } else if (!PlantRecordBlockEntity.resistancesOf(level, root).equals(own.resistances())) {
+            if (!PlantRecordBlockEntity.potencyOf(level, root).equals(own.traits().potency())) {
+                findings.put(id, "rolls a potency band from " + PlantRecordBlockEntity.potencyOf(level, root) + ", not " + own.traits().potency());
+            } else if (!PlantRecordBlockEntity.qualityOf(level, root).equals(own.traits().quality())) {
+                findings.put(id, "rolls a quality gene from " + PlantRecordBlockEntity.qualityOf(level, root) + ", not " + own.traits().quality());
+            } else if (!PlantRecordBlockEntity.resistancesOf(level, root).equals(own.traits().resistances())) {
                 findings.put(id, "rolls resistances from another sheet than its strain's");
-            } else if (!PlantRecordBlockEntity.resinOf(level, root).equals(own.resin())) {
-                findings.put(id, "rolls resin from " + PlantRecordBlockEntity.resinOf(level, root) + ", not " + own.resin());
+            } else if (!PlantRecordBlockEntity.resinOf(level, root).equals(own.traits().resin())) {
+                findings.put(id, "rolls resin from " + PlantRecordBlockEntity.resinOf(level, root) + ", not " + own.traits().resin());
             }
         }
         Sweep.atLeast(context, "crops", seen, 13);

@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.loot;
 
+import com.warlonmhite.hempdustry.strain.internal.Resins;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
@@ -57,8 +58,8 @@ public final class SetResinFunction extends LootItemConditionalFunction {
             return stack;
         }
         ResinTexture texture = Strain.fromBuds(context.getLevel().registryAccess(), stack.getItem())
-                .map(strain -> strain.value().resin().texture()).orElse(ResinTexture.EVEN);
-        return ResinStep.stamp(stack, record.resin(), texture);
+                .map(strain -> strain.value().traits().resin().texture()).orElse(ResinTexture.EVEN);
+        return Resins.stamp(stack, record.resin(), texture);
     }
 
     /** The function as a loot table builder takes it. */

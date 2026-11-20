@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.strain.internal.Dosing;
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
+import com.warlonmhite.hempdustry.strain.internal.Bands;
 import com.warlonmhite.hempdustry.block.custom.SiftingBoxBlock;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -177,10 +180,10 @@ public final class DudWeedGameTest {
     public static void dudWeedSmokesNothing(GameTestHelper context) {
         ServerLevel world = context.getLevel();
         Holder<Strain> dud = strain(world, ModStrains.DUD_WEED);
-        context.assertTrue(dud.value().chemotype() == Chemotype.CANNABINOID_FREE, "Dud Weed is not cannabinoid-free");
-        context.assertValueEqual(Optional.of(Terpene.HUMULENE), dud.value().terpene(), "Dud Weed's terpene");
-        context.assertValueEqual(Potency.odds(60, 40, 0, 0), dud.value().potency(), "Dud Weed's potency odds");
-        context.assertValueEqual(0, SmokeContents.of(dud, 3).thcDose(), "a bong of Dud Weed's THC dose");
+        context.assertTrue(dud.value().traits().chemotype() == Chemotype.CANNABINOID_FREE, "Dud Weed is not cannabinoid-free");
+        context.assertValueEqual(Optional.of(Terpene.HUMULENE), dud.value().traits().terpene(), "Dud Weed's terpene");
+        context.assertValueEqual(Bands.odds(60, 40, 0, 0), dud.value().traits().potency(), "Dud Weed's potency odds");
+        context.assertValueEqual(0, Dosing.thcDose(SmokeContents.of(dud, 3)), "a bong of Dud Weed's THC dose");
 
         ServerPlayer smoker = Players.survival(context);
         // The harsh smoke's Nausea is every smoke's, Dud Weed's too: the device rolls it on each hit, whatever the
@@ -201,7 +204,7 @@ public final class DudWeedGameTest {
                 "an oven recipe takes Dud Weed buds, a page in a viewer that the oven refuses");
         context.assertTrue(world.recipeAccess().getRecipeFor(ModRecipes.DECARBOXYLATING_TYPE, new SingleRecipeInput(
                         new ItemStack(ModItems.INDICA_BUDS)), world).isPresent(), "the control, Purple Kush, has no oven recipe");
-        context.assertValueEqual(0, SmokeContents.of(strain(world, ModStrains.HASHISH), 2, Chemotype.CANNABINOID_FREE).thcDose(),
+        context.assertValueEqual(0, Dosing.thcDose(Dosing.load(strain(world, ModStrains.HASHISH), 2, Chemotype.CANNABINOID_FREE)),
                 "cannabinoid-free hash's THC dose");
 
         // Hash or scorched hemp stamped cannabinoid-free has none of its strain's own effects, where the
@@ -209,20 +212,20 @@ public final class DudWeedGameTest {
         java.util.random.RandomGenerator always = () -> 0L;
         for (ResourceKey<Strain> key : List.of(ModStrains.HASHISH, ModStrains.CHARAS, ModStrains.SCORCHED_HEMP)) {
             Strain resin = strain(world, key).value();
-            List<MobEffectInstance> typeV = new ArrayList<>(resin.effects(1, Chemotype.CANNABINOID_FREE, 700, false, 0, always));
-            typeV.addAll(resin.effects(1, Chemotype.CANNABINOID_FREE, 700, true, 0, always));
+            List<MobEffectInstance> typeV = new ArrayList<>(Dosing.effects(resin, 1, Chemotype.CANNABINOID_FREE, 700, false, 0, always));
+            typeV.addAll(Dosing.effects(resin, 1, Chemotype.CANNABINOID_FREE, 700, true, 0, always));
             context.assertTrue(typeV.isEmpty(), "cannabinoid-free " + key.identifier().getPath() + " gave " + typeV);
-            context.assertTrue(!resin.effects(1, Chemotype.THC_DOMINANT, 700, false, 0, always).isEmpty()
-                            || !resin.effects(1, Chemotype.THC_DOMINANT, 700, true, 0, always).isEmpty(),
+            context.assertTrue(!Dosing.effects(resin, 1, Chemotype.THC_DOMINANT, 700, false, 0, always).isEmpty()
+                            || !Dosing.effects(resin, 1, Chemotype.THC_DOMINANT, 700, true, 0, always).isEmpty(),
                     "the control, THC-dominant " + key.identifier().getPath() + ", gave nothing");
         }
 
         // Its schwag: Poison is the smoke's own and stays, Hunger is the THC's and goes.
         Strain schwag = strain(world, ModStrains.SCHWAG).value();
-        List<MobEffectInstance> dudSchwag = schwag.effects(1, Chemotype.CANNABINOID_FREE, 700, false, 0, always);
+        List<MobEffectInstance> dudSchwag = Dosing.effects(schwag, 1, Chemotype.CANNABINOID_FREE, 700, false, 0, always);
         context.assertTrue(dudSchwag.stream().anyMatch(e -> e.is(MobEffects.POISON)), "Dud Weed's schwag lost its Poison");
         context.assertTrue(dudSchwag.stream().noneMatch(e -> e.is(MobEffects.HUNGER)), "Dud Weed's schwag gave Hunger");
-        context.assertTrue(schwag.effects(1, Chemotype.THC_DOMINANT, 700, false, 0, always).stream()
+        context.assertTrue(Dosing.effects(schwag, 1, Chemotype.THC_DOMINANT, 700, false, 0, always).stream()
                 .anyMatch(e -> e.is(MobEffects.HUNGER)), "the control, THC schwag, gave no Hunger");
         context.succeed();
     }
@@ -244,7 +247,7 @@ public final class DudWeedGameTest {
         BlockPos box = context.absolutePos(boxAt);
         BlockHitResult boxHit = new BlockHitResult(Vec3.atCenterOf(box), Direction.UP, box, false);
         for (ItemStack matter : List.of(new ItemStack(ModItems.DUD_WEED_BUDS, 8),
-                Chemotype.stamp(new ItemStack(ModItems.HEMP_LEAF, 64), Chemotype.CANNABINOID_FREE))) {
+                Chemotypes.stamp(new ItemStack(ModItems.HEMP_LEAF, 64), Chemotype.CANNABINOID_FREE))) {
             int before = matter.getCount();
             for (int i = 0; i < 8; i++) {
                 world.getBlockState(box).useItemOn(matter, world, player, InteractionHand.MAIN_HAND, boxHit);
@@ -279,7 +282,7 @@ public final class DudWeedGameTest {
         context.assertValueEqual(0, charas, "charas off " + rubs + " rubs of ripe Dud Weed");
 
         for (Item resin : List.of(ModItems.KIEF, ModItems.BUBBLE_HASH, ModItems.FILTERED_KIEF, ModItems.FILTERED_HASHISH)) {
-            context.assertTrue(HempPressBlockEntity.resultFor(world, Chemotype.stamp(new ItemStack(resin), Chemotype.CANNABINOID_FREE)).isEmpty(),
+            context.assertTrue(HempPressBlockEntity.resultFor(world, Chemotypes.stamp(new ItemStack(resin), Chemotype.CANNABINOID_FREE)).isEmpty(),
                     "the Press took cannabinoid-free " + resin);
             context.assertTrue(!HempPressBlockEntity.resultFor(world, new ItemStack(resin)).isEmpty(), "the control, plain " + resin + ", did not press");
         }
@@ -295,12 +298,12 @@ public final class DudWeedGameTest {
     public static void dudWeedShowsNoPotency(GameTestHelper context) {
         ServerLevel world = context.getLevel();
         for (PotencyBand band : PotencyBand.values()) {
-            List<String> dud = keys(world, PotencyBand.stamp(new ItemStack(ModItems.DUD_WEED_BUDS), band));
+            List<String> dud = keys(world, Bands.stamp(new ItemStack(ModItems.DUD_WEED_BUDS), band));
             context.assertTrue(dud.stream().noneMatch(key -> key.startsWith("hempdustry.potency.")),
                     "a " + band + " Dud Weed bud shows a potency line: " + dud);
             context.assertTrue(dud.contains("hempdustry.chemotype.cannabinoid_free"), "a Dud Weed bud does not say what it is: " + dud);
             context.assertTrue(dud.contains("hempdustry.terpene.humulene"), "a Dud Weed bud names no terpene: " + dud);
-            List<String> cherry = keys(world, PotencyBand.stamp(new ItemStack(ModItems.CHERRY_WINE_BUDS), band));
+            List<String> cherry = keys(world, Bands.stamp(new ItemStack(ModItems.CHERRY_WINE_BUDS), band));
             context.assertTrue(cherry.contains(band.getTranslationKey()), "a " + band + " Cherry Wine bud lost its potency line");
         }
         List<String> seeds = keys(world, new ItemStack(ModItems.DUD_WEED_SEEDS));

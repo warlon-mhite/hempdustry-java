@@ -1,5 +1,9 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.strain.internal.Rolls;
+import com.warlonmhite.hempdustry.strain.internal.Resins;
+import com.warlonmhite.hempdustry.strain.internal.Bands;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -73,16 +77,16 @@ public final class ResinGameTest {
     private static final Map<ResourceKey<Strain>, ResinSheet> SHEETS = new LinkedHashMap<>();
 
     static {
-        SHEETS.put(ModStrains.BELDIA, new ResinSheet(0, 0, 0, 20, 80, ResinTexture.DRY));
-        SHEETS.put(ModStrains.INDICA, new ResinSheet(0, 5, 25, 50, 20, ResinTexture.EVEN));
-        SHEETS.put(ModStrains.SATIVA, new ResinSheet(10, 40, 40, 10, 0, ResinTexture.EVEN));
-        SHEETS.put(ModStrains.WARPED_KUSH, new ResinSheet(0, 0, 10, 30, 60, ResinTexture.STICKY));
-        SHEETS.put(ModStrains.CRIMSON, new ResinSheet(0, 0, 20, 50, 30, ResinTexture.STICKY));
-        SHEETS.put(ModStrains.ENDER_HAZE, new ResinSheet(5, 25, 50, 15, 5, ResinTexture.EVEN));
-        SHEETS.put(ModStrains.RUDERALIS, new ResinSheet(25, 50, 25, 0, 0, ResinTexture.DRY));
-        SHEETS.put(ModStrains.CHERRY_WINE, new ResinSheet(0, 10, 30, 45, 15, ResinTexture.EVEN));
-        SHEETS.put(ModStrains.WHITE_WIDOW, new ResinSheet(0, 0, 15, 50, 35, ResinTexture.STICKY));
-        SHEETS.put(ModStrains.DUD_WEED, new ResinSheet(80, 12, 8, 0, 0, ResinTexture.EVEN));
+        SHEETS.put(ModStrains.BELDIA, Sheets.resin(0, 0, 0, 20, 80, ResinTexture.DRY));
+        SHEETS.put(ModStrains.INDICA, Sheets.resin(0, 5, 25, 50, 20, ResinTexture.EVEN));
+        SHEETS.put(ModStrains.SATIVA, Sheets.resin(10, 40, 40, 10, 0, ResinTexture.EVEN));
+        SHEETS.put(ModStrains.WARPED_KUSH, Sheets.resin(0, 0, 10, 30, 60, ResinTexture.STICKY));
+        SHEETS.put(ModStrains.CRIMSON, Sheets.resin(0, 0, 20, 50, 30, ResinTexture.STICKY));
+        SHEETS.put(ModStrains.ENDER_HAZE, Sheets.resin(5, 25, 50, 15, 5, ResinTexture.EVEN));
+        SHEETS.put(ModStrains.RUDERALIS, Sheets.resin(25, 50, 25, 0, 0, ResinTexture.DRY));
+        SHEETS.put(ModStrains.CHERRY_WINE, Sheets.resin(0, 10, 30, 45, 15, ResinTexture.EVEN));
+        SHEETS.put(ModStrains.WHITE_WIDOW, Sheets.resin(0, 0, 15, 50, 35, ResinTexture.STICKY));
+        SHEETS.put(ModStrains.DUD_WEED, Sheets.resin(80, 12, 8, 0, 0, ResinTexture.EVEN));
     }
 
     private ResinGameTest() {
@@ -105,26 +109,26 @@ public final class ResinGameTest {
                 int i = step.ordinal();
                 float expectedSieve = i < 3 ? sieve[i] : richSieve.get(texture)[i - 3];
                 float expectedRub = i < 3 ? rub[i] : richRub.get(texture)[i - 3];
-                context.assertTrue(Math.abs(step.sieveFactor(texture) - expectedSieve) < 1e-6F,
-                        step + " " + texture + " sieves ×" + step.sieveFactor(texture) + ", not ×" + expectedSieve);
-                context.assertTrue(Math.abs(step.rubChance(texture) - expectedRub) < 1e-6F,
-                        step + " " + texture + " rubs at " + step.rubChance(texture) + ", not " + expectedRub);
+                context.assertTrue(Math.abs(Resins.sieveFactor(step, texture) - expectedSieve) < 1e-6F,
+                        step + " " + texture + " sieves ×" + Resins.sieveFactor(step, texture) + ", not ×" + expectedSieve);
+                context.assertTrue(Math.abs(Resins.rubChance(step, texture) - expectedRub) < 1e-6F,
+                        step + " " + texture + " rubs at " + Resins.rubChance(step, texture) + ", not " + expectedRub);
             }
         }
         for (ResinStep step : ResinStep.values()) {
             context.assertValueEqual(step.ordinal() - 2, step.offset(), step + "'s place around average");
-            context.assertValueEqual(step, ResinStep.ofOffset(step.offset()), step + " read back from its offset");
+            context.assertValueEqual(step, Resins.ofOffset(step.offset()), step + " read back from its offset");
         }
-        context.assertValueEqual(ResinStep.VERY_LOW, ResinStep.ofOffset(-7), "an offset below the steps");
-        context.assertValueEqual(ResinStep.VERY_RICH, ResinStep.ofOffset(9), "an offset above the steps");
+        context.assertValueEqual(ResinStep.VERY_LOW, Resins.ofOffset(-7), "an offset below the steps");
+        context.assertValueEqual(ResinStep.VERY_RICH, Resins.ofOffset(9), "an offset above the steps");
 
         // The file.
         Strain bare = parse(Strain.CODEC, "{\"translation_key\":\"x\",\"color\":1,\"buds\":\"minecraft:wheat\"}");
-        context.assertValueEqual(ResinSheet.DEFAULT, bare.resin(), "a strain file naming no resin");
+        context.assertValueEqual(ResinSheet.DEFAULT, bare.traits().resin(), "a strain file naming no resin");
         Strain sifted = parse(Strain.CODEC, "{\"translation_key\":\"x\",\"color\":1,\"buds\":\"minecraft:wheat\","
                 + "\"plant\":{\"resin\":{\"rich\":20,\"very_rich\":80,\"texture\":\"dry\"}}}");
-        context.assertValueEqual(new ResinSheet(0, 0, 0, 20, 80, ResinTexture.DRY), sifted.resin(), "a strain file naming its resin");
-        context.assertValueEqual(new ResinSheet(0, 0, 0, 0, 0, ResinTexture.STICKY),
+        context.assertValueEqual(Sheets.resin(0, 0, 0, 20, 80, ResinTexture.DRY), sifted.traits().resin(), "a strain file naming its resin");
+        context.assertValueEqual(Sheets.resin(0, 0, 0, 0, 0, ResinTexture.STICKY),
                 parse(ResinSheet.CODEC, "{\"texture\":\"sticky\"}"), "a resin naming only its texture");
         context.assertValueEqual(ResinTexture.EVEN, parse(ResinSheet.CODEC, "{}").texture(), "a resin naming no texture");
 
@@ -134,7 +138,7 @@ public final class ResinGameTest {
         Map<ResinStep, Integer> seen = new EnumMap<>(ResinStep.class);
         int rolls = 8000;
         for (int roll = 0; roll < rolls; roll++) {
-            seen.merge(beldia.roll(random), 1, Integer::sum);
+            seen.merge(Rolls.roll(beldia, random), 1, Integer::sum);
         }
         for (ResinStep step : ResinStep.values()) {
             double share = (double) seen.getOrDefault(step, 0) / rolls;
@@ -144,7 +148,7 @@ public final class ResinGameTest {
         long seed = new Random(20261114L).nextLong();
         RandomSource rolled = RandomSource.create(seed);
         RandomSource counted = RandomSource.create(seed);
-        context.assertValueEqual(ResinStep.AVERAGE, new ResinSheet(0, 0, 0, 0, 0, ResinTexture.DRY).roll(rolled), "odds that are all zero");
+        context.assertValueEqual(ResinStep.AVERAGE, Rolls.roll(Sheets.resin(0, 0, 0, 0, 0, ResinTexture.DRY), rolled), "odds that are all zero");
         context.assertValueEqual(counted.nextLong(), rolled.nextLong(), "odds that are all zero took a draw");
 
         // A bud with no step reads what it sieved as before resin; that step writes nothing.
@@ -152,14 +156,14 @@ public final class ResinGameTest {
         ItemStack beldiaBud = new ItemStack(ModItems.BELDIA_BUDS);
         context.assertValueEqual(ResinStep.AVERAGE, ResinStep.of(kush), "a Purple Kush bud with no step");
         context.assertValueEqual(ResinStep.VERY_RICH, ResinStep.of(beldiaBud), "a Beldía bud with no step (two levels a bud)");
-        context.assertTrue(ResinStep.stamp(kush.copy(), ResinStep.AVERAGE).getComponentsPatch().isEmpty()
-                        && ResinStep.stamp(beldiaBud.copy(), ResinStep.VERY_RICH).getComponentsPatch().isEmpty(),
+        context.assertTrue(Resins.stamp(kush.copy(), ResinStep.AVERAGE).getComponentsPatch().isEmpty()
+                        && Resins.stamp(beldiaBud.copy(), ResinStep.VERY_RICH).getComponentsPatch().isEmpty(),
                 "an average Purple Kush bud or a very rich Beldía bud was written a step: it no longer stacks with an old one");
-        context.assertValueEqual(ResinStep.VERY_RICH, ResinStep.stamp(kush.copy(), ResinStep.VERY_RICH).get(ModComponents.RESIN_STEP),
+        context.assertValueEqual(ResinStep.VERY_RICH, Resins.stamp(kush.copy(), ResinStep.VERY_RICH).get(ModComponents.RESIN_STEP),
                 "a very rich Purple Kush bud's step");
-        context.assertValueEqual(ResinStep.AVERAGE, ResinStep.stamp(beldiaBud.copy(), ResinStep.AVERAGE).get(ModComponents.RESIN_STEP),
+        context.assertValueEqual(ResinStep.AVERAGE, Resins.stamp(beldiaBud.copy(), ResinStep.AVERAGE).get(ModComponents.RESIN_STEP),
                 "an average Beldía bud's step");
-        context.assertTrue(ResinStep.stamp(ResinStep.stamp(kush.copy(), ResinStep.LOW), ResinStep.AVERAGE).getComponentsPatch().isEmpty(),
+        context.assertTrue(Resins.stamp(Resins.stamp(kush.copy(), ResinStep.LOW), ResinStep.AVERAGE).getComponentsPatch().isEmpty(),
                 "a low bud stamped back to average keeps a patch");
         context.succeed();
     }
@@ -169,9 +173,9 @@ public final class ResinGameTest {
         HolderLookup.Provider registries = context.getLevel().registryAccess();
         for (Map.Entry<ResourceKey<Strain>, ResinSheet> sheet : SHEETS.entrySet()) {
             Strain strain = Strain.registry(registries).getOrThrow(sheet.getKey()).value();
-            context.assertValueEqual(sheet.getValue(), strain.resin(), sheet.getKey().identifier() + "'s resin");
+            context.assertValueEqual(sheet.getValue(), strain.traits().resin(), sheet.getKey().identifier() + "'s resin");
         }
-        context.assertValueEqual(new ResinSheet(92, 5, 3, 0, 0, ResinTexture.EVEN), IndustrialHempCropBlock.RESIN,
+        context.assertValueEqual(Sheets.resin(92, 5, 3, 0, 0, ResinTexture.EVEN), IndustrialHempCropBlock.RESIN,
                 "Industrial Hemp's resin");
         context.succeed();
     }
@@ -252,7 +256,7 @@ public final class ResinGameTest {
                     if (drop.is(buds)) {
                         any = true;
                         context.assertValueEqual(step, ResinStep.of(drop), "a bud of a " + step + " " + buds);
-                        context.assertValueEqual(step != ResinStep.legacy(drop), drop.has(ModComponents.RESIN_STEP),
+                        context.assertValueEqual(step != Resins.legacy(drop), drop.has(ModComponents.RESIN_STEP),
                                 "whether a " + step + " " + buds + " carries its step written");
                     } else {
                         context.assertTrue(!drop.has(ModComponents.RESIN_STEP), drop + " off a plant carries a resin step");
@@ -269,7 +273,7 @@ public final class ResinGameTest {
         String potency = Component.translatable("hempdustry.potency.mid").getString();
         String dank = Component.translatable("hempdustry.tier.dank").getString();
         for (ResinStep step : ResinStep.values()) {
-            List<String> lines = lines(world, ResinStep.stamp(new ItemStack(ModItems.INDICA_BUDS), step));
+            List<String> lines = lines(world, Resins.stamp(new ItemStack(ModItems.INDICA_BUDS), step));
             String line = Component.translatable(step.getTranslationKey()).getString();
             if (step == ResinStep.AVERAGE) {
                 context.assertTrue(!lines.contains(line), "an average bud's tooltip names its resin: " + lines);
@@ -282,7 +286,7 @@ public final class ResinGameTest {
         context.assertTrue(lines(world, new ItemStack(ModItems.BELDIA_BUDS))
                         .contains(Component.translatable(ResinStep.VERY_RICH.getTranslationKey()).getString()),
                 "a Beldía bud with no step, which sieves as a very rich one, does not say so");
-        List<String> dud = lines(world, ResinStep.stamp(new ItemStack(ModItems.DUD_WEED_BUDS), ResinStep.VERY_LOW));
+        List<String> dud = lines(world, Resins.stamp(new ItemStack(ModItems.DUD_WEED_BUDS), ResinStep.VERY_LOW));
         context.assertTrue(!dud.contains(Component.translatable(ResinStep.VERY_LOW.getTranslationKey()).getString()),
                 "a cannabinoid-free bud names its resin: " + dud);
         context.succeed();
@@ -299,40 +303,40 @@ public final class ResinGameTest {
         Map<ItemStack, Float> expected = new LinkedHashMap<>();
         expected.put(new ItemStack(ModItems.INDICA_BUDS), 1.0F);
         expected.put(new ItemStack(ModItems.BELDIA_BUDS), 2.0F);
-        expected.put(ResinStep.stamp(new ItemStack(ModItems.INDICA_BUDS), ResinStep.VERY_LOW), 0.5F);
-        expected.put(ResinStep.stamp(new ItemStack(ModItems.INDICA_BUDS), ResinStep.LOW), 0.75F);
-        expected.put(ResinStep.stamp(new ItemStack(ModItems.INDICA_BUDS), ResinStep.RICH), 1.25F);
-        expected.put(ResinStep.stamp(new ItemStack(ModItems.INDICA_BUDS), ResinStep.VERY_RICH), 1.5F);
-        expected.put(ResinStep.stamp(new ItemStack(ModItems.BELDIA_BUDS), ResinStep.AVERAGE), 1.0F);
-        expected.put(ResinStep.stamp(new ItemStack(ModItems.BELDIA_BUDS), ResinStep.RICH), 1.5F);
-        expected.put(ResinStep.stamp(new ItemStack(ModItems.BELDIA_BUDS), ResinStep.VERY_LOW), 0.5F);
-        expected.put(ResinStep.stamp(new ItemStack(ModItems.WARPED_KUSH_BUDS), ResinStep.VERY_RICH), 1.5F);
-        expected.put(ResinStep.stamp(new ItemStack(ModItems.RUDERALIS_BUDS), ResinStep.LOW), 0.75F);
+        expected.put(Resins.stamp(new ItemStack(ModItems.INDICA_BUDS), ResinStep.VERY_LOW), 0.5F);
+        expected.put(Resins.stamp(new ItemStack(ModItems.INDICA_BUDS), ResinStep.LOW), 0.75F);
+        expected.put(Resins.stamp(new ItemStack(ModItems.INDICA_BUDS), ResinStep.RICH), 1.25F);
+        expected.put(Resins.stamp(new ItemStack(ModItems.INDICA_BUDS), ResinStep.VERY_RICH), 1.5F);
+        expected.put(Resins.stamp(new ItemStack(ModItems.BELDIA_BUDS), ResinStep.AVERAGE), 1.0F);
+        expected.put(Resins.stamp(new ItemStack(ModItems.BELDIA_BUDS), ResinStep.RICH), 1.5F);
+        expected.put(Resins.stamp(new ItemStack(ModItems.BELDIA_BUDS), ResinStep.VERY_LOW), 0.5F);
+        expected.put(Resins.stamp(new ItemStack(ModItems.WARPED_KUSH_BUDS), ResinStep.VERY_RICH), 1.5F);
+        expected.put(Resins.stamp(new ItemStack(ModItems.RUDERALIS_BUDS), ResinStep.LOW), 0.75F);
         expected.put(new ItemStack(ModItems.HEMP_LEAF), SiftingBoxBlock.TRIM_CHANCE);
         expected.put(new ItemStack(ModItems.KIEF), SiftingBoxBlock.KIEF_CHANCE);
         for (Map.Entry<ItemStack, Float> entry : expected.entrySet()) {
             float chance = SiftingBoxBlock.sieveChance(entry.getKey(), registries);
             context.assertTrue(Math.abs(chance - entry.getValue()) < 1e-6F, entry.getKey() + " "
-                    + ResinStep.written(entry.getKey()) + " sieves at " + chance + ", not " + entry.getValue());
+                    + Resins.written(entry.getKey()) + " sieves at " + chance + ", not " + entry.getValue());
         }
 
         // Written only where nothing written would sieve otherwise: a very rich bud in the resinous tag is left bare
         // for a dry strain (the tag's double rate is its own), written for any other texture (which a datapack's
         // tagged strain may have), and an average bud outside the tag is never written.
-        context.assertTrue(ResinStep.written(ResinStep.stamp(new ItemStack(ModItems.BELDIA_BUDS), ResinStep.VERY_RICH,
+        context.assertTrue(Resins.written(Resins.stamp(new ItemStack(ModItems.BELDIA_BUDS), ResinStep.VERY_RICH,
                 ResinTexture.DRY)).isEmpty(), "a very rich bud of a dry resinous strain was written");
         for (ResinTexture texture : List.of(ResinTexture.EVEN, ResinTexture.STICKY)) {
-            context.assertTrue(ResinStep.written(ResinStep.stamp(new ItemStack(ModItems.BELDIA_BUDS), ResinStep.VERY_RICH,
+            context.assertTrue(Resins.written(Resins.stamp(new ItemStack(ModItems.BELDIA_BUDS), ResinStep.VERY_RICH,
                     texture)).isPresent(), "a very rich bud of an " + texture.getSerializedName()
                     + " resinous strain was left bare, so it would sieve at the tag's double rate");
-            context.assertTrue(ResinStep.written(ResinStep.stamp(new ItemStack(ModItems.INDICA_BUDS), ResinStep.AVERAGE,
+            context.assertTrue(Resins.written(Resins.stamp(new ItemStack(ModItems.INDICA_BUDS), ResinStep.AVERAGE,
                     texture)).isEmpty(), "an average bud outside the tag was written");
         }
 
         // In the box: one average Beldía bud is one level; one with no step is two.
         context.setBlock(BOX, ModBlocks.SIFTING_BOX.defaultBlockState());
         Players.click(context, Players.survival(context), BOX,
-                ResinStep.stamp(new ItemStack(ModItems.BELDIA_BUDS, 4), ResinStep.AVERAGE));
+                Resins.stamp(new ItemStack(ModItems.BELDIA_BUDS, 4), ResinStep.AVERAGE));
         context.assertValueEqual(1, context.getBlockState(BOX).getValue(SiftingBoxBlock.LEVEL),
                 "an average Beldía bud's level on the screen");
         Players.click(context, Players.survival(context), BOX, new ItemStack(ModItems.BELDIA_BUDS, 4));
@@ -366,7 +370,7 @@ public final class ResinGameTest {
                 float sun = Defoliation.charasChance(world, pos, state);
                 float lamp = Defoliation.charasChance(world, pos, state.setValue(GrowLight.PROPERTY, GrowLight.LAMP));
                 float stressed = Defoliation.charasChance(world, pos, state.setValue(GrowLight.PROPERTY, GrowLight.STRESSED));
-                float expected = step.rubChance(crop.getValue());
+                float expected = Resins.rubChance(step, crop.getValue());
                 context.assertTrue(Math.abs(sun - expected) < 1e-6F && Math.abs(lamp - expected / 2) < 1e-6F
                                 && Math.abs(stressed - expected / 2) < 1e-6F,
                         "a " + step + " " + crop.getKey() + " rubs at " + sun + " / lamp " + lamp + " / stressed " + stressed
@@ -420,7 +424,7 @@ public final class ResinGameTest {
         context.assertTrue(parts.size() == 1 && ItemStack.matches(parts.getFirst(), new ItemStack(ModItems.BELDIA_BUDS, 3)),
                 "three old Beldía buds came out as " + describe(parts));
         parts = blend(List.of(new ItemStack(ModItems.BELDIA_BUDS),
-                ResinStep.stamp(new ItemStack(ModItems.BELDIA_BUDS), ResinStep.AVERAGE))).parts();
+                Resins.stamp(new ItemStack(ModItems.BELDIA_BUDS), ResinStep.AVERAGE))).parts();
         context.assertTrue(parts.size() == 1 && parts.getFirst().getCount() == 2 && ResinStep.of(parts.getFirst()) == ResinStep.RICH,
                 "an old Beldía bud and an average one blended to " + describe(parts) + ", not two rich ones");
 
@@ -463,7 +467,7 @@ public final class ResinGameTest {
     }
 
     private static ItemStack kush(int count, BudTier tier, PotencyBand band, ResinStep resin) {
-        return ResinStep.stamp(PotencyBand.stamp(BudTier.stamp(new ItemStack(ModItems.INDICA_BUDS, count), tier), band), resin);
+        return Resins.stamp(Bands.stamp(Tiers.stamp(new ItemStack(ModItems.INDICA_BUDS, count), tier), band), resin);
     }
 
     private static StashContents blend(List<ItemStack> stacks) {

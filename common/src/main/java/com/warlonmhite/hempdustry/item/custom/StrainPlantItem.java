@@ -1,5 +1,10 @@
 package com.warlonmhite.hempdustry.item.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Resins;
+import com.warlonmhite.hempdustry.strain.internal.Bands;
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
+import com.warlonmhite.hempdustry.strain.internal.Terpenes;
 import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.strain.BudTier;
 import com.warlonmhite.hempdustry.strain.Chemotype;
@@ -74,22 +79,22 @@ public final class StrainPlantItem {
                                      Optional<Chemotype> fallback, Optional<PotencyBand> band, Optional<ResinStep> resin,
                                      Optional<BudTier> tier) {
         Optional<Strain> strain = strainOf(stack.getItem(), context);
-        Optional<Chemotype> chemotype = strain.map(Strain::chemotype).or(() -> fallback);
-        chemotype.ifPresent(value -> tooltip.accept(value.tooltipLine()));
+        Optional<Chemotype> chemotype = strain.map(Strain::traits).map(Strain.Traits::chemotype).or(() -> fallback);
+        chemotype.ifPresent(value -> tooltip.accept(Chemotypes.tooltipLine(value)));
         // Only the plant with nothing in it at all loses the lines: a CBG-dominant bud's band is how much
         // CBG it carries, so that one keeps it. A cannabinoid-free bud has no resin worth the sieve either.
         if (chemotype.filter(value -> value == Chemotype.CANNABINOID_FREE).isEmpty()) {
-            band.ifPresent(value -> tooltip.accept(value.tooltipLine()));
-            resin.flatMap(ResinStep::tooltipLine).ifPresent(tooltip);
+            band.ifPresent(value -> tooltip.accept(Bands.tooltipLine(value)));
+            resin.flatMap(Resins::tooltipLine).ifPresent(tooltip);
         }
-        tier.ifPresent(value -> tooltip.accept(value.tooltipLine()));
+        tier.ifPresent(value -> tooltip.accept(Tiers.tooltipLine(value)));
         HolderLookup.Provider registries = context.registries();
-        Optional<Terpene> terpene = strain.flatMap(value -> value.loadedTerpene(registries));
+        Optional<Terpene> terpene = strain.flatMap(value -> Terpenes.of(value, registries));
         if (terpene.isEmpty() && registries != null && stack.getItem() instanceof BlockItem plants) {
             // A plant with no strain record (the fibre family) still smells of something.
-            terpene = Terpene.ofPlant(plants.getBlock(), registries);
+            terpene = Terpenes.ofPlant(plants.getBlock(), registries);
         }
-        terpene.ifPresent(value -> tooltip.accept(value.tooltipLine()));
+        terpene.ifPresent(value -> tooltip.accept(Terpenes.tooltipLine(value)));
     }
 
     /** A strain's buds. */

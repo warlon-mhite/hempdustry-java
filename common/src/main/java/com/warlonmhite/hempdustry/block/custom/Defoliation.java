@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Resins;
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
+import com.warlonmhite.hempdustry.strain.internal.Bands;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
 import com.warlonmhite.hempdustry.strain.Chemotype;
@@ -173,7 +176,7 @@ public final class Defoliation {
 
     /**
      * The chance that rubbing the plant whose root is {@code lowerState} at {@code lowerPos} pays a charas. A plant
-     * that keeps a record rubs by its resin step and its strain's texture ({@link ResinStep#rubChance}): 1 in 8 for
+     * that keeps a record rubs by its resin step and its strain's texture ({@link Resins#rubChance}): 1 in 8 for
      * a very low plant to 1 in 2 for a very rich sticky one, halved for a plant that grew under any light but the
      * sun or was stressed, as before. One with no record rubs at {@link #charasOneIn}.
      */
@@ -182,7 +185,7 @@ public final class Defoliation {
         if (step == null) {
             return 1.0F / charasOneIn(lowerState);
         }
-        float chance = step.rubChance(PlantRecordBlockEntity.textureOf(world, lowerState));
+        float chance = Resins.rubChance(step, PlantRecordBlockEntity.textureOf(world, lowerState));
         boolean lamps = lowerState.hasProperty(GrowLight.PROPERTY) && lowerState.getValue(GrowLight.PROPERTY).artificial();
         return lamps ? chance / 2.0F : chance;
     }
@@ -317,12 +320,12 @@ public final class Defoliation {
             GrowLight light = lowerState.getValue(GrowLight.PROPERTY);
             int leaves = !rub && light == GrowLight.GROW_LAMP ? 2 : 1;
             // What comes off the plant is the plant's chemotype.
-            Chemotype chemotype = Chemotype.ofPlant(lowerState.getBlock(), world.registryAccess());
+            Chemotype chemotype = Chemotypes.ofPlant(lowerState.getBlock(), world.registryAccess());
             if (leaves > 0) {
-                ItemStack leaf = Chemotype.stamp(new ItemStack(ModItems.HEMP_LEAF, leaves), chemotype);
+                ItemStack leaf = Chemotypes.stamp(new ItemStack(ModItems.HEMP_LEAF, leaves), chemotype);
                 // And of a high or extra-high plant, it is marked: asked of the plant's record.
-                if (PlantRecordBlockEntity.bandAt(world, lowerPos).marksLeaf()) {
-                    PotencyBand.stamp(leaf, PotencyBand.HIGH);
+                if (Bands.marksLeaf(PlantRecordBlockEntity.bandAt(world, lowerPos))) {
+                    Bands.stamp(leaf, PotencyBand.HIGH);
                 }
                 Block.popResource(world, lowerPos, leaf);
             }
@@ -347,7 +350,7 @@ public final class Defoliation {
                 boolean gotCharas = world.getRandom().nextFloat() < charasChance(world, lowerPos, lowerState)
                         && chemotype != Chemotype.CANNABINOID_FREE;
                 if (gotCharas) {
-                    Block.popResource(world, lowerPos, Chemotype.stamp(new ItemStack(ModItems.CHARAS), chemotype));
+                    Block.popResource(world, lowerPos, Chemotypes.stamp(new ItemStack(ModItems.CHARAS), chemotype));
                 }
                 world.playSound(null, lowerPos,
                         gotCharas ? SoundEvents.HONEY_BLOCK_BREAK

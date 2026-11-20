@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom.stash;
 
+import com.warlonmhite.hempdustry.strain.internal.Terpenes;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.particle.TerpenePuffOption;
 import com.warlonmhite.hempdustry.strain.Strain;
@@ -49,7 +50,7 @@ public final class TerpenePuff {
             return STALE_HAY;
         }
         return Strain.fromBuds(level.registryAccess(), out.getItem())
-                .flatMap(strain -> strain.value().smokeTint(level.registryAccess()))
+                .flatMap(strain -> Terpenes.smokeTint(strain.value(), level.registryAccess()))
                 .orElse(PLAIN);
     }
 }

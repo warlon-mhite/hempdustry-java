@@ -1,5 +1,7 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Rolls;
+import com.warlonmhite.hempdustry.strain.internal.Strains;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
 import com.warlonmhite.hempdustry.strain.GrowQuality;
 import com.warlonmhite.hempdustry.strain.Strain;
@@ -37,12 +39,12 @@ public final class GrowLuck {
 
     /** The grow luck of {@code record}'s plant, whose root stood as {@code root}, harvested by {@code harvester}. */
     public static float of(PlantRecordBlockEntity record, BlockState root, Level level, @Nullable Entity harvester) {
-        int baseLuck = Strain.ofPlant(root.getBlock(), level.registryAccess())
+        int baseLuck = Strains.ofPlant(root.getBlock(), level.registryAccess())
                 .map(Holder::value)
-                .map(Strain::quality)
+                .map(Strain::traits).map(Strain.Traits::quality)
                 .orElse(GrowQuality.DEFAULT)
                 .baseLuck();
-        return baseLuck + record.gene().luck() + care(root, record.openSky(), record.workingTray()) + luckOf(harvester);
+        return baseLuck + Rolls.luck(record.gene()) + care(root, record.openSky(), record.workingTray()) + luckOf(harvester);
     }
 
     /** What the plant's care adds: its trims, the best light it kept, and a Hydro Tray. */

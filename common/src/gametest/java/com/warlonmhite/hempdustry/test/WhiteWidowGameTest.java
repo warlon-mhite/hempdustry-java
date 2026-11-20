@@ -114,8 +114,8 @@ public final class WhiteWidowGameTest {
         }
 
         Holder<Strain> widow = strain(world, ModStrains.WHITE_WIDOW);
-        context.assertTrue(widow.value().chemotype() == Chemotype.THC_DOMINANT, "White Widow is not THC-dominant");
-        context.assertValueEqual(Optional.of(Terpene.NEROLIDOL), widow.value().terpene(), "White Widow's terpene");
+        context.assertTrue(widow.value().traits().chemotype() == Chemotype.THC_DOMINANT, "White Widow is not THC-dominant");
+        context.assertValueEqual(Optional.of(Terpene.NEROLIDOL), widow.value().traits().terpene(), "White Widow's terpene");
         context.assertTrue(widow.value().wildFlower().filter(f -> f == ModBlocks.WHITE_WIDOW_FLOWER).isPresent(),
                 "White Widow's wild flower is " + widow.value().wildFlower());
 

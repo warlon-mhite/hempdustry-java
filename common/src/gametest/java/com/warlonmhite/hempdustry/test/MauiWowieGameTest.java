@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.strain.internal.Terpenes;
 import com.mojang.serialization.JsonOps;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
@@ -287,17 +288,17 @@ public final class MauiWowieGameTest {
         ServerLevel world = context.getLevel();
         Holder<Strain> maui = world.registryAccess().lookupOrThrow(Strain.REGISTRY_KEY).getOrThrow(ModStrains.MAUI_WOWIE);
         Strain strain = maui.value();
-        context.assertTrue(strain.chemotype() == Chemotype.THC_DOMINANT, "Maui Wowie is not Type I");
-        context.assertValueEqual(Optional.of(Terpene.OCIMENE), strain.terpene(), "Maui Wowie's terpene");
+        context.assertTrue(strain.traits().chemotype() == Chemotype.THC_DOMINANT, "Maui Wowie is not Type I");
+        context.assertValueEqual(Optional.of(Terpene.OCIMENE), strain.traits().terpene(), "Maui Wowie's terpene");
         context.assertValueEqual(Optional.of(0x4A7BD8),
-                Terpene.resolve(world.registryAccess(), Terpene.OCIMENE).map(Terpene::color), "ocimene's colour");
+                Terpenes.resolve(world.registryAccess(), Terpene.OCIMENE).map(Terpene::color), "ocimene's colour");
         context.assertTrue(strain.wildFlower().filter(f -> f == ModBlocks.MAUI_WOWIE_FLOWER).isPresent(),
                 "Maui Wowie's wild plant is " + strain.wildFlower());
         context.assertTrue(world.recipeAccess().byKey(ResourceKey.create(Registries.RECIPE,
                         Identifier.fromNamespaceAndPath("hempdustry", "decarboxylating/maui_wowie_buds"))).isPresent(),
                 "the oven turns Maui Wowie buds away");
-        context.assertValueEqual(com.warlonmhite.hempdustry.strain.Resistances.of(Resistance.WEAK,
-                Resistance.VERY_RESISTANT, Resistance.NEUTRAL, Resistance.VERY_RESISTANT), strain.resistances(), "Maui Wowie's resistances");
+        context.assertValueEqual(Sheets.resistances(Resistance.WEAK,
+                Resistance.VERY_RESISTANT, Resistance.NEUTRAL, Resistance.VERY_RESISTANT), strain.traits().resistances(), "Maui Wowie's resistances");
 
         int bong = DeviceType.BONG.builtInStats().durationTicks();
         List<MobEffectInstance> one = SmokeContents.of(maui, 1).effects(bong, false, new java.util.Random(1L));

@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block;
 
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.strain.Chemotype;
 import net.minecraft.core.BlockPos;
@@ -106,7 +107,7 @@ public final class ModCauldronBehaviors {
                 // creativeOverride): the input is never spent, so the output is only handed over
                 // when the player has none — otherwise every click mints another stack out of
                 // nothing. One item, not the batch: nothing was consumed to pay for a batch.
-                ItemStack one = Chemotype.stamp(new ItemStack(output), Chemotype.of(stack));
+                ItemStack one = Chemotypes.stamp(new ItemStack(output), Chemotype.of(stack));
                 if (!player.getInventory().contains(one)) {
                     player.getInventory().add(one);
                 }
@@ -115,7 +116,7 @@ public final class ModCauldronBehaviors {
                 Chemotype chemotype = Chemotype.of(stack);
                 stack.shrink(toProcess);
                 // toProcess is capped by the input stack, so this never exceeds one legal stack.
-                player.getInventory().placeItemBackInInventory(Chemotype.stamp(new ItemStack(output, toProcess), chemotype));
+                player.getInventory().placeItemBackInInventory(Chemotypes.stamp(new ItemStack(output, toProcess), chemotype));
             }
             player.awardStat(Stats.USE_CAULDRON);
             player.awardStat(Stats.ITEM_USED.get(input));

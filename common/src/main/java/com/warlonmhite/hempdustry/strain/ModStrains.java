@@ -6,11 +6,13 @@ import com.warlonmhite.hempdustry.effect.ModEffects;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.strain.Strain.SmokeEffect;
+import com.warlonmhite.hempdustry.strain.internal.Bands;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffects;
 import java.util.HashMap;
 import java.util.List;
@@ -235,7 +237,7 @@ public class ModStrains {
 
     /**
      * Every plant strain names its most likely resistance step per phenomenon, in the order dry ground,
-     * overwatering and overfeeding, light, mildew ({@link Resistances#of}); a plant rolls around it by the shared
+     * overwatering and overfeeding, light, mildew ({@link #resistances}); a plant rolls around it by the shared
      * spread. A strain smoked for its effects sums to between −3 and +3 on the hardiness scale, with at most one
      * very resistant and one very weak step; only a plant with nothing to smoke for goes above.
      */
@@ -252,9 +254,11 @@ public class ModStrains {
                 List.of(
                         new SmokeEffect(MobEffects.RESISTANCE, 0, true),
                         new SmokeEffect(MobEffects.HUNGER, 0, true),
-                        new SmokeEffect(MobEffects.MINING_FATIGUE, 0, true))).withTerpene(Terpene.LINALOOL)
-                .withResistances(Resistances.of(Resistance.NEUTRAL, Resistance.RESISTANT, Resistance.NEUTRAL, Resistance.WEAK))
-                .withResin(new ResinSheet(0, 5, 25, 50, 20, ResinTexture.EVEN)));
+                        new SmokeEffect(MobEffects.MINING_FATIGUE, 0, true)))
+                .withTraits(Strain.Traits.DEFAULT
+                        .withTerpene(Terpene.LINALOOL)
+                        .withResistances(resistances(Resistance.NEUTRAL, Resistance.RESISTANT, Resistance.NEUTRAL, Resistance.WEAK))
+                        .withResin(resin(0, 5, 25, 50, 20, ResinTexture.EVEN))));
 
         // Lemon Haze — the head high, and a deliberate mirror of Purple Kush: where indica buffs
         // defence and taxes mining, sativa buffs movement and mining and taxes melee damage. Hunger
@@ -267,10 +271,12 @@ public class ModStrains {
                         new SmokeEffect(MobEffects.SPEED, 0, true),
                         new SmokeEffect(MobEffects.HASTE, 0, true),
                         new SmokeEffect(MobEffects.HUNGER, 0, true),
-                        new SmokeEffect(MobEffects.WEAKNESS, 0, true))).withTerpene(Terpene.LIMONENE)
-                .withQuality(new GrowQuality(0, 25, 50, 20, 5))
-                .withResistances(Resistances.of(Resistance.RESISTANT, Resistance.WEAK, Resistance.NEUTRAL, Resistance.RESISTANT))
-                .withResin(new ResinSheet(10, 40, 40, 10, 0, ResinTexture.EVEN)));
+                        new SmokeEffect(MobEffects.WEAKNESS, 0, true)))
+                .withTraits(Strain.Traits.DEFAULT
+                        .withTerpene(Terpene.LIMONENE)
+                        .withQuality(quality(0, 25, 50, 20, 5))
+                        .withResistances(resistances(Resistance.RESISTANT, Resistance.WEAK, Resistance.NEUTRAL, Resistance.RESISTANT))
+                        .withResin(resin(10, 40, 40, 10, 0, ResinTexture.EVEN))));
 
         // Beldía -- the Rif's traditional landrace ("of the country" in Darija), grown for the sieve
         // rather than the bowl: its plants are nearly all very rich in dry resin, so its buds count about
@@ -297,12 +303,15 @@ public class ModStrains {
                         new SmokeEffect(MobEffects.INVISIBILITY, 0, false),
                         new SmokeEffect(MobEffects.BLINDNESS, 0, false, 0.25F, true),
                         new SmokeEffect(MobEffects.HUNGER, 0, true)),
-                0.5F, Chemotype.BALANCED).withTerpene(Terpene.MYRCENE)
-                .withPotency(Potency.odds(30, 50, 20, 0))
-                // Base luck -1: a hardy landrace grown for its kief, not its flower.
-                .withQuality(new GrowQuality(-1, 25, 50, 20, 5))
-                .withResistances(Resistances.of(Resistance.VERY_RESISTANT, Resistance.WEAK, Resistance.NEUTRAL, Resistance.RESISTANT))
-                .withResin(new ResinSheet(0, 0, 0, 20, 80, ResinTexture.DRY)));
+                0.5F)
+                .withTraits(Strain.Traits.DEFAULT
+                        .withChemotype(Chemotype.BALANCED)
+                        .withTerpene(Terpene.MYRCENE)
+                        .withPotency(Bands.odds(30, 50, 20, 0))
+                        // Base luck -1: a hardy landrace grown for its kief, not its flower.
+                        .withQuality(quality(-1, 25, 50, 20, 5))
+                        .withResistances(resistances(Resistance.VERY_RESISTANT, Resistance.WEAK, Resistance.NEUTRAL, Resistance.RESISTANT))
+                        .withResin(resin(0, 0, 0, 20, 80, ResinTexture.DRY))));
         // Warped Kush -- the Nether's plant, after Blueberry and Blue Dream, and a strain that
         // literally gets you high.
         //
@@ -326,12 +335,14 @@ public class ModStrains {
                         new SmokeEffect(MobEffects.FIRE_RESISTANCE, 0, false),
                         new SmokeEffect(MobEffects.JUMP_BOOST, 0, true),
                         new SmokeEffect(MobEffects.DARKNESS, 0, false),
-                        new SmokeEffect(MobEffects.HUNGER, 0, true))).withTerpene(Terpene.EUCALYPTOL)
-                .withPotency(Potency.odds(20, 50, 25, 5))
-                // Base luck +2 stands in for the light record and the Hydro Tray it can never take.
-                .withQuality(new GrowQuality(2, 15, 50, 25, 10))
-                .withResistances(Resistances.of(Resistance.RESISTANT, Resistance.NEUTRAL, Resistance.VERY_RESISTANT, Resistance.NEUTRAL))
-                .withResin(new ResinSheet(0, 0, 10, 30, 60, ResinTexture.STICKY)));
+                        new SmokeEffect(MobEffects.HUNGER, 0, true)))
+                .withTraits(Strain.Traits.DEFAULT
+                        .withTerpene(Terpene.EUCALYPTOL)
+                        .withPotency(Bands.odds(20, 50, 25, 5))
+                        // Base luck +2 stands in for the light record and the Hydro Tray it can never take.
+                        .withQuality(quality(2, 15, 50, 25, 10))
+                        .withResistances(resistances(Resistance.RESISTANT, Resistance.NEUTRAL, Resistance.VERY_RESISTANT, Resistance.NEUTRAL))
+                        .withResin(resin(0, 0, 10, 30, 60, ResinTexture.STICKY))));
 
         // Ruderalis -- the feral ancestor, and the lucky one.
         //
@@ -356,13 +367,16 @@ public class ModStrains {
                 Optional.of(ModBlocks.RUDERALIS_CROP), 2.0F, 1,
                 List.of(
                         new SmokeEffect(MobEffects.LUCK, 0, false),
-                        new SmokeEffect(MobEffects.HUNGER, 0, EffectLabel.THC, 1.0F, false, 1.0F, SmokeEffect.NO_CAP)),
-                0.5F, Chemotype.BALANCED).withTerpene(Terpene.PINENE)
-                .withPotency(Potency.odds(50, 40, 10, 0))
-                // Reliable, not good: it takes no care luck, so it is never Epic in plain survival.
-                .withQuality(new GrowQuality(0, 30, 50, 18, 2))
-                .withResistances(Resistances.of(Resistance.RESISTANT, Resistance.NEUTRAL, Resistance.VERY_RESISTANT, Resistance.NEUTRAL))
-                .withResin(new ResinSheet(25, 50, 25, 0, 0, ResinTexture.DRY)));
+                        labelled(MobEffects.HUNGER, 0, EffectLabel.THC, 1.0F, false, 1.0F, SmokeEffect.NO_CAP)),
+                0.5F)
+                .withTraits(Strain.Traits.DEFAULT
+                        .withChemotype(Chemotype.BALANCED)
+                        .withTerpene(Terpene.PINENE)
+                        .withPotency(Bands.odds(50, 40, 10, 0))
+                        // Reliable, not good: it takes no care luck, so it is never Epic in plain survival.
+                        .withQuality(quality(0, 30, 50, 18, 2))
+                        .withResistances(resistances(Resistance.RESISTANT, Resistance.NEUTRAL, Resistance.VERY_RESISTANT, Resistance.NEUTRAL))
+                        .withResin(resin(25, 50, 25, 0, 0, ResinTexture.DRY))));
 
         // Crimson Weed -- the crimson forest's plant, Warped Kush's opposite number.
         //
@@ -384,13 +398,15 @@ public class ModStrains {
                 List.of(
                         new SmokeEffect(MobEffects.STRENGTH, 0, true),
                         new SmokeEffect(MobEffects.GLOWING, 0, false),
-                        new SmokeEffect(MobEffects.HUNGER, 0, true))).withTerpene(Terpene.CARYOPHYLLENE)
-                .withPotency(Potency.odds(20, 50, 25, 5))
-                // As Warped Kush: +2 for the light record and the tray it can never take.
-                .withQuality(new GrowQuality(2, 15, 50, 25, 10))
-                // Neutral to mildew, as Warped Kush: it never catches it, so its gene says nothing either way.
-                .withResistances(Resistances.of(Resistance.RESISTANT, Resistance.NEUTRAL, Resistance.VERY_RESISTANT, Resistance.NEUTRAL))
-                .withResin(new ResinSheet(0, 0, 20, 50, 30, ResinTexture.STICKY)));
+                        new SmokeEffect(MobEffects.HUNGER, 0, true)))
+                .withTraits(Strain.Traits.DEFAULT
+                        .withTerpene(Terpene.CARYOPHYLLENE)
+                        .withPotency(Bands.odds(20, 50, 25, 5))
+                        // As Warped Kush: +2 for the light record and the tray it can never take.
+                        .withQuality(quality(2, 15, 50, 25, 10))
+                        // Neutral to mildew, as Warped Kush: it never catches it, so its gene says nothing either way.
+                        .withResistances(resistances(Resistance.RESISTANT, Resistance.NEUTRAL, Resistance.VERY_RESISTANT, Resistance.NEUTRAL))
+                        .withResin(resin(0, 0, 20, 50, 30, ResinTexture.STICKY))));
 
         // Ender Haze -- the End's plant, and the second Haze: Speed is the family's, as Hunger is
         // everyone's.
@@ -416,14 +432,17 @@ public class ModStrains {
                 List.of(
                         new SmokeEffect(MobEffects.SPEED, 0, true),
                         new SmokeEffect(ModEffects.AVERTED_GAZE, 0, false),
-                        new SmokeEffect(MobEffects.LEVITATION, 0, EffectLabel.STRAIN, LEVITATION_DURATION_FACTOR, true,
+                        labelled(MobEffects.LEVITATION, 0, EffectLabel.STRAIN, LEVITATION_DURATION_FACTOR, true,
                                 1.0F, SmokeEffect.NO_CAP),
                         new SmokeEffect(MobEffects.HUNGER, 0, true)),
-                1.0F, Chemotype.BALANCED).withTerpene(Terpene.TERPINOLENE)
-                .withPotency(Potency.odds(28, 50, 20, 2))
-                .withQuality(new GrowQuality(0, 15, 45, 30, 10))
-                .withResistances(Resistances.of(Resistance.NEUTRAL, Resistance.WEAK, Resistance.RESISTANT, Resistance.RESISTANT))
-                .withResin(new ResinSheet(5, 25, 50, 15, 5, ResinTexture.EVEN)));
+                1.0F)
+                .withTraits(Strain.Traits.DEFAULT
+                        .withChemotype(Chemotype.BALANCED)
+                        .withTerpene(Terpene.TERPINOLENE)
+                        .withPotency(Bands.odds(28, 50, 20, 2))
+                        .withQuality(quality(0, 15, 45, 30, 10))
+                        .withResistances(resistances(Resistance.NEUTRAL, Resistance.WEAK, Resistance.RESISTANT, Resistance.RESISTANT))
+                        .withResin(resin(5, 25, 50, 15, 5, ResinTexture.EVEN))));
 
         // Cherry Wine -- the CBD plant, a real high-CBD cultivar bred from hemp for its flower, and the
         // first strain whose smoke carries CBD-labelled effects only.
@@ -431,7 +450,7 @@ public class ModStrains {
         // REGENERATION is the signature, a game shortcut for CBD's one modest medical claim, and
         // SLOWNESS the tax: sleepiness is purified CBD's commonest side effect. Both are CBD's, so both
         // stay at level I and last 50 ticks for each mid bud's worth of CBD in the bowl, at most 150
-        // (SmokeContents#cbdTicks): one bud heals half a heart, a bong of three a heart and a half, less
+        // (com.warlonmhite.hempdustry.strain.internal.Dosing#cbdTicks): one bud heals half a heart, a bong of three a heart and a half, less
         // than a Potion of Regeneration. Butter is the stronger CBD route, as edibles last longer.
         //
         // NO HUNGER, and no rule needed for it: the munchies are THC-labelled, and a CBD-dominant bud
@@ -444,12 +463,15 @@ public class ModStrains {
                 Optional.of(ModItems.CHERRY_WINE_SEEDS), ModItems.CHERRY_WINE_BUDS,
                 Optional.of(ModBlocks.CHERRY_WINE_FLOWER), 0.0F, 1,
                 List.of(
-                        new SmokeEffect(MobEffects.REGENERATION, 0, EffectLabel.CBD, 1.0F, false, 1.0F, SmokeEffect.NO_CAP),
-                        new SmokeEffect(MobEffects.SLOWNESS, 0, EffectLabel.CBD, 1.0F, false, 1.0F, SmokeEffect.NO_CAP)),
-                1.0F, Chemotype.CBD_DOMINANT).withTerpene(Terpene.GERANIOL)
-                .withPotency(Potency.odds(40, 50, 10, 0))
-                .withResistances(Resistances.of(Resistance.NEUTRAL, Resistance.RESISTANT, Resistance.NEUTRAL, Resistance.WEAK))
-                .withResin(new ResinSheet(0, 10, 30, 45, 15, ResinTexture.EVEN)));
+                        labelled(MobEffects.REGENERATION, 0, EffectLabel.CBD, 1.0F, false, 1.0F, SmokeEffect.NO_CAP),
+                        labelled(MobEffects.SLOWNESS, 0, EffectLabel.CBD, 1.0F, false, 1.0F, SmokeEffect.NO_CAP)),
+                1.0F)
+                .withTraits(Strain.Traits.DEFAULT
+                        .withChemotype(Chemotype.CBD_DOMINANT)
+                        .withTerpene(Terpene.GERANIOL)
+                        .withPotency(Bands.odds(40, 50, 10, 0))
+                        .withResistances(resistances(Resistance.NEUTRAL, Resistance.RESISTANT, Resistance.NEUTRAL, Resistance.WEAK))
+                        .withResin(resin(0, 10, 30, 45, 15, ResinTexture.EVEN))));
 
         // White Widow -- the pale garden's plant, and the resin strain: the real cultivar is named
         // for the white frost of trichomes on its buds, and the pale garden is vanilla's resin garden.
@@ -469,15 +491,18 @@ public class ModStrains {
                 Optional.of(ModItems.WHITE_WIDOW_SEEDS), ModItems.WHITE_WIDOW_BUDS,
                 Optional.of(ModBlocks.WHITE_WIDOW_FLOWER), 1.0F, 1,
                 List.of(
-                        new SmokeEffect(MobEffects.HEALTH_BOOST, 0, EffectLabel.THC, 1.0F, false, 1.0F, 0),
-                        new SmokeEffect(MobEffects.HUNGER, 0, EffectLabel.THC, 1.0F, false, 1.0F, SmokeEffect.NO_CAP),
-                        new SmokeEffect(MobEffects.WEAVING, 0, EffectLabel.STRAIN, 1.0F, false, 1.0F, SmokeEffect.NO_CAP),
-                        new SmokeEffect(MobEffects.UNLUCK, 0, EffectLabel.STRAIN, 1.0F, false, 1.0F, SmokeEffect.NO_CAP)),
-                1.0F, Chemotype.THC_DOMINANT).withTerpene(Terpene.NEROLIDOL)
-                .withPotency(Potency.odds(20, 50, 25, 5))
-                .withQuality(new GrowQuality(0, 18, 48, 28, 6))
-                .withResistances(Resistances.of(Resistance.NEUTRAL, Resistance.NEUTRAL, Resistance.VERY_WEAK, Resistance.NEUTRAL))
-                .withResin(new ResinSheet(0, 0, 15, 50, 35, ResinTexture.STICKY)));
+                        labelled(MobEffects.HEALTH_BOOST, 0, EffectLabel.THC, 1.0F, false, 1.0F, 0),
+                        labelled(MobEffects.HUNGER, 0, EffectLabel.THC, 1.0F, false, 1.0F, SmokeEffect.NO_CAP),
+                        labelled(MobEffects.WEAVING, 0, EffectLabel.STRAIN, 1.0F, false, 1.0F, SmokeEffect.NO_CAP),
+                        labelled(MobEffects.UNLUCK, 0, EffectLabel.STRAIN, 1.0F, false, 1.0F, SmokeEffect.NO_CAP)),
+                1.0F)
+                .withTraits(Strain.Traits.DEFAULT
+                        .withChemotype(Chemotype.THC_DOMINANT)
+                        .withTerpene(Terpene.NEROLIDOL)
+                        .withPotency(Bands.odds(20, 50, 25, 5))
+                        .withQuality(quality(0, 18, 48, 28, 6))
+                        .withResistances(resistances(Resistance.NEUTRAL, Resistance.NEUTRAL, Resistance.VERY_WEAK, Resistance.NEUTRAL))
+                        .withResin(resin(0, 0, 15, 50, 35, ResinTexture.STICKY))));
 
         // Dud Weed -- the cannabinoid-free plant. Real cannabinoid-free lines were bred out of fibre
         // hemp (de Meijer et al. 2009), and the trait is recessive, so it turns up in a hemp field
@@ -486,7 +511,7 @@ public class ModStrains {
         // NO EFFECTS, by its chemistry rather than by a rule: it makes neither THC nor CBD, so a bowl of
         // it has a THC dose of 0 (no high, no Hunger, no green-out) and nothing for a CBD effect to read.
         // What is left is the smoke, its humulene colour, and the cough. green_out_factor 0 says the same
-        // in the codec's own words. The oven and the Infuser turn its flowers away (Chemotype#infusable).
+        // in the codec's own words. The oven and the Infuser turn its flowers away (com.warlonmhite.hempdustry.strain.internal.Chemotypes#infusable).
         //
         // Potency odds 60 / 40 / 0 / 0, the lowest in the mod: the band weighs nothing on a plant with no
         // THC, but it is rolled and kept like any plant's, and hardiness comes at that price.
@@ -496,11 +521,14 @@ public class ModStrains {
                 Optional.of(ModItems.DUD_WEED_SEEDS), ModItems.DUD_WEED_BUDS,
                 Optional.of(ModBlocks.DUD_WEED_CROP), 0.0F, 1,
                 List.of(),
-                1.0F, Chemotype.CANNABINOID_FREE).withTerpene(Terpene.HUMULENE)
-                .withPotency(Potency.odds(60, 40, 0, 0))
-                .withQuality(new GrowQuality(0, 30, 50, 18, 2))
-                .withResistances(Resistances.of(Resistance.VERY_RESISTANT, Resistance.VERY_RESISTANT, Resistance.RESISTANT, Resistance.VERY_RESISTANT))
-                .withResin(new ResinSheet(80, 12, 8, 0, 0, ResinTexture.EVEN)));
+                1.0F)
+                .withTraits(Strain.Traits.DEFAULT
+                        .withChemotype(Chemotype.CANNABINOID_FREE)
+                        .withTerpene(Terpene.HUMULENE)
+                        .withPotency(Bands.odds(60, 40, 0, 0))
+                        .withQuality(quality(0, 30, 50, 18, 2))
+                        .withResistances(resistances(Resistance.VERY_RESISTANT, Resistance.VERY_RESISTANT, Resistance.RESISTANT, Resistance.VERY_RESISTANT))
+                        .withResin(resin(80, 12, 8, 0, 0, ResinTexture.EVEN))));
 
         // Echo OG -- the Ancient City's plant, and the first CBG-dominant strain: its chemistry stops at the
         // precursor the THC and CBD synthases work on (de Meijer & Hammond 2005; the French hemp cultivar
@@ -519,7 +547,7 @@ public class ModStrains {
         // NO HUNGER, and no rule needed for it: the munchies are THC-labelled, and a CBG-dominant bud carries
         // neither THC nor CBD, so its THC dose is 0 -- no high, no Hunger, nothing to green you out with.
         // green_out_factor 0 says the same in the codec's own words. The oven and the Infuser turn its
-        // flowers away (Chemotype#infusable).
+        // flowers away (com.warlonmhite.hempdustry.strain.internal.Chemotypes#infusable).
         //
         // Base luck +2, as the Nether pair's: it can take no lamp and no tray. Gene odds 12 / 46 / 32 / 10,
         // the best of any strain, for the hardest to obtain. Resin low and even: a plant that never sees the
@@ -530,14 +558,17 @@ public class ModStrains {
                 Optional.of(ModItems.ECHO_OG_SEEDS), ModItems.ECHO_OG_BUDS,
                 Optional.of(ModBlocks.ECHO_OG_CROP), 0.0F, 1,
                 List.of(
-                        new SmokeEffect(ModEffects.HUSH, 0, EffectLabel.STRAIN, 1.0F, false, 1.0F, SmokeEffect.NO_CAP),
-                        new SmokeEffect(MobEffects.DARKNESS, 0, EffectLabel.STRAIN, ECHO_DARKNESS_DURATION_FACTOR, true,
+                        labelled(ModEffects.HUSH, 0, EffectLabel.STRAIN, 1.0F, false, 1.0F, SmokeEffect.NO_CAP),
+                        labelled(MobEffects.DARKNESS, 0, EffectLabel.STRAIN, ECHO_DARKNESS_DURATION_FACTOR, true,
                                 1.0F, SmokeEffect.NO_CAP)),
-                1.0F, Chemotype.CBG_DOMINANT).withTerpene(Terpene.BORNEOL)
-                .withPotency(Potency.odds(20, 50, 25, 5))
-                .withQuality(new GrowQuality(2, 12, 46, 32, 10))
-                .withResistances(Resistances.of(Resistance.NEUTRAL, Resistance.NEUTRAL, Resistance.VERY_WEAK, Resistance.WEAK))
-                .withResin(new ResinSheet(15, 40, 35, 10, 0, ResinTexture.EVEN)));
+                1.0F)
+                .withTraits(Strain.Traits.DEFAULT
+                        .withChemotype(Chemotype.CBG_DOMINANT)
+                        .withTerpene(Terpene.BORNEOL)
+                        .withPotency(Bands.odds(20, 50, 25, 5))
+                        .withQuality(quality(2, 12, 46, 32, 10))
+                        .withResistances(resistances(Resistance.NEUTRAL, Resistance.NEUTRAL, Resistance.VERY_WEAK, Resistance.WEAK))
+                        .withResin(resin(15, 40, 35, 10, 0, ResinTexture.EVEN))));
 
         // Maui Wowie -- the ocean's plant: an island sativa of the 1960s and 70s, one of the stoner classics.
         // Its "Hawaiian landrace" history is seed-bank folklore, so the game calls it an island name and no more.
@@ -561,15 +592,18 @@ public class ModStrains {
                 Optional.of(ModItems.MAUI_WOWIE_SEEDS), ModItems.MAUI_WOWIE_BUDS,
                 Optional.of(ModBlocks.MAUI_WOWIE_FLOWER), 1.0F, 1,
                 List.of(
-                        SmokeEffect.dosedByTime(MobEffects.WATER_BREATHING),
-                        SmokeEffect.dosedByTime(MobEffects.DOLPHINS_GRACE),
-                        new SmokeEffect(MobEffects.MINING_FATIGUE, 0, EffectLabel.STRAIN, MAUI_FATIGUE_DURATION_FACTOR, true,
+                        dosedByTime(MobEffects.WATER_BREATHING),
+                        dosedByTime(MobEffects.DOLPHINS_GRACE),
+                        labelled(MobEffects.MINING_FATIGUE, 0, EffectLabel.STRAIN, MAUI_FATIGUE_DURATION_FACTOR, true,
                                 1.0F, SmokeEffect.NO_CAP),
-                        new SmokeEffect(MobEffects.HUNGER, 0, EffectLabel.THC, 1.0F, false, 1.0F, SmokeEffect.NO_CAP)),
-                1.0F, Chemotype.THC_DOMINANT).withTerpene(Terpene.OCIMENE)
-                .withQuality(new GrowQuality(0, 20, 50, 25, 5))
-                .withResistances(Resistances.of(Resistance.WEAK, Resistance.VERY_RESISTANT, Resistance.NEUTRAL, Resistance.VERY_RESISTANT))
-                .withResin(new ResinSheet(5, 35, 45, 15, 0, ResinTexture.STICKY)));
+                        labelled(MobEffects.HUNGER, 0, EffectLabel.THC, 1.0F, false, 1.0F, SmokeEffect.NO_CAP)),
+                1.0F)
+                .withTraits(Strain.Traits.DEFAULT
+                        .withChemotype(Chemotype.THC_DOMINANT)
+                        .withTerpene(Terpene.OCIMENE)
+                        .withQuality(quality(0, 20, 50, 25, 5))
+                        .withResistances(resistances(Resistance.WEAK, Resistance.VERY_RESISTANT, Resistance.NEUTRAL, Resistance.VERY_RESISTANT))
+                        .withResin(resin(5, 35, 45, 15, 0, ResinTexture.STICKY))));
 
         // Hashish -- strainless by construction. Sifting keeps the trichome heads and throws the
         // plant away, and a trichome head is a trichome head whichever plant grew it. Its identity
@@ -711,10 +745,12 @@ public class ModStrains {
                 modelIndex(SCHWAG),
                 Optional.empty(), ModItems.SCHWAG, Optional.empty(), 0.0F, 1,
                 List.of(
-                        new SmokeEffect(MobEffects.POISON, 0, EffectLabel.SMOKE, SCHWAG_POISON_SHARE, false,
+                        labelled(MobEffects.POISON, 0, EffectLabel.SMOKE, SCHWAG_POISON_SHARE, false,
                                 SCHWAG_POISON_CHANCE, SCHWAG_POISON_MAX_AMPLIFIER),
                         new SmokeEffect(MobEffects.HUNGER, 0, true)),
-                0.5F).withSmokeColor(SCHWAG_SMOKE));
+                0.5F)
+                .withTraits(Strain.Traits.DEFAULT
+                        .withSmokeColor(SCHWAG_SMOKE)));
     }
 
     /**
@@ -729,6 +765,43 @@ public class ModStrains {
     private static final float SCHWAG_POISON_CHANCE = 0.6F;
     /** Poison II: vanilla's own survival ceiling for the effect. */
     private static final int SCHWAG_POISON_MAX_AMPLIFIER = 1;
+
+    /** A sheet of most likely steps, each spread by the shared spread, in phenomenon order. */
+    private static Resistances resistances(Resistance dryGround, Resistance overwatering, Resistance light,
+                                           Resistance mildew) {
+        return new Resistances(Map.of(StressPhenomenon.DRY_GROUND, ResistanceOdds.spread(dryGround),
+                StressPhenomenon.OVERWATERING, ResistanceOdds.spread(overwatering),
+                StressPhenomenon.LIGHT, ResistanceOdds.spread(light),
+                StressPhenomenon.MILDEW, ResistanceOdds.spread(mildew)));
+    }
+
+    /** A quality sheet: the base luck, then the weights poor, average, good, elite. */
+    private static GrowQuality quality(int baseLuck, int poor, int average, int good, int elite) {
+        return new GrowQuality(baseLuck, Map.of(QualityGene.POOR, poor, QualityGene.AVERAGE, average,
+                QualityGene.GOOD, good, QualityGene.ELITE, elite));
+    }
+
+    /** A resin sheet: the weights very low to very rich, then the texture. */
+    private static ResinSheet resin(int veryLow, int low, int average, int rich, int veryRich, ResinTexture texture) {
+        return new ResinSheet(Map.of(ResinStep.VERY_LOW, veryLow, ResinStep.LOW, low, ResinStep.AVERAGE, average,
+                ResinStep.RICH, rich, ResinStep.VERY_RICH, veryRich), texture);
+    }
+
+    /** An effect with its label named, its {@code scales} flag kept in step for older readers. */
+    private static SmokeEffect labelled(Holder<MobEffect> effect, int baseAmplifier, EffectLabel label,
+                                        float durationFactor, boolean onExhale, float chance, int maxAmplifier) {
+        return new SmokeEffect(effect, baseAmplifier, label.scales(), durationFactor, onExhale, chance, maxAmplifier,
+                Optional.of(label), false);
+    }
+
+    /**
+     * A flat effect of the plant's own whose every bud past the first buys time, never a level (Maui
+     * Wowie's Water Breathing and Dolphin's Grace, which vanilla reads at no level).
+     */
+    private static SmokeEffect dosedByTime(Holder<MobEffect> effect) {
+        return new SmokeEffect(effect, 0, false, 1.0F, false, 1.0F, SmokeEffect.NO_CAP, Optional.of(EffectLabel.STRAIN),
+                true);
+    }
 
     private static ResourceKey<Strain> key(String name) {
         return ResourceKey.create(Strain.REGISTRY_KEY, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name));

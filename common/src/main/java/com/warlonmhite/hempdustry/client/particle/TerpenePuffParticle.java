@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.client.particle;
 
+import com.warlonmhite.hempdustry.strain.internal.Terpenes;
 import com.warlonmhite.hempdustry.block.custom.stash.StashNose;
 import com.warlonmhite.hempdustry.block.custom.stash.TerpenePuff;
 import com.warlonmhite.hempdustry.particle.TerpenePuffOption;
@@ -95,7 +96,7 @@ public class TerpenePuffParticle extends NoRenderParticle {
 
     /** The colour of the puff at this nose: the smell's colour, mixed deeper the better the jar. */
     private int tint(float share) {
-        return Terpene.mix(0xFFFFFF, colour, share);
+        return Terpenes.mix(0xFFFFFF, colour, share);
     }
 
     private void soft() {

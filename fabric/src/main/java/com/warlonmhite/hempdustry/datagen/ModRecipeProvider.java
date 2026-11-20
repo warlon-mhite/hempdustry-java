@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.datagen;
 
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.warlonmhite.hempdustry.strain.Chemotype;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import com.warlonmhite.hempdustry.component.ModComponents;
@@ -565,7 +566,7 @@ public class ModRecipeProvider extends FabricRecipeProvider {
         // would be a page in a viewer that the machine refuses.
         for (ResourceKey<Strain> key : ModStrains.BUILT_IN) {
             Strain strain = strains.getOrThrow(key).value();
-            if (strain.wildFlower().isEmpty() || !strain.chemotype().infusable()) {
+            if (strain.wildFlower().isEmpty() || !Chemotypes.infusable(strain.traits().chemotype())) {
                 continue;
             }
             // A mid bud's worth is the strain's potency base (4 for every strain the mod ships,
@@ -574,7 +575,7 @@ public class ModRecipeProvider extends FabricRecipeProvider {
             // bud's band moves it at the oven, on top.
             output.accept(id("decarboxylating/" + BuiltInRegistries.ITEM.getKey(strain.buds()).getPath()),
                     new DecarboxylatingRecipe(Ingredient.of(strain.buds()),
-                            new ItemStack(ModItems.DECARBOXYLATED_HEMP, strain.potency().base()), true),
+                            new ItemStack(ModItems.DECARBOXYLATED_HEMP, strain.traits().potency().base()), true),
                     null);
         }
         // Fan leaf: bulk trim, worth a quarter of a bud, and strain-agnostic like everything else
@@ -627,7 +628,7 @@ public class ModRecipeProvider extends FabricRecipeProvider {
         for (ResourceKey<Strain> key : ModStrains.BUILT_IN) {
             Strain strain = strains.getOrThrow(key).value();
             if (strain.wildFlower().isPresent()) {
-                offerScorching(strain.buds(), strain.chemotype());
+                offerScorching(strain.buds(), strain.traits().chemotype());
             }
         }
 

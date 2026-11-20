@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.block.entity.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Rolls;
+import com.warlonmhite.hempdustry.strain.internal.Strains;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.warlonmhite.hempdustry.block.custom.GrowLuck;
 import com.warlonmhite.hempdustry.block.custom.HydroTrayBlock;
 import com.warlonmhite.hempdustry.block.custom.PlantStress;
@@ -134,7 +137,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
             return PotencyBand.MID;
         }
         if (band == null) {
-            band = potencyOf(level, getBlockState()).roll(RandomSource.create());
+            band = Rolls.roll(potencyOf(level, getBlockState()), RandomSource.create());
             setChanged();
         }
         return band;
@@ -159,16 +162,16 @@ public class PlantRecordBlockEntity extends BlockEntity {
         boolean buds = growsBuds(getBlockState());
         if (buds && (band == null || gene == null) || resistances == null || resin == null) {
             if (buds && band == null) {
-                band = potencyOf(level, getBlockState()).roll(RandomSource.create());
+                band = Rolls.roll(potencyOf(level, getBlockState()), RandomSource.create());
             }
             if (buds && gene == null) {
-                gene = qualityOf(level, getBlockState()).roll(RandomSource.create());
+                gene = Rolls.roll(qualityOf(level, getBlockState()), RandomSource.create());
             }
             if (resistances == null) {
-                resistances = resistancesOf(level, getBlockState()).roll(RandomSource.create());
+                resistances = Rolls.roll(resistancesOf(level, getBlockState()), RandomSource.create());
             }
             if (resin == null) {
-                resin = resinOf(level, getBlockState()).roll(RandomSource.create());
+                resin = Rolls.roll(resinOf(level, getBlockState()), RandomSource.create());
             }
             setChanged();
         }
@@ -177,10 +180,10 @@ public class PlantRecordBlockEntity extends BlockEntity {
     /** The plant at this root is a new plant: everything is rolled again. */
     public void replant() {
         boolean buds = growsBuds(getBlockState());
-        band = buds ? potencyOf(level, getBlockState()).roll(RandomSource.create()) : null;
-        gene = buds ? qualityOf(level, getBlockState()).roll(RandomSource.create()) : null;
-        resistances = resistancesOf(level, getBlockState()).roll(RandomSource.create());
-        resin = resinOf(level, getBlockState()).roll(RandomSource.create());
+        band = buds ? Rolls.roll(potencyOf(level, getBlockState()), RandomSource.create()) : null;
+        gene = buds ? Rolls.roll(qualityOf(level, getBlockState()), RandomSource.create()) : null;
+        resistances = Rolls.roll(resistancesOf(level, getBlockState()), RandomSource.create());
+        resin = Rolls.roll(resinOf(level, getBlockState()), RandomSource.create());
         openSky = null;
         workingTray = null;
         sawNight = false;
@@ -218,7 +221,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
             return QualityGene.AVERAGE;
         }
         if (gene == null) {
-            gene = qualityOf(level, getBlockState()).roll(RandomSource.create());
+            gene = Rolls.roll(qualityOf(level, getBlockState()), RandomSource.create());
             setChanged();
         }
         return gene;
@@ -238,7 +241,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
     /** This plant's four resistances, rolled now from its strain's odds if it has none yet. */
     public ResistanceGenes resistances() {
         if (resistances == null) {
-            resistances = resistancesOf(level, getBlockState()).roll(RandomSource.create());
+            resistances = Rolls.roll(resistancesOf(level, getBlockState()), RandomSource.create());
             setChanged();
         }
         return resistances;
@@ -258,7 +261,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
     /** This plant's resin step, rolled now from its strain's odds if it has none yet. */
     public ResinStep resin() {
         if (resin == null) {
-            resin = resinOf(level, getBlockState()).roll(RandomSource.create());
+            resin = Rolls.roll(resinOf(level, getBlockState()), RandomSource.create());
             setChanged();
         }
         return resin;
@@ -406,7 +409,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
         if (harvestTier == null || harvest.get() != harvestKey) {
             harvestTier = GrowLuck.givesMids(root)
                     ? BudTier.MIDS
-                    : BudTier.roll(GrowLuck.of(this, root, level, harvester), RandomSource.create());
+                    : Tiers.roll(GrowLuck.of(this, root, level, harvester), RandomSource.create());
             harvest = new WeakReference<>(harvestKey);
         }
         return harvestTier;
@@ -417,9 +420,9 @@ public class PlantRecordBlockEntity extends BlockEntity {
         if (level == null) {
             return GrowQuality.DEFAULT;
         }
-        return Strain.ofPlant(state.getBlock(), level.registryAccess())
+        return Strains.ofPlant(state.getBlock(), level.registryAccess())
                 .map(Holder::value)
-                .map(Strain::quality)
+                .map(Strain::traits).map(Strain.Traits::quality)
                 .orElse(GrowQuality.DEFAULT);
     }
 
@@ -434,9 +437,9 @@ public class PlantRecordBlockEntity extends BlockEntity {
         if (level == null) {
             return Resistances.DEFAULT;
         }
-        return Strain.ofPlant(state.getBlock(), level.registryAccess())
+        return Strains.ofPlant(state.getBlock(), level.registryAccess())
                 .map(Holder::value)
-                .map(Strain::resistances)
+                .map(Strain::traits).map(Strain.Traits::resistances)
                 .orElse(Resistances.DEFAULT);
     }
 
@@ -451,9 +454,9 @@ public class PlantRecordBlockEntity extends BlockEntity {
         if (level == null) {
             return ResinSheet.DEFAULT;
         }
-        return Strain.ofPlant(state.getBlock(), level.registryAccess())
+        return Strains.ofPlant(state.getBlock(), level.registryAccess())
                 .map(Holder::value)
-                .map(Strain::resin)
+                .map(Strain::traits).map(Strain.Traits::resin)
                 .orElse(ResinSheet.DEFAULT);
     }
 
@@ -492,9 +495,9 @@ public class PlantRecordBlockEntity extends BlockEntity {
         if (level == null) {
             return Potency.DEFAULT;
         }
-        return Strain.ofPlant(state.getBlock(), level.registryAccess())
+        return Strains.ofPlant(state.getBlock(), level.registryAccess())
                 .map(Holder::value)
-                .map(Strain::potency)
+                .map(Strain::traits).map(Strain.Traits::potency)
                 .orElse(Potency.DEFAULT);
     }
 

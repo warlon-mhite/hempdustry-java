@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Hardiness;
 import com.warlonmhite.hempdustry.strain.ResistanceGenes;
 import com.warlonmhite.hempdustry.strain.StressPhenomenon;
 
@@ -25,6 +26,6 @@ public record StressCause(StressPhenomenon phenomenon, float chance) {
 
     /** This cause's chance against a plant with {@code genes}: its step against the phenomenon multiplies it. */
     public float chanceFor(ResistanceGenes genes) {
-        return chance > 0.0F ? genes.get(phenomenon).apply(chance) : 0.0F;
+        return chance > 0.0F ? Hardiness.apply(genes.get(phenomenon), chance) : 0.0F;
     }
 }

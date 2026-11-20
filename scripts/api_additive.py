@@ -9,6 +9,12 @@ Strain from SmokeContents, and so on. Every constructor, method and field those 
 and JVM descriptor, must still be in the new jar, because that is what a compiled addon links
 against. Additions are fine; anything missing is printed and the exit code is 1.
 
+    python3 scripts/api_additive.py --additions <released.jar> <new.jar>
+
+also lists what the new jar adds to that surface, walked from the new jar's own api package: every
+class newly reachable and every member a reachable class gained. Each addition freezes with the
+first public build that has it, so the list is what to review before one.
+
 Give it two jars of the same loader, so that the Minecraft types in the descriptors are named the
 same way on both sides: Fabric's remapped jars (fabric/build/libs, or a release download), which
 name them in intermediary, or two NeoForge jars (neoforge/build/libs), which use Mojang's names.
@@ -66,19 +72,43 @@ def referenced(declarations, members):
     return names
 
 
-def main(old_jar, new_jar):
-    roots = [n[:-len('.class')].replace('/', '.') for n in zipfile.ZipFile(old_jar).namelist()
+def reachable(jar):
+    """Every class of the mod reachable from the jar's api package, with its declarations and members."""
+    roots = [n[:-len('.class')].replace('/', '.') for n in zipfile.ZipFile(jar).namelist()
              if n.startswith(PACKAGE + 'api/') and n.endswith('.class')]
     if not roots:
-        sys.exit(f'{old_jar} has no {PACKAGE}api/ classes — is it a Hempdustry jar?')
-    seen, frontier, old = set(), set(roots), {}
+        sys.exit(f'{jar} has no {PACKAGE}api/ classes — is it a Hempdustry jar?')
+    seen, frontier, out = set(), set(roots), {}
     while frontier:
-        found = javap(old_jar, sorted(frontier))
-        old.update(found)
+        found = javap(jar, sorted(frontier))
+        out.update(found)
         seen |= frontier
         frontier = set()
         for declarations, members in found.values():
             frontier |= referenced(declarations, members) - seen
+    return out
+
+
+def additions(old, new_jar):
+    """What the new jar's api surface has that the old one's did not, one line each."""
+    new = reachable(new_jar)
+    lines = []
+    for name in sorted(new):
+        if name not in old:
+            lines.append(f'{name}: new class, {len(new[name][1])} members')
+            for member, descriptor in sorted(new[name][1]):
+                lines.append(f'    {member} {descriptor}')
+            continue
+        for member, descriptor in sorted(new[name][1] - old[name][1]):
+            lines.append(f'{name}#{member} {descriptor}')
+    print(f'{len(new)} classes reachable from the api package of {new_jar}')
+    for line in lines:
+        print('  ADDED ' + line)
+    print(f'{sum(1 for l in lines if not l.startswith("    "))} additions')
+
+
+def main(old_jar, new_jar, list_additions=False):
+    old = reachable(old_jar)
 
     new = javap(new_jar, sorted(old))
     missing = []
@@ -91,11 +121,15 @@ def main(old_jar, new_jar):
     print(f'{len(old)} classes reachable from the api package of {old_jar}')
     for line in missing:
         print('  MISSING ' + line)
+    if list_additions:
+        additions(old, new_jar)
     print(f'{len(missing)} missing')
     return 1 if missing else 0
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
+    flags = [a for a in sys.argv[1:] if a.startswith('--')]
+    jars = [a for a in sys.argv[1:] if not a.startswith('--')]
+    if len(jars) != 2 or set(flags) - {'--additions'}:
         sys.exit(__doc__)
-    sys.exit(main(sys.argv[1], sys.argv[2]))
+    sys.exit(main(jars[0], jars[1], '--additions' in flags))

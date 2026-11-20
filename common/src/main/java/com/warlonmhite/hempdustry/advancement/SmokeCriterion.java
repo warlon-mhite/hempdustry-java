@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.advancement;
 
+import com.warlonmhite.hempdustry.strain.internal.Dosing;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.warlonmhite.hempdustry.component.ModComponents;
@@ -72,7 +73,7 @@ public class SmokeCriterion extends SimpleCriterionTrigger<SmokeCriterion.Condit
                 return false;
             }
             if (thcDose.isPresent() && !thcDose.get().matches(
-                    stack.getOrDefault(ModComponents.SMOKE_CONTENTS, SmokeContents.EMPTY).thcDose())) {
+                    Dosing.thcDose(stack.getOrDefault(ModComponents.SMOKE_CONTENTS, SmokeContents.EMPTY)))) {
                 return false;
             }
             if (strain.isPresent() && stack.getOrDefault(ModComponents.SMOKE_CONTENTS, SmokeContents.EMPTY)

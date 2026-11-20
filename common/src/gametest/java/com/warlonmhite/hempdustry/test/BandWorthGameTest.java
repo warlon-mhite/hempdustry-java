@@ -1,5 +1,7 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.strain.internal.Dosing;
+import com.warlonmhite.hempdustry.strain.internal.Bands;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 import com.warlonmhite.hempdustry.component.ModComponents;
@@ -75,10 +77,10 @@ public final class BandWorthGameTest {
         // Balanced rosin weighs 1½ where THC rosin weighs 3, with no press rule of its own: one piece
         // is three units of a strainless concentrate at half the THC, level I, and the half buys time.
         Holder<Strain> rosin = strain(world, ModStrains.ROSIN);
-        SmokeContents balancedRosin = SmokeContents.of(rosin, rosin.value().dosePerItem(), Chemotype.BALANCED);
-        context.assertTrue(Math.abs(balancedRosin.entries().getFirst().thcUnits() - 1.5) < 1e-9,
-                "a piece of balanced rosin's THC: " + balancedRosin.entries().getFirst().thcUnits());
-        context.assertValueEqual(1, balancedRosin.thcDose(), "a piece of balanced rosin's THC dose");
+        SmokeContents balancedRosin = Dosing.load(rosin, rosin.value().dosePerItem(), Chemotype.BALANCED);
+        context.assertTrue(Math.abs(Dosing.thcUnits(balancedRosin.entries().getFirst()) - 1.5) < 1e-9,
+                "a piece of balanced rosin's THC: " + Dosing.thcUnits(balancedRosin.entries().getFirst()));
+        context.assertValueEqual(1, Dosing.thcDose(balancedRosin), "a piece of balanced rosin's THC dose");
         context.succeed();
     }
 
@@ -124,7 +126,7 @@ public final class BandWorthGameTest {
     public static void aMoonRockCountsItsBandOnce(GameTestHelper context) {
         ServerLevel world = context.getLevel();
         for (PotencyBand band : PotencyBand.values()) {
-            ItemStack bud = PotencyBand.stamp(new ItemStack(ModItems.ENDER_HAZE_BUDS), band);
+            ItemStack bud = Bands.stamp(new ItemStack(ModItems.ENDER_HAZE_BUDS), band);
             CraftingInput grid = CraftingInput.of(3, 1, List.of(bud, new ItemStack(ModItems.ROSIN), new ItemStack(ModItems.HASHISH)));
             ItemStack rock = world.recipeAccess().getRecipeFor(RecipeType.CRAFTING, grid, world)
                     .map(entry -> entry.value().assemble(grid, world.registryAccess())).orElse(ItemStack.EMPTY);
@@ -153,21 +155,21 @@ public final class BandWorthGameTest {
         Holder<Strain> holder = Holder.direct(cbd);
         int[] mid = {50, 100, 150};
         for (int count = 1; count <= 3; count++) {
-            MobEffectInstance regeneration = find(SmokeContents.of(holder, count, Chemotype.THC_DOMINANT, PotencyBand.MID),
+            MobEffectInstance regeneration = find(Dosing.load(holder, count, Chemotype.THC_DOMINANT, PotencyBand.MID),
                     MobEffects.REGENERATION);
             context.assertValueEqual(mid[count - 1], regeneration.getDuration(), "a CBD load of " + count + "'s Regeneration ticks");
             context.assertValueEqual(0, regeneration.getAmplifier(), "a CBD load of " + count + "'s Regeneration level");
         }
         // The band moves the CBD: a high bud is 5/4 of a mid one; an extra-high bong of three stops at 150.
-        context.assertValueEqual(63, find(SmokeContents.of(holder, 1, Chemotype.THC_DOMINANT, PotencyBand.HIGH),
+        context.assertValueEqual(63, find(Dosing.load(holder, 1, Chemotype.THC_DOMINANT, PotencyBand.HIGH),
                 MobEffects.REGENERATION).getDuration(), "a high CBD bud's Regeneration ticks");
-        context.assertValueEqual(150, find(SmokeContents.of(holder, 3, Chemotype.THC_DOMINANT, PotencyBand.EXTRA_HIGH),
+        context.assertValueEqual(150, find(Dosing.load(holder, 3, Chemotype.THC_DOMINANT, PotencyBand.EXTRA_HIGH),
                 MobEffects.REGENERATION).getDuration(), "an extra-high CBD bong of three's Regeneration ticks");
         // Whatever the device: the device's duration plays no part.
-        context.assertValueEqual(100, find(SmokeContents.of(holder, 2, Chemotype.THC_DOMINANT, PotencyBand.MID).effects(
+        context.assertValueEqual(100, find(Dosing.load(holder, 2, Chemotype.THC_DOMINANT, PotencyBand.MID).effects(
                 4000, false, () -> 0L), MobEffects.REGENERATION).getDuration(), "a CBD pipe of two's ticks on a long device");
         // Half the CBD in a balanced bud: Beldía's CBD is worth half a CBD bud's.
-        context.assertTrue(Math.abs(SmokeContents.of(strain(world, ModStrains.BELDIA), 3).entries().getFirst().cbdUnits() - 1.5) < 1e-9,
+        context.assertTrue(Math.abs(Dosing.cbdUnits(SmokeContents.of(strain(world, ModStrains.BELDIA), 3).entries().getFirst()) - 1.5) < 1e-9,
                 "a balanced bong of three's CBD");
         context.succeed();
     }
@@ -177,7 +179,7 @@ public final class BandWorthGameTest {
     }
 
     private static SmokeContents load(Holder<Strain> strain, int count, PotencyBand band) {
-        return SmokeContents.of(strain, count, Chemotype.THC_DOMINANT, band);
+        return Dosing.load(strain, count, Chemotype.THC_DOMINANT, band);
     }
 
     private static void expect(GameTestHelper context, Holder<Strain> strain, int count, PotencyBand band,
