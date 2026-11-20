@@ -1,5 +1,5 @@
 {
-  "parent": "hempdustry:hempdustry",
+  "parent": "hempdustry:strain_gauge",
   "criteria": {
     "has_indica_buds": {
       "conditions": {

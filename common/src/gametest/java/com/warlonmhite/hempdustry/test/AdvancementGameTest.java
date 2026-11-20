@@ -24,9 +24,11 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.ServerAdvancementManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -192,7 +194,6 @@ public final class AdvancementGameTest {
     public static void obtainingGrantsTheExtractionNodes(GameTestHelper context) {
         record Node(String id, String parent, Item item) {}
         List<Node> nodes = List.of(
-                new Node("kif_country", "hempdustry", ModItems.BELDIA_BUDS),
                 new Node("sticky_fingers", "trim_season", ModItems.CHARAS),
                 new Node("well_done", "trim_season", ModItems.SCORCHED_HEMP),
                 new Node("its_not_pollen", "green_threads", ModItems.KIEF),
@@ -235,6 +236,107 @@ public final class AdvancementGameTest {
             obtain(collector, new ItemStack(resin));
         }
         assertDone(context, collector, aroundTheWorld, "all five resins, one at a time");
+        context.succeed();
+    }
+
+    /**
+     * The Strains tab. Strain Gauge is its root, with a background of its own and a few rows under it;
+     * every strain that grows buds has a node in it, earned by its own buds alone, with nothing before it
+     * in its row earned, and by no other strain's; schwag and leaves earn none of it. Apothecary is a
+     * criterion per strain, and each is earned the way a player earns it: buds clicked into a jar in the
+     * inventory, a fresh empty jar each time, so a criterion that wanted every strain in one jar at once
+     * would stay red.
+     */
+    public static void theStrainHubCountsEveryStrain(GameTestHelper context) {
+        ServerAdvancementManager advancements = context.getLevel().getServer().getAdvancements();
+        AdvancementHolder gauge = advancements.get(Identifier.fromNamespaceAndPath("hempdustry", "strain_gauge"));
+        context.assertTrue(gauge != null, "hempdustry:strain_gauge is not loaded at all");
+        context.assertTrue(gauge.value().parent().isEmpty(), "Strain Gauge hangs under " + gauge.value().parent()
+                + ", so the strains are not a tab of their own");
+        context.assertTrue(gauge.value().display().orElseThrow().getBackground().isPresent(),
+                "Strain Gauge, a tab's root, names no background, so the tab draws none");
+        long rows = advancements.getAllAdvancements().stream()
+                .filter(entry -> entry.value().parent().equals(Optional.of(gauge.id()))).count();
+        context.assertTrue(rows >= 2 && rows <= 5, "Strain Gauge has " + rows + " rows under it, not a few");
+        AdvancementHolder goodStash = loaded(context, "good_stash", "strain_gauge");
+        AdvancementHolder apothecary = loaded(context, "apothecary", "good_stash");
+        ServerLevel world = context.getLevel();
+        List<ResourceKey<Strain>> budStrains = ModStrains.BUILT_IN.stream()
+                .filter(key -> strain(world, key).value().wildFlower().isPresent())
+                .toList();
+        context.assertTrue(budStrains.size() >= 12, "only " + budStrains.size() + " strains grow buds, so this proves little");
+        context.assertTrue(apothecary.value().criteria().size() == budStrains.size(),
+                "Apothecary asks for " + apothecary.value().criteria().size() + " strains, not the "
+                        + budStrains.size() + " that grow buds");
+
+        ServerPlayer nobody = freshPlayer(context);
+        obtain(nobody, new ItemStack(ModItems.SCHWAG));
+        obtain(nobody, new ItemStack(ModItems.HEMP_LEAF));
+        assertNotDone(context, nobody, gauge, "schwag or a leaf");
+
+        for (ResourceKey<Strain> key : budStrains) {
+            String id = key == ModStrains.BELDIA ? "kif_country" : ModStrains.id(key) + "_strain";
+            AdvancementHolder node = advancements.get(Identifier.fromNamespaceAndPath("hempdustry", id));
+            context.assertTrue(node != null, "hempdustry:" + id + " is not loaded at all");
+            // Up its row to Strain Gauge, a row at most five long.
+            AdvancementHolder up = node;
+            int steps = 0;
+            while (up != null && !up.equals(gauge) && steps <= 5) {
+                up = up.value().parent().map(advancements::get).orElse(null);
+                steps++;
+            }
+            context.assertTrue(gauge.equals(up), "hempdustry:" + id + " is not in a row under Strain Gauge");
+            context.assertTrue(node.value().display().orElseThrow().isHidden() == (key == ModStrains.DUD_WEED),
+                    "hempdustry:" + id + " is hidden where it should not be, or shown where it should be hidden");
+            ServerPlayer grower = freshPlayer(context);
+            obtain(grower, new ItemStack(strain(world, key).value().buds()));
+            assertDone(context, grower, gauge, "obtaining " + id + "'s buds");
+            assertDone(context, grower, node, "obtaining " + id + "'s buds, with nothing before it in its row");
+            for (ResourceKey<Strain> other : budStrains) {
+                if (other != key) {
+                    String otherId = other == ModStrains.BELDIA ? "kif_country" : ModStrains.id(other) + "_strain";
+                    assertNotDone(context, grower,
+                            advancements.get(Identifier.fromNamespaceAndPath("hempdustry", otherId)), id + "'s buds");
+                }
+            }
+        }
+
+        for (Block jar : ModBlocks.STASH_JARS) {
+            ServerPlayer owner = freshPlayer(context);
+            obtain(owner, new ItemStack(jar));
+            assertDone(context, owner, goodStash, "obtaining a " + jar.getDescriptionId());
+        }
+
+        // A jar in the first slot of the main inventory, buds carried onto it: the jar's own click takes
+        // them in. The menu's next sync is what fires inventory_changed, as a bundle's does: a real player's
+        // tick runs it (ServerPlayer#tick), and a mock player never ticks, so the test runs it. A fresh jar
+        // every strain.
+        ServerPlayer collector = freshPlayer(context);
+        int jarSlot = 9;
+        for (ResourceKey<Strain> key : budStrains) {
+            context.assertFalse(collector.getAdvancements().getOrStartProgress(apothecary).isDone(),
+                    "Apothecary was granted before " + ModStrains.id(key) + " was ever stashed — it wants every strain");
+            collector.getInventory().clearContent();
+            collector.getInventory().setItem(jarSlot, new ItemStack(ModBlocks.STASH_JAR));
+            collector.inventoryMenu.broadcastChanges();
+            collector.inventoryMenu.setCarried(new ItemStack(strain(world, key).value().buds(), 3));
+            collector.inventoryMenu.clicked(jarSlot, 0, ClickType.PICKUP, collector);
+            context.assertTrue(collector.inventoryMenu.getCarried().isEmpty(),
+                    "the jar did not take " + ModStrains.id(key) + "'s buds, so this proves nothing");
+            collector.inventoryMenu.broadcastChanges();
+            context.assertTrue(collector.getAdvancements().getOrStartProgress(apothecary)
+                            .getCriterion("stashed_" + BuiltInRegistries.ITEM.getKey(strain(world, key).value().buds()).getPath())
+                            .isDone(),
+                    "stashing " + ModStrains.id(key) + " in a jar did not earn its Apothecary criterion");
+        }
+        assertDone(context, collector, apothecary, "every strain stashed, one jar at a time");
+
+        // Buds held beside a jar are not buds in it.
+        ServerPlayer beside = freshPlayer(context);
+        obtain(beside, new ItemStack(ModBlocks.STASH_JAR));
+        obtain(beside, new ItemStack(ModItems.INDICA_BUDS));
+        context.assertFalse(beside.getAdvancements().getOrStartProgress(apothecary).getCriterion("stashed_indica_buds").isDone(),
+                "a jar and Purple Kush side by side earned the Purple Kush criterion, so it reads the inventory, not the jar");
         context.succeed();
     }
 

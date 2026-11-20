@@ -1,0 +1,35 @@
+{
+  "parent": "hempdustry:ruderalis_strain",
+  "criteria": {
+    "has_dud_weed_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": "hempdustry:dud_weed_buds"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "background": "hempdustry:block/hempcrete_powder_block",
+    "description": {
+      "translate": "advancements.hempdustry.dud_weed_strain.description"
+    },
+    "hidden": true,
+    "icon": {
+      "count": 1,
+      "id": "hempdustry:dud_weed_buds"
+    },
+    "title": {
+      "translate": "advancements.hempdustry.dud_weed_strain.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_dud_weed_buds"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

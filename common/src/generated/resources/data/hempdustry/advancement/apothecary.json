@@ -1,0 +1,370 @@
+{
+  "parent": "hempdustry:good_stash",
+  "criteria": {
+    "stashed_beldia_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "hempdustry:stash_jar",
+              "hempdustry:gilded_stash_jar",
+              "hempdustry:diamond_stash_jar",
+              "hempdustry:netherite_stash_jar"
+            ],
+            "predicates": {
+              "hempdustry:stash_contents": {
+                "items": {
+                  "contains": [
+                    {
+                      "items": "hempdustry:beldia_buds"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "stashed_cherry_wine_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "hempdustry:stash_jar",
+              "hempdustry:gilded_stash_jar",
+              "hempdustry:diamond_stash_jar",
+              "hempdustry:netherite_stash_jar"
+            ],
+            "predicates": {
+              "hempdustry:stash_contents": {
+                "items": {
+                  "contains": [
+                    {
+                      "items": "hempdustry:cherry_wine_buds"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "stashed_crimson_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "hempdustry:stash_jar",
+              "hempdustry:gilded_stash_jar",
+              "hempdustry:diamond_stash_jar",
+              "hempdustry:netherite_stash_jar"
+            ],
+            "predicates": {
+              "hempdustry:stash_contents": {
+                "items": {
+                  "contains": [
+                    {
+                      "items": "hempdustry:crimson_buds"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "stashed_dud_weed_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "hempdustry:stash_jar",
+              "hempdustry:gilded_stash_jar",
+              "hempdustry:diamond_stash_jar",
+              "hempdustry:netherite_stash_jar"
+            ],
+            "predicates": {
+              "hempdustry:stash_contents": {
+                "items": {
+                  "contains": [
+                    {
+                      "items": "hempdustry:dud_weed_buds"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "stashed_echo_og_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "hempdustry:stash_jar",
+              "hempdustry:gilded_stash_jar",
+              "hempdustry:diamond_stash_jar",
+              "hempdustry:netherite_stash_jar"
+            ],
+            "predicates": {
+              "hempdustry:stash_contents": {
+                "items": {
+                  "contains": [
+                    {
+                      "items": "hempdustry:echo_og_buds"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "stashed_ender_haze_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "hempdustry:stash_jar",
+              "hempdustry:gilded_stash_jar",
+              "hempdustry:diamond_stash_jar",
+              "hempdustry:netherite_stash_jar"
+            ],
+            "predicates": {
+              "hempdustry:stash_contents": {
+                "items": {
+                  "contains": [
+                    {
+                      "items": "hempdustry:ender_haze_buds"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "stashed_indica_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "hempdustry:stash_jar",
+              "hempdustry:gilded_stash_jar",
+              "hempdustry:diamond_stash_jar",
+              "hempdustry:netherite_stash_jar"
+            ],
+            "predicates": {
+              "hempdustry:stash_contents": {
+                "items": {
+                  "contains": [
+                    {
+                      "items": "hempdustry:indica_buds"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "stashed_maui_wowie_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "hempdustry:stash_jar",
+              "hempdustry:gilded_stash_jar",
+              "hempdustry:diamond_stash_jar",
+              "hempdustry:netherite_stash_jar"
+            ],
+            "predicates": {
+              "hempdustry:stash_contents": {
+                "items": {
+                  "contains": [
+                    {
+                      "items": "hempdustry:maui_wowie_buds"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "stashed_ruderalis_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "hempdustry:stash_jar",
+              "hempdustry:gilded_stash_jar",
+              "hempdustry:diamond_stash_jar",
+              "hempdustry:netherite_stash_jar"
+            ],
+            "predicates": {
+              "hempdustry:stash_contents": {
+                "items": {
+                  "contains": [
+                    {
+                      "items": "hempdustry:ruderalis_buds"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "stashed_sativa_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "hempdustry:stash_jar",
+              "hempdustry:gilded_stash_jar",
+              "hempdustry:diamond_stash_jar",
+              "hempdustry:netherite_stash_jar"
+            ],
+            "predicates": {
+              "hempdustry:stash_contents": {
+                "items": {
+                  "contains": [
+                    {
+                      "items": "hempdustry:sativa_buds"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "stashed_warped_kush_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "hempdustry:stash_jar",
+              "hempdustry:gilded_stash_jar",
+              "hempdustry:diamond_stash_jar",
+              "hempdustry:netherite_stash_jar"
+            ],
+            "predicates": {
+              "hempdustry:stash_contents": {
+                "items": {
+                  "contains": [
+                    {
+                      "items": "hempdustry:warped_kush_buds"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "stashed_white_widow_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "hempdustry:stash_jar",
+              "hempdustry:gilded_stash_jar",
+              "hempdustry:diamond_stash_jar",
+              "hempdustry:netherite_stash_jar"
+            ],
+            "predicates": {
+              "hempdustry:stash_contents": {
+                "items": {
+                  "contains": [
+                    {
+                      "items": "hempdustry:white_widow_buds"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "background": "hempdustry:block/hempcrete_powder_block",
+    "description": {
+      "translate": "advancements.hempdustry.apothecary.description"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "hempdustry:gilded_stash_jar"
+    },
+    "title": {
+      "translate": "advancements.hempdustry.apothecary.title"
+    }
+  },
+  "requirements": [
+    [
+      "stashed_indica_buds"
+    ],
+    [
+      "stashed_sativa_buds"
+    ],
+    [
+      "stashed_beldia_buds"
+    ],
+    [
+      "stashed_warped_kush_buds"
+    ],
+    [
+      "stashed_ruderalis_buds"
+    ],
+    [
+      "stashed_crimson_buds"
+    ],
+    [
+      "stashed_ender_haze_buds"
+    ],
+    [
+      "stashed_cherry_wine_buds"
+    ],
+    [
+      "stashed_white_widow_buds"
+    ],
+    [
+      "stashed_dud_weed_buds"
+    ],
+    [
+      "stashed_echo_og_buds"
+    ],
+    [
+      "stashed_maui_wowie_buds"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

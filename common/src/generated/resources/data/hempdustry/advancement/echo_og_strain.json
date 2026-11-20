@@ -1,0 +1,34 @@
+{
+  "parent": "hempdustry:maui_wowie_strain",
+  "criteria": {
+    "has_echo_og_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": "hempdustry:echo_og_buds"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "background": "hempdustry:block/hempcrete_powder_block",
+    "description": {
+      "translate": "advancements.hempdustry.echo_og_strain.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "hempdustry:echo_og_buds"
+    },
+    "title": {
+      "translate": "advancements.hempdustry.echo_og_strain.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_echo_og_buds"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

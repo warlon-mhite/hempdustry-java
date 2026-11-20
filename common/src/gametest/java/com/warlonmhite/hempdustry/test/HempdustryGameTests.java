@@ -194,6 +194,7 @@ public final class HempdustryGameTests {
                 AdvancementGameTest::breakingTheBedHarvestsThePlantFirst);
         register("smoke_nodes_read_the_load", AdvancementGameTest::smokeNodesReadTheLoad);
         register("obtaining_grants_the_extraction_nodes", AdvancementGameTest::obtainingGrantsTheExtractionNodes);
+        register("the_strain_hub_counts_every_strain", AdvancementGameTest::theStrainHubCountsEveryStrain);
         register("a_big_dose_buys_time_not_level", RebalanceGameTest::aBigDoseBuysTimeNotLevel);
         register("a_full_green_out_ends_the_high", RebalanceGameTest::aFullGreenOutEndsTheHigh);
         register("a_lowered_level_cap_still_buys_time", RebalanceGameTest::aLoweredLevelCapStillBuysTime);

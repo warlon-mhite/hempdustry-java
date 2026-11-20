@@ -163,8 +163,15 @@ public class ModTags {
         public static final TagKey<Item> HASH_CUTTERS = createTag("hash_cutters");
 
         /**
-         * What a Stash Jar takes: every bud and schwag. The jar's only filter, on every way in (a click,
-         * a hopper, a pipe); a datapack strain or a pack adds its own buds here.
+         * Every strain's buds: what grew on a plant of a strain, and so not schwag, which is a bud gone
+         * wrong. Strain Gauge is any of them; the Stash Jar takes them. A datapack strain or a pack adds its
+         * own buds here.
+         */
+        public static final TagKey<Item> BUDS = createTag("buds");
+
+        /**
+         * What a Stash Jar takes: {@link #BUDS} and schwag. The jar's only filter, on every way in (a click,
+         * a hopper, a pipe).
          */
         public static final TagKey<Item> STASH_JAR_STORABLE = createTag("stash_jar_storable");
         private static TagKey<Item> createTag(String name) {

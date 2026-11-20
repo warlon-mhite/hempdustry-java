@@ -1,0 +1,33 @@
+{
+  "criteria": {
+    "has_buds": {
+      "conditions": {
+        "items": [
+          {
+            "items": "#hempdustry:buds"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "background": "minecraft:block/farmland_moist",
+    "description": {
+      "translate": "advancements.hempdustry.strain_gauge.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "hempdustry:sativa_buds"
+    },
+    "title": {
+      "translate": "advancements.hempdustry.strain_gauge.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_buds"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

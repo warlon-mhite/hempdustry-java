@@ -6,6 +6,7 @@ import com.warlonmhite.hempdustry.advancement.EdibleKicksInCriterion;
 import com.warlonmhite.hempdustry.advancement.HarvestHempCriterion;
 import com.warlonmhite.hempdustry.advancement.ModCriteria;
 import com.warlonmhite.hempdustry.advancement.SmokeCriterion;
+import com.warlonmhite.hempdustry.advancement.StashContentsPredicate;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
 import com.warlonmhite.hempdustry.block.custom.GrowLight;
@@ -81,6 +82,28 @@ public class ModAdvancementProvider extends FabricAdvancementProvider {
     private static final ClientAsset.ResourceTexture BACKGROUND = new ClientAsset.ResourceTexture(
             Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "block/hempcrete_powder_block"));
 
+    /**
+     * The Strains tab's background: vanilla's watered farmland, where most of the strains are grown. Like
+     * every tab background it is solid in every pixel; a texture with clear pixels shows holes.
+     */
+    private static final ClientAsset.ResourceTexture STRAINS_BACKGROUND = new ClientAsset.ResourceTexture(
+            Identifier.withDefaultNamespace("block/farmland_moist"));
+
+    /**
+     * The Strains tab's rows, each a chain drawn left to right, grouped by where the plants grow: the
+     * fields, the wild biomes, the Nether and the End. Vanilla lays siblings out as a column and a chain
+     * as a row, so a row is the only way to keep twelve strains to a few lines. A chain orders nothing:
+     * an advancement is granted on its own criteria whatever its parent, so every strain is still earned
+     * by its own buds in any order. What the chain changes is when a node shows: one not earned yet
+     * appears once its parent or the one before that is, so a row uncovers itself as it is walked, as the
+     * Nether tab does. Each row starts with its most common strain. A new strain joins a row here; the
+     * build refuses a bud strain no row holds.
+     */
+    private static final List<List<ResourceKey<Strain>>> STRAIN_ROWS = List.of(
+            List.of(ModStrains.INDICA, ModStrains.SATIVA, ModStrains.BELDIA, ModStrains.RUDERALIS, ModStrains.DUD_WEED),
+            List.of(ModStrains.CHERRY_WINE, ModStrains.WHITE_WIDOW, ModStrains.MAUI_WOWIE, ModStrains.ECHO_OG),
+            List.of(ModStrains.WARPED_KUSH, ModStrains.CRIMSON, ModStrains.ENDER_HAZE));
+
     public ModAdvancementProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registryLookup) {
         super(output, registryLookup);
     }
@@ -121,6 +144,18 @@ public class ModAdvancementProvider extends FabricAdvancementProvider {
         return ages;
     }
 
+    /**
+     * A tab's own root, with the background its tab shows. On this game every advancement carries one and only a
+     * root's is drawn, so the Strains tab's root names its own.
+     */
+    private static DisplayInfo rootDisplay(ItemLike icon, String id, AdvancementType frame,
+                                           ClientAsset.ResourceTexture background) {
+        return new DisplayInfo(new ItemStack(icon),
+                Component.translatable("advancements.hempdustry." + id + ".title"),
+                Component.translatable("advancements.hempdustry." + id + ".description"),
+                Optional.of(background), frame, true, true, false);
+    }
+
     private static DisplayInfo display(ItemLike icon, String id, AdvancementType frame,
                                               boolean hidden) {
         return new DisplayInfo(new ItemStack(icon),
@@ -148,17 +183,72 @@ public class ModAdvancementProvider extends FabricAdvancementProvider {
                 .save(consumer, Hempdustry.MOD_ID + ":hempdustry");
 
 
-        Advancement.Builder.advancement()
-                .display(display(ModItems.INDICA_BUDS, "indica_strain", AdvancementType.TASK))
-                .addCriterion("has_indica_buds", InventoryChangeTrigger.TriggerInstance.hasItems(ModItems.INDICA_BUDS))
-                .parent(rootAdvancement)
-                .save(consumer, Hempdustry.MOD_ID + ":indica_strain");
+        // ---------------------------------------------------------------------
+        // The Strains tab
+        // ---------------------------------------------------------------------
 
-        Advancement.Builder.advancement()
-                .display(display(ModItems.SATIVA_BUDS, "sativa_strain", AdvancementType.TASK))
-                .addCriterion("has_sativa_buds", InventoryChangeTrigger.TriggerInstance.hasItems(ModItems.SATIVA_BUDS))
-                .parent(rootAdvancement)
-                .save(consumer, Hempdustry.MOD_ID + ":sativa_strain");
+        // A tab of its own, as vanilla gives a collection one (Husbandry): twelve strains under High
+        // Hopes made that tab a column three dozen rows tall. Its root is any strain's buds, through the
+        // tag, so a datapack strain adding its buds there opens it too, and the tab first shows with the
+        // first buds. Schwag is not in the tag: a bud gone wrong, it keeps its node in High Hopes.
+        AdvancementHolder strainGauge = Advancement.Builder.advancement()
+                .display(rootDisplay(ModItems.SATIVA_BUDS, "strain_gauge", AdvancementType.TASK, STRAINS_BACKGROUND))
+                .addCriterion("has_buds", InventoryChangeTrigger.TriggerInstance.hasItems(
+                        ItemPredicate.Builder.item().of(items(registryLookup), ModTags.Items.BUDS)))
+                .save(consumer, Hempdustry.MOD_ID + ":strain_gauge");
+
+        // One node per strain, the rows above. Obtaining the buds is the criterion, so a wild plant counts
+        // as much as a grown one. Purple Kush, Lemon Haze and Beldía came first and hung under the root of
+        // High Hopes; moved here, they keep their ids and criterion names, which is all a save keeps of
+        // them. Every newer strain follows the first two, <strain>_strain with has_<buds item>; Beldía's
+        // was Kif Country from the start. Dud Weed is hidden: a 1-in-64 sport of Industrial Hemp is a
+        // find, not a goal.
+        List<ResourceKey<Strain>> placed = STRAIN_ROWS.stream().flatMap(List::stream).toList();
+        if (!placed.containsAll(budStrains(registryLookup)) || placed.size() != budStrains(registryLookup).size()) {
+            throw new IllegalStateException("Every strain that grows buds needs exactly one place in STRAIN_ROWS: rows "
+                    + placed + ", strains " + budStrains(registryLookup));
+        }
+        for (List<ResourceKey<Strain>> row : STRAIN_ROWS) {
+            AdvancementHolder before = strainGauge;
+            for (ResourceKey<Strain> key : row) {
+                Item buds = Strain.registry(registryLookup).getOrThrow(key).value().buds();
+                String id = key == ModStrains.BELDIA ? "kif_country" : ModStrains.id(key) + "_strain";
+                String budsId = BuiltInRegistries.ITEM.getKey(buds).getPath();
+                before = Advancement.Builder.advancement()
+                        .display(display(buds, id, AdvancementType.TASK, key == ModStrains.DUD_WEED))
+                        .addCriterion("has_" + budsId, InventoryChangeTrigger.TriggerInstance.hasItems(buds))
+                        .parent(before)
+                        .save(consumer, Hempdustry.MOD_ID + ":" + id);
+            }
+        }
+
+        // The fourth row: the jar, then the collection in it.
+        AdvancementHolder goodStash = Advancement.Builder.advancement()
+                .display(display(ModBlocks.STASH_JAR, "good_stash", AdvancementType.TASK))
+                .addCriterion("has_stash_jar", InventoryChangeTrigger.TriggerInstance.hasItems(
+                        ItemPredicate.Builder.item().of(items(registryLookup), ModBlocks.STASH_JARS.toArray(ItemLike[]::new))))
+                .parent(strainGauge)
+                .save(consumer, Hempdustry.MOD_ID + ":good_stash");
+
+        // Vanilla's A Balanced Diet, for the jar: one criterion per strain, each "a Stash Jar in the
+        // inventory holding this strain's buds", so each is earned when it happens and kept, any jar of any
+        // tier counts, and the tooltip counts them off. A strain added later adds a criterion and reopens
+        // it, as a new biome reopens Adventuring Time. One criterion asking for every strain in one jar at
+        // once would show no progress at all.
+        Advancement.Builder apothecary = Advancement.Builder.advancement()
+                .display(display(ModBlocks.GILDED_STASH_JAR, "apothecary", AdvancementType.CHALLENGE))
+                .parent(goodStash);
+        for (ResourceKey<Strain> key : budStrains(registryLookup)) {
+            Item buds = Strain.registry(registryLookup).getOrThrow(key).value().buds();
+            apothecary.addCriterion("stashed_" + BuiltInRegistries.ITEM.getKey(buds).getPath(),
+                    InventoryChangeTrigger.TriggerInstance.hasItems(ItemPredicate.Builder.item()
+                            .of(items(registryLookup), ModBlocks.STASH_JARS.toArray(ItemLike[]::new))
+                            .withComponents(DataComponentMatchers.Builder.components()
+                                    .partial(ModCriteria.STASH_CONTENTS, StashContentsPredicate.holding(
+                                            ItemPredicate.Builder.item().of(items(registryLookup), buds).build()))
+                                    .build())));
+        }
+        apothecary.save(consumer, Hempdustry.MOD_ID + ":apothecary");
 
         // The strains' sour sibling, beside them: nobody grows schwag, so it has no node of its own
         // in the cultivation branch. Vanilla's poisonous potato earns its keep the same way, as a
@@ -168,14 +258,6 @@ public class ModAdvancementProvider extends FabricAdvancementProvider {
                 .addCriterion("has_schwag", InventoryChangeTrigger.TriggerInstance.hasItems(ModItems.SCHWAG))
                 .parent(rootAdvancement)
                 .save(consumer, Hempdustry.MOD_ID + ":schwag");
-
-        // Beldía's node sits with the other two strains. Obtaining the buds is the criterion, so a
-        // wild desert plant counts as much as a grown one.
-        Advancement.Builder.advancement()
-                .display(display(ModItems.BELDIA_BUDS, "kif_country", AdvancementType.TASK))
-                .addCriterion("has_beldia_buds", InventoryChangeTrigger.TriggerInstance.hasItems(ModItems.BELDIA_BUDS))
-                .parent(rootAdvancement)
-                .save(consumer, Hempdustry.MOD_ID + ":kif_country");
 
         // ---------------------------------------------------------------------
         // Cultivation
@@ -649,6 +731,13 @@ public class ModAdvancementProvider extends FabricAdvancementProvider {
                     InventoryChangeTrigger.TriggerInstance.hasItems(resin));
         }
         aroundTheWorld.save(consumer, Hempdustry.MOD_ID + ":around_the_world_in_80_grams");
+    }
+
+    /** The built-in strains that grow buds on a plant of their own: a node each, and a criterion each in Apothecary. */
+    private static List<ResourceKey<Strain>> budStrains(HolderLookup.Provider registryLookup) {
+        return ModStrains.BUILT_IN.stream()
+                .filter(key -> Strain.registry(registryLookup).getOrThrow(key).value().wildFlower().isPresent())
+                .toList();
     }
 
     /** A hit of {@code strain} taken while riding a {@code vehicle}. */

@@ -1,5 +1,5 @@
 {
-  "parent": "hempdustry:hempdustry",
+  "parent": "hempdustry:sativa_strain",
   "criteria": {
     "has_beldia_buds": {
       "conditions": {

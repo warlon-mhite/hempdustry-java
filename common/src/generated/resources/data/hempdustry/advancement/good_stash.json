@@ -1,0 +1,39 @@
+{
+  "parent": "hempdustry:strain_gauge",
+  "criteria": {
+    "has_stash_jar": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "hempdustry:stash_jar",
+              "hempdustry:gilded_stash_jar",
+              "hempdustry:diamond_stash_jar",
+              "hempdustry:netherite_stash_jar"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "background": "hempdustry:block/hempcrete_powder_block",
+    "description": {
+      "translate": "advancements.hempdustry.good_stash.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "hempdustry:stash_jar"
+    },
+    "title": {
+      "translate": "advancements.hempdustry.good_stash.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_stash_jar"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
