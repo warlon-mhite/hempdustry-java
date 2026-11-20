@@ -1,5 +1,7 @@
 package com.warlonmhite.hempdustry;
 
+import com.warlonmhite.hempdustry.strain.internal.Strains;
+import com.warlonmhite.hempdustry.strain.internal.Terpenes;
 import com.warlonmhite.hempdustry.balance.DeviceStats;
 import com.warlonmhite.hempdustry.balance.EdibleBundle;
 import com.warlonmhite.hempdustry.balance.GreenOut;
@@ -39,7 +41,7 @@ public class HempdustryDataGenerator implements DataGeneratorEntrypoint {
 
 	@Override
 	public void buildRegistry(RegistrySetBuilder registryBuilder) {
-		registryBuilder.add(Terpene.REGISTRY_KEY, Terpene::bootstrap);
+		registryBuilder.add(Terpene.REGISTRY_KEY, Terpenes::bootstrap);
 		registryBuilder.add(Strain.REGISTRY_KEY, ModStrains::bootstrap);
 		registryBuilder.add(DeviceStats.REGISTRY_KEY, DeviceStats::bootstrap);
 		registryBuilder.add(EdibleBundle.REGISTRY_KEY, EdibleBundle::bootstrap);

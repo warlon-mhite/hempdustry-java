@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.item.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Dosing;
+import com.warlonmhite.hempdustry.strain.internal.Terpenes;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.warlonmhite.hempdustry.network.PlayerGesture;
 import com.warlonmhite.hempdustry.advancement.ModCriteria;
 import com.warlonmhite.hempdustry.balance.EdibleBundle;
@@ -259,7 +262,7 @@ public final class Smoking {
                 && ThreadLocalRandom.current().nextInt(greenOutOdds) == 0;
 
         if (greenedOut) {
-            greenOut(player, contents.thcDose());
+            greenOut(player, Dosing.thcDose(contents));
         } else {
             for (MobEffectInstance effect : EffectPolicy.filter(contents.effects(durationTicks, false, ThreadLocalRandom.current()), contents.buffBonus())) {
                 player.addEffect(effect);
@@ -304,7 +307,7 @@ public final class Smoking {
         // The stack is still packed here; a spliff's contents are gone a few lines later, which is
         // why contents is handed over as its own argument.
         Services.ADDON_EVENTS.afterSmoke(player, contents, stack);
-        return greenedOut && contents.thcDose() >= GreenOut.of(world.registryAccess()).fullFromDose();
+        return greenedOut && Dosing.thcDose(contents) >= GreenOut.of(world.registryAccess()).fullFromDose();
     }
 
     /**
@@ -314,7 +317,7 @@ public final class Smoking {
      * green-out, which is the price of a big hit. A schwag load keeps 2.1's odds.
      */
     public static int greenOutOneIn(int greenOutChanceOneIn, SmokeContents contents) {
-        return BudTier.scaleOneIn(smoothed(greenOutChanceOneIn, contents), contents.primaryTier().map(BudTier::greenOutFactor).orElse(1.0F));
+        return Tiers.scaleOneIn(smoothed(greenOutChanceOneIn, contents), Dosing.primaryTier(contents).map(Tiers::greenOutFactor).orElse(1.0F));
     }
 
     /**
@@ -323,7 +326,7 @@ public final class Smoking {
      * again, Dank as 2.1, Top Shelf half, Epic none.
      */
     public static int coughOneIn(int coughChanceOneIn, SmokeContents contents) {
-        return BudTier.scaleOneIn(harshened(coughChanceOneIn, contents), contents.primaryTier().map(BudTier::coughFactor).orElse(1.0F));
+        return Tiers.scaleOneIn(harshened(coughChanceOneIn, contents), Dosing.primaryTier(contents).map(Tiers::coughFactor).orElse(1.0F));
     }
 
     /**
@@ -331,7 +334,7 @@ public final class Smoking {
      * the primary material's tier: Mids as 2.1, Dank three quarters of the chance, Top Shelf half, Epic none.
      */
     public static int nauseaOneIn(int nauseaChanceOneIn, SmokeContents contents) {
-        return BudTier.scaleOneIn(nauseaChanceOneIn, contents.primaryTier().map(BudTier::nauseaFactor).orElse(1.0F));
+        return Tiers.scaleOneIn(nauseaChanceOneIn, Dosing.primaryTier(contents).map(Tiers::nauseaFactor).orElse(1.0F));
     }
 
     /**
@@ -467,17 +470,17 @@ public final class Smoking {
         if (primary == null) {
             return base;
         }
-        Optional<Integer> tint = primary.value().smokeTint(world.registryAccess());
+        Optional<Integer> tint = Terpenes.smokeTint(primary.value(), world.registryAccess());
         if (tint.isEmpty()) {
             return base;
         }
         if (base == ParticleTypes.CAMPFIRE_COSY_SMOKE) {
             return ColorParticleOption.create(ModParticles.TERPENE_SMOKE,
-                    ARGB.opaque(Terpene.mix(0xFFFFFF, tint.get(), Terpene.SMOKE_SHARE)));
+                    ARGB.opaque(Terpenes.mix(0xFFFFFF, tint.get(), Terpenes.SMOKE_SHARE)));
         }
         if (base == ParticleTypes.CLOUD) {
             return ColorParticleOption.create(ModParticles.TERPENE_VAPOUR,
-                    ARGB.opaque(Terpene.mix(0xFFFFFF, tint.get(), Terpene.VAPOUR_SHARE)));
+                    ARGB.opaque(Terpenes.mix(0xFFFFFF, tint.get(), Terpenes.VAPOUR_SHARE)));
         }
         return base;
     }

@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.entity.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.mojang.serialization.Codec;
 import com.warlonmhite.hempdustry.block.custom.InfuserBlock;
 import com.warlonmhite.hempdustry.block.entity.ImplementedInventory;
@@ -394,7 +395,7 @@ public class InfuserBlockEntity extends NamedMachineBlockEntity
      */
     public static boolean isHemp(@Nullable Level world, ItemStack stack) {
         InfusingRecipe recipe = recipe(world);
-        return recipe != null && Chemotype.of(stack).infusable()
+        return recipe != null && Chemotypes.infusable(Chemotype.of(stack))
                 && (recipe.hemp().test(stack) || recipe.washedHemp().test(stack) || recipe.isScorched(stack));
     }
 
@@ -710,9 +711,9 @@ public class InfuserBlockEntity extends NamedMachineBlockEntity
         return Mth.positiveCeilDiv(sum(false), EIGHTHS);
     }
 
-    /** What the batch is, by the dosage of what it took ({@link Chemotype#ofShares}). */
+    /** What the batch is, by the dosage of what it took ({@link Chemotypes#ofShares}). */
     public Chemotype chemotype() {
-        return Chemotype.ofShares(sum(true), sum(false));
+        return Chemotypes.ofShares(sum(true), sum(false));
     }
 
     /**
@@ -809,7 +810,7 @@ public class InfuserBlockEntity extends NamedMachineBlockEntity
         ItemStack butter = recipe.result().create();
         butter.set(ModComponents.STRENGTH, strength);
         butter.set(ModComponents.QUALITY, quality);
-        Chemotype.stampButter(butter, chemotype(), cbdStrength());
+        Chemotypes.stampButter(butter, chemotype(), cbdStrength());
         return butter;
     }
 

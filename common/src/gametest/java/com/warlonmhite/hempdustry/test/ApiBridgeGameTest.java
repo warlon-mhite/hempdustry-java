@@ -1,6 +1,8 @@
 package com.warlonmhite.hempdustry.test;
 
 import com.warlonmhite.hempdustry.item.custom.SmokeContents;
+import com.warlonmhite.hempdustry.strain.BudTier;
+import com.warlonmhite.hempdustry.strain.Chemotype;
 import com.warlonmhite.hempdustry.strain.ModStrains;
 import com.warlonmhite.hempdustry.strain.Strain;
 import java.util.List;
@@ -51,6 +53,58 @@ public final class ApiBridgeGameTest {
         assertHas(context, SmokeContents.of(strains.getOrThrow(ModStrains.SCHWAG), 1).effects(100),
                 MobEffects.POISON, "schwag's 60% Poison, from SmokeContents#effects(int)");
         context.succeed();
+    }
+
+    /**
+     * 2.1's constructors build a strain with the default traits, as every file 2.1 wrote reads, and a strain's
+     * later traits come in one block: a strain built 2.1's way and given the registered one's traits is the
+     * registered one.
+     */
+    public static void theTwoOneConstructorsReadTheDefaultTraits(GameTestHelper context) {
+        Registry<Strain> strains = context.getLevel().registryAccess().lookupOrThrow(Strain.REGISTRY_KEY);
+        Strain beldia = strains.getOrThrow(ModStrains.BELDIA).value();
+        Strain built = new Strain(beldia.translationKey(), beldia.color(), beldia.modelIndex(), beldia.seedItem(),
+                beldia.buds(), beldia.wildFlower(), beldia.greenOutFactor(), beldia.dosePerItem(), beldia.smokeEffects(),
+                beldia.coughFactor());
+        context.assertValueEqual(built.traits(), Strain.Traits.DEFAULT, "a strain built with 2.1's constructor");
+        context.assertValueEqual(built.traits().chemotype(), Chemotype.THC_DOMINANT, "2.1's default chemotype");
+        context.assertValueEqual(built.withTraits(beldia.traits()), beldia, "2.1's Beldía given its traits");
+        SmokeContents.Entry entry = new SmokeContents.Entry(strains.getOrThrow(ModStrains.SCHWAG), 2);
+        context.assertTrue(entry.stamp() == Chemotype.THC_DOMINANT && entry.potency() == 0 && entry.tier() == BudTier.DANK,
+                "2.1's entry constructor is not unstamped, mid and Dank: " + entry);
+        context.succeed();
+    }
+
+    /**
+     * A strain may have no registry id (a bred one, from the breeding update): a load of one reads and smokes as a
+     * load of its registered twin, its name included, so nothing on the way from a load to the player asks for an id.
+     */
+    public static void aStrainWithNoIdSmokesLikeItsTwin(GameTestHelper context) {
+        Registry<Strain> strains = context.getLevel().registryAccess().lookupOrThrow(Strain.REGISTRY_KEY);
+        for (ResourceKey<Strain> key : List.of(ModStrains.SATIVA, ModStrains.BELDIA, ModStrains.CHERRY_WINE,
+                ModStrains.HASHISH)) {
+            Holder<Strain> named = strains.getOrThrow(key);
+            Holder<Strain> unnamed = Holder.direct(named.value());
+            context.assertTrue(unnamed.unwrapKey().isEmpty(), "a direct holder has an id");
+            SmokeContents twin = new SmokeContents(List.of(new SmokeContents.Entry(named, 2, Chemotype.BALANCED, 1,
+                    BudTier.TOP_SHELF)));
+            SmokeContents bred = new SmokeContents(List.of(new SmokeContents.Entry(unnamed, 2, Chemotype.BALANCED, 1,
+                    BudTier.TOP_SHELF)));
+            for (boolean exhale : new boolean[] {false, true}) {
+                context.assertValueEqual(describe(bred.effects(700, exhale, () -> 0L)),
+                        describe(twin.effects(700, exhale, () -> 0L)), key.identifier() + " with no id, exhale " + exhale);
+            }
+            context.assertValueEqual(bred.loadName(), twin.loadName(), key.identifier() + "'s name with no id");
+            context.assertValueEqual(bred.color(), twin.color(), key.identifier() + "'s colour with no id");
+            context.assertValueEqual(bred.entries().getFirst().chemotype(), twin.entries().getFirst().chemotype(),
+                    key.identifier() + "'s chemotype with no id");
+        }
+        context.succeed();
+    }
+
+    private static List<String> describe(List<MobEffectInstance> effects) {
+        return effects.stream().map(effect -> effect.getEffect().getRegisteredName() + " " + effect.getAmplifier() + " "
+                + effect.getDuration()).toList();
     }
 
     private static void assertHas(GameTestHelper context, List<MobEffectInstance> effects,

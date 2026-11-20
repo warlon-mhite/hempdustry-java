@@ -1,5 +1,7 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
+import com.warlonmhite.hempdustry.strain.internal.Bands;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 import com.warlonmhite.hempdustry.balance.EdibleBundle;
@@ -88,14 +90,14 @@ public final class StampedMatterGameTest {
         context.assertTrue(set.getComponentsPatch().isEmpty(), "kief set to THC-dominant carries " + set.getComponentsPatch());
 
         // Stamped one way and back: nothing left behind, not even a removal.
-        ItemStack leaf = PotencyBand.stamp(Chemotype.stamp(new ItemStack(ModItems.HEMP_LEAF), Chemotype.CBD_DOMINANT), PotencyBand.HIGH);
-        Chemotype.stamp(leaf, Chemotype.THC_DOMINANT);
-        PotencyBand.stamp(leaf, PotencyBand.MID);
+        ItemStack leaf = Bands.stamp(Chemotypes.stamp(new ItemStack(ModItems.HEMP_LEAF), Chemotype.CBD_DOMINANT), PotencyBand.HIGH);
+        Chemotypes.stamp(leaf, Chemotype.THC_DOMINANT);
+        Bands.stamp(leaf, PotencyBand.MID);
         context.assertTrue(leaf.getComponentsPatch().isEmpty(), "a leaf stamped and unstamped carries " + leaf.getComponentsPatch());
-        ItemStack bud = PotencyBand.stamp(PotencyBand.stamp(new ItemStack(ModItems.INDICA_BUDS), PotencyBand.HIGH), PotencyBand.MID);
+        ItemStack bud = Bands.stamp(Bands.stamp(new ItemStack(ModItems.INDICA_BUDS), PotencyBand.HIGH), PotencyBand.MID);
         context.assertTrue(bud.getComponentsPatch().isEmpty(), "a bud banded and unbanded carries " + bud.getComponentsPatch());
         // An item without the band on its prototype still writes nothing for mid.
-        ItemStack decarb = PotencyBand.stamp(new ItemStack(ModItems.DECARBOXYLATED_HEMP), PotencyBand.MID);
+        ItemStack decarb = Bands.stamp(new ItemStack(ModItems.DECARBOXYLATED_HEMP), PotencyBand.MID);
         context.assertTrue(decarb.getComponentsPatch().isEmpty(), "mid on decarboxylated hemp wrote " + decarb.getComponentsPatch());
         // A bud and a seed never carry a chemotype: their strain is their chemotype.
         context.assertTrue(!new ItemStack(ModItems.BELDIA_BUDS).has(ModComponents.CHEMOTYPE)
@@ -145,12 +147,12 @@ public final class StampedMatterGameTest {
     public static void bhangRefusesHempWithoutThcOrCbd(GameTestHelper context) {
         ServerLevel world = context.getLevel();
         for (Chemotype chemotype : Chemotype.values()) {
-            ItemStack hemp = Chemotype.stamp(new ItemStack(ModItems.DECARBOXYLATED_HEMP), chemotype);
+            ItemStack hemp = Chemotypes.stamp(new ItemStack(ModItems.DECARBOXYLATED_HEMP), chemotype);
             CraftingInput grid = CraftingInput.of(2, 2, List.of(hemp, hemp.copy(), new ItemStack(Items.MILK_BUCKET),
                     new ItemStack(Items.SUGAR)));
             ItemStack bhang = world.recipeAccess().getRecipeFor(RecipeType.CRAFTING, grid, world)
                     .map(entry -> entry.value().assemble(grid)).orElse(ItemStack.EMPTY);
-            context.assertTrue(bhang.is(ModItems.BHANG_BUCKET) == chemotype.infusable(),
+            context.assertTrue(bhang.is(ModItems.BHANG_BUCKET) == Chemotypes.infusable(chemotype),
                     "two " + chemotype + " decarboxylated hemp and milk made " + bhang);
         }
         context.succeed();
@@ -176,9 +178,9 @@ public final class StampedMatterGameTest {
             context.assertTrue(smelting.input().items().count() == 1,
                     recipe.id().identifier() + " takes more than its own bud, so its result cannot say its chemotype");
             ItemStack copied = smelting.template().create();
-            context.assertTrue(copied.is(ModItems.SCORCHED_HEMP) && Chemotype.of(copied) == strain.value().chemotype(),
+            context.assertTrue(copied.is(ModItems.SCORCHED_HEMP) && Chemotype.of(copied) == strain.value().traits().chemotype(),
                     recipe.id().identifier() + "'s own result is " + Chemotype.of(copied) + " scorched hemp, the bud is "
-                            + strain.value().chemotype());
+                            + strain.value().traits().chemotype());
             context.assertTrue(ItemStack.isSameItemSameComponents(copied, smelting.assemble(input)),
                     recipe.id().identifier() + "'s assembled result differs from its own");
             seen++;

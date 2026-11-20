@@ -6,8 +6,9 @@ import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.Encoder;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import com.warlonmhite.hempdustry.item.custom.SmokeContents;
 import com.warlonmhite.hempdustry.Hempdustry;
+import com.warlonmhite.hempdustry.strain.internal.Dosing;
+import java.util.Objects;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -25,9 +26,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.core.registries.codec.RegistryFixedCodec;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
@@ -124,6 +123,27 @@ import net.minecraft.world.level.block.Blocks;
  * The same promise covers every id, tag and data shape a released build had, and the game tests
  * fail on any of them going missing.
  *
+ * <h2>The code shape: 2.1's ten fields and one traits block</h2>
+ *
+ * The record's components are the ten 2.1 shipped and {@link Traits}, which holds everything a strain
+ * gained since: chemotype, terpene, smoke and jar colours, and the sheets its plants roll from. A trait
+ * added later goes inside {@link Traits} as one more accessor and one more {@code with} method, so this
+ * record never needs another component or constructor. Every set of genes in it is a map keyed by what
+ * each entry is (a phenomenon, a band, a step), never a field per entry, so a gene added later (a fifth
+ * phenomenon) is one more key. Build a strain with 2.1's constructor and {@link #withTraits}.
+ *
+ * <p>The types reachable from here are facts: what a strain is, and what a stack or a load carries. The
+ * rules that act on them (how a plant rolls its genes, what a tier or a band does in the bowl, how a batch
+ * mixes) live in {@code com.warlonmhite.hempdustry.strain.internal}, which is not API and may change in any
+ * release; the breeding update replaces the rolls with inheritance.
+ *
+ * <h2>A strain may have no registry id</h2>
+ *
+ * A strain is a sheet. From the breeding update a cross writes a new one, carried by its seeds and buds,
+ * that no registry lists. <b>Never assume a {@code Holder<Strain>} has an id</b>: read the strain off
+ * {@code value()}, test a known one with {@code is(key)}, which is false for a strain with none, and never
+ * {@code unwrapKey().orElseThrow()}.
+ *
  * <h2>A strain is a smokeable material, not necessarily a plant</h2>
  *
  * <b>{@code seeds} and {@code flower} are optional, and {@code buds} is not.</b> Every entry names
@@ -162,119 +182,21 @@ import net.minecraft.world.level.block.Blocks;
  *                        green-out's: {@code 2.0} halves them, {@code 0.5} doubles them. Beldía's
  *                        harsh leafy smoke is the {@code 0.5}. The cough is a sound, so this is
  *                        flavour rather than balance
- * @param chemotype       what the plant makes, THC, CBD, both or neither (see {@link Chemotype}). A
- *                        bud's and a seed's chemotype is always their strain's; everything else from
- *                        the plant is stamped with it as it drops. THC-dominant when the file names none
- * @param terpene         the terpene its smell is known for (see {@link Terpene}), if any: its name on
- *                        the bud's and the seed's tooltip, and the colour of its smoke and its plant's
- *                        aroma. A cosmetic: it changes nothing the strain does
- * @param smokeColor      the colour its smoke takes, RGB, when it is not its terpene's: schwag has no
- *                        terpene and smokes the colour of stale hay
- * @param potency         a plant strain's potency sheet (see {@link Potency}): a mid bud's worth at the
- *                        oven and the odds of each band a plant rolls. {@link Potency#DEFAULT} when the
- *                        file names none; read only for the buds of a plant
- * @param jarColour       the colour of its buds' pistils in a Stash Jar, RGB, when it is not the strain's own
- *                        {@code color}: a strain whose colour would vanish on a green bud can name another
- * @param plant           what a plant of the strain rolls at planting beyond its band (see {@link Plant}): its
- *                        quality sheet, its resistance sheet and its resin, written in the file's {@code plant} object.
- *                        {@link Plant#DEFAULT} when the file names none; read only for a plant
+ * @param traits          everything a strain gained after 2.1, in one block that grows (see {@link Traits}): its
+ *                        chemotype, terpene, smoke and jar colours, and the sheets its plants roll at planting
  */
 public record Strain(String translationKey, int color, int modelIndex,
                      Optional<Item> seedItem, Item buds, Optional<Block> wildFlower,
                      float greenOutFactor, int dosePerItem, List<SmokeEffect> smokeEffects,
-                     float coughFactor, Chemotype chemotype, Optional<ResourceKey<Terpene>> terpene,
-                     Optional<Integer> smokeColor, Potency potency, Optional<Integer> jarColour,
-                     Plant plant) {
+                     float coughFactor, Traits traits) {
 
-    /** A strain with the default plant sheets: the shape every strain had before {@code plant}. */
-    public Strain(String translationKey, int color, int modelIndex,
-                  Optional<Item> seedItem, Item buds, Optional<Block> wildFlower,
-                  float greenOutFactor, int dosePerItem, List<SmokeEffect> smokeEffects,
-                  float coughFactor, Chemotype chemotype, Optional<ResourceKey<Terpene>> terpene,
-                  Optional<Integer> smokeColor, Potency potency, Optional<Integer> jarColour) {
-        this(translationKey, color, modelIndex, seedItem, buds, wildFlower, greenOutFactor, dosePerItem, smokeEffects,
-                coughFactor, chemotype, terpene, smokeColor, potency, jarColour, Plant.DEFAULT);
-    }
-
-    /**
-     * What a plant of a strain rolls at planting beyond its potency band, kept in the strain file's {@code plant}
-     * object: {@code "plant": {"grow_quality": {...}, "resistances": {...}, "resin": {...}}}. Every key is optional.
-     *
-     * @param quality     the base luck of its harvests and the odds of each quality gene (see {@link GrowQuality})
-     * @param resistances the odds of each resistance step, per phenomenon (see {@link Resistances})
-     * @param resin       the odds of each resin step and the resin's texture (see {@link ResinSheet})
-     */
-    public record Plant(GrowQuality quality, Resistances resistances, ResinSheet resin) {
-
-        /**
-         * The sheet of a strain that names no {@code plant}: the default quality, the shared spread round neutral on
-         * every phenomenon, and always average resin.
-         */
-        public static final Plant DEFAULT = new Plant(GrowQuality.DEFAULT, Resistances.DEFAULT, ResinSheet.DEFAULT);
-
-        public static final Codec<Plant> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                FileFields.written(GrowQuality.CODEC, "grow_quality", GrowQuality.DEFAULT).forGetter(Plant::quality),
-                // Always written, as every key here: the spread round neutral is also what four "neutral"s read
-                // as, so a strain neutral on all four would otherwise lose its sheet from its file.
-                FileFields.written(Resistances.CODEC, "resistances", Resistances.DEFAULT).forGetter(Plant::resistances),
-                FileFields.written(ResinSheet.CODEC, "resin", ResinSheet.DEFAULT).forGetter(Plant::resin)
-        ).apply(instance, Plant::new));
-
-        /** The {@code plant} object as a strain file carries it. */
-        static final MapCodec<Plant> FIELD = FileFields.written(CODEC, "plant", DEFAULT);
-    }
-
-    /** A plant strain's quality sheet: the base luck of its harvests and the odds of each quality gene a plant rolls. */
-    public GrowQuality quality() {
-        return plant.quality();
-    }
-
-    /** A plant strain's resistance sheet: the odds of each resistance step a plant rolls, per phenomenon. */
-    public Resistances resistances() {
-        return plant.resistances();
-    }
-
-    /** A plant strain's resin: the odds of each resin step a plant rolls, and the texture that decides where a rich one pays. */
-    public ResinSheet resin() {
-        return plant.resin();
-    }
-
-    /** A strain with no jar colour of its own: the shape every strain had before {@code jar_color}. */
-    public Strain(String translationKey, int color, int modelIndex,
-                  Optional<Item> seedItem, Item buds, Optional<Block> wildFlower,
-                  float greenOutFactor, int dosePerItem, List<SmokeEffect> smokeEffects,
-                  float coughFactor, Chemotype chemotype, Optional<ResourceKey<Terpene>> terpene,
-                  Optional<Integer> smokeColor, Potency potency) {
-        this(translationKey, color, modelIndex, seedItem, buds, wildFlower, greenOutFactor, dosePerItem, smokeEffects,
-                coughFactor, chemotype, terpene, smokeColor, potency, Optional.empty());
-    }
-
-    /** A strain with the default potency sheet. */
-    public Strain(String translationKey, int color, int modelIndex,
-                  Optional<Item> seedItem, Item buds, Optional<Block> wildFlower,
-                  float greenOutFactor, int dosePerItem, List<SmokeEffect> smokeEffects,
-                  float coughFactor, Chemotype chemotype, Optional<ResourceKey<Terpene>> terpene,
-                  Optional<Integer> smokeColor) {
-        this(translationKey, color, modelIndex, seedItem, buds, wildFlower, greenOutFactor, dosePerItem, smokeEffects,
-                coughFactor, chemotype, terpene, smokeColor, Potency.DEFAULT);
-    }
-
-    /** A strain with no terpene and the plain smoke. */
-    public Strain(String translationKey, int color, int modelIndex,
-                  Optional<Item> seedItem, Item buds, Optional<Block> wildFlower,
-                  float greenOutFactor, int dosePerItem, List<SmokeEffect> smokeEffects,
-                  float coughFactor, Chemotype chemotype) {
-        this(translationKey, color, modelIndex, seedItem, buds, wildFlower, greenOutFactor, dosePerItem, smokeEffects,
-                coughFactor, chemotype, Optional.empty(), Optional.empty());
-    }
-
-    /** Every strain written before {@code chemotype} existed is THC-dominant, as 2.1 had them all. */
+    /** 2.1's constructor: a strain with the default {@link Traits}, as every strain 2.1 wrote reads. */
     public Strain(String translationKey, int color, int modelIndex,
                   Optional<Item> seedItem, Item buds, Optional<Block> wildFlower,
                   float greenOutFactor, int dosePerItem, List<SmokeEffect> smokeEffects,
                   float coughFactor) {
         this(translationKey, color, modelIndex, seedItem, buds, wildFlower, greenOutFactor, dosePerItem, smokeEffects,
-                coughFactor, Chemotype.THC_DOMINANT);
+                coughFactor, Traits.DEFAULT);
     }
 
     /** Every strain written before {@code cough_factor} existed coughs like the device does. */
@@ -316,64 +238,188 @@ public record Strain(String translationKey, int color, int modelIndex,
         return wildFlower.orElse(Blocks.AIR);
     }
 
-    /** This strain with {@code terpene} as its signature. */
-    public Strain withTerpene(ResourceKey<Terpene> terpene) {
+    /** This strain with {@code traits} in place of its own. */
+    public Strain withTraits(Traits traits) {
         return new Strain(translationKey, color, modelIndex, seedItem, buds, wildFlower, greenOutFactor, dosePerItem,
-                smokeEffects, coughFactor, chemotype, Optional.of(terpene), smokeColor, potency, jarColour, plant);
+                smokeEffects, coughFactor, traits);
     }
 
-    /** This strain smoking {@code rgb} rather than its terpene's colour. */
-    public Strain withSmokeColor(int rgb) {
-        return new Strain(translationKey, color, modelIndex, seedItem, buds, wildFlower, greenOutFactor, dosePerItem,
-                smokeEffects, coughFactor, chemotype, terpene, Optional.of(rgb), potency, jarColour, plant);
-    }
+    /**
+     * Everything a strain gained after 2.1, in one block that grows: a trait added later is one more field here,
+     * read through one more accessor and set through one more {@code with} method, so neither {@link Strain} nor
+     * this class ever needs another constructor. Start from {@link #DEFAULT}, what a strain naming none of them
+     * reads as, and set what differs:
+     *
+     * <pre>{@code
+     * Strain.Traits.DEFAULT.withChemotype(Chemotype.BALANCED).withTerpene(Terpene.MYRCENE)
+     * }</pre>
+     *
+     * <p>In a strain file every trait keeps its own key: {@code chemotype}, {@code terpene}, {@code smoke_color},
+     * {@code potency} and {@code jar_color} at the top level, and what a plant rolls at planting in the
+     * {@code plant} object ({@code grow_quality}, {@code resistances}, {@code resin}). Every key is optional.
+     *
+     * <p>Every value is a fact about the strain, read the same way whether the strain is one of the mod's, a
+     * datapack's, or (from the breeding update) a bred one written on a seed.
+     */
+    public static final class Traits {
+        /** A strain that names no trait: THC-dominant, no terpene, its own colour everywhere, the default sheets. */
+        public static final Traits DEFAULT = new Traits(Chemotype.THC_DOMINANT, Optional.empty(), Optional.empty(),
+                Potency.DEFAULT, Optional.empty(), GrowQuality.DEFAULT, Resistances.DEFAULT, ResinSheet.DEFAULT);
 
-    /** This strain with {@code potency} as its sheet. */
-    public Strain withPotency(Potency potency) {
-        return new Strain(translationKey, color, modelIndex, seedItem, buds, wildFlower, greenOutFactor, dosePerItem,
-                smokeEffects, coughFactor, chemotype, terpene, smokeColor, potency, jarColour, plant);
-    }
+        private final Chemotype chemotype;
+        private final Optional<ResourceKey<Terpene>> terpene;
+        private final Optional<Integer> smokeColor;
+        private final Potency potency;
+        private final Optional<Integer> jarColour;
+        private final GrowQuality quality;
+        private final Resistances resistances;
+        private final ResinSheet resin;
 
-    /** This strain's pistils in a Stash Jar tinted {@code rgb} rather than its own colour. */
-    public Strain withJarColour(int rgb) {
-        return new Strain(translationKey, color, modelIndex, seedItem, buds, wildFlower, greenOutFactor, dosePerItem,
-                smokeEffects, coughFactor, chemotype, terpene, smokeColor, potency, Optional.of(rgb), plant);
-    }
+        private Traits(Chemotype chemotype, Optional<ResourceKey<Terpene>> terpene, Optional<Integer> smokeColor,
+                       Potency potency, Optional<Integer> jarColour, GrowQuality quality, Resistances resistances,
+                       ResinSheet resin) {
+            this.chemotype = Objects.requireNonNull(chemotype, "chemotype");
+            this.terpene = Objects.requireNonNull(terpene, "terpene");
+            this.smokeColor = Objects.requireNonNull(smokeColor, "smokeColor");
+            this.potency = Objects.requireNonNull(potency, "potency");
+            this.jarColour = Objects.requireNonNull(jarColour, "jarColour");
+            this.quality = Objects.requireNonNull(quality, "quality");
+            this.resistances = Objects.requireNonNull(resistances, "resistances");
+            this.resin = Objects.requireNonNull(resin, "resin");
+        }
 
-    /** This strain with {@code quality} as its quality sheet. */
-    public Strain withQuality(GrowQuality quality) {
-        return new Strain(translationKey, color, modelIndex, seedItem, buds, wildFlower, greenOutFactor, dosePerItem,
-                smokeEffects, coughFactor, chemotype, terpene, smokeColor, potency, jarColour,
-                new Plant(quality, plant.resistances(), plant.resin()));
-    }
+        /**
+         * What the plant makes, THC, CBD, both or neither (see {@link Chemotype}). A bud's and a seed's chemotype is
+         * always their strain's; everything else from the plant is stamped with it as it drops. THC-dominant when
+         * the file names none.
+         */
+        public Chemotype chemotype() {
+            return chemotype;
+        }
 
-    /** This strain with {@code resistances} as its resistance sheet. */
-    public Strain withResistances(Resistances resistances) {
-        return new Strain(translationKey, color, modelIndex, seedItem, buds, wildFlower, greenOutFactor, dosePerItem,
-                smokeEffects, coughFactor, chemotype, terpene, smokeColor, potency, jarColour,
-                new Plant(plant.quality(), resistances, plant.resin()));
-    }
+        /**
+         * The terpene its smell is known for (see {@link Terpene}), if any, by key: a strain naming a terpene the
+         * world does not define still loads, and smokes plain. A cosmetic: it changes nothing the strain does.
+         */
+        public Optional<ResourceKey<Terpene>> terpene() {
+            return terpene;
+        }
 
-    /** This strain with {@code resin} as its resin sheet. */
-    public Strain withResin(ResinSheet resin) {
-        return new Strain(translationKey, color, modelIndex, seedItem, buds, wildFlower, greenOutFactor, dosePerItem,
-                smokeEffects, coughFactor, chemotype, terpene, smokeColor, potency, jarColour,
-                new Plant(plant.quality(), plant.resistances(), resin));
-    }
+        /** The colour its smoke takes, RGB, when it is not its terpene's: schwag has no terpene and smokes stale hay. */
+        public Optional<Integer> smokeColor() {
+            return smokeColor;
+        }
 
-    /** The colour of its buds' pistils in a Stash Jar, RGB: its {@code jar_color}, else its own {@link #color}. */
-    public int jarColourOrDefault() {
-        return jarColour.orElse(color);
-    }
+        /**
+         * Its potency sheet (see {@link Potency}): a mid bud's worth at the oven and the odds of each band a plant
+         * rolls. Read only for the buds of a plant.
+         */
+        public Potency potency() {
+            return potency;
+        }
 
-    /** The terpene the world loaded under this strain's {@link #terpene} key, if both exist. */
-    public Optional<Terpene> loadedTerpene(HolderLookup.Provider registries) {
-        return terpene.flatMap(key -> Terpene.resolve(registries, key));
-    }
+        /**
+         * The colour of its buds' pistils in a Stash Jar, RGB, when it is not the strain's own {@code color}: a
+         * strain whose colour would vanish on a green bud names another.
+         */
+        public Optional<Integer> jarColour() {
+            return jarColour;
+        }
 
-    /** The colour its smoke takes: its own smoke colour, else its terpene's, else none (plain smoke). */
-    public Optional<Integer> smokeTint(HolderLookup.Provider registries) {
-        return smokeColor.or(() -> loadedTerpene(registries).map(Terpene::color));
+        /** Its quality sheet: the base luck of its harvests and the odds of each quality gene a plant rolls. */
+        public GrowQuality quality() {
+            return quality;
+        }
+
+        /** Its resistance sheet: the odds of each resistance step a plant rolls, per phenomenon. */
+        public Resistances resistances() {
+            return resistances;
+        }
+
+        /** Its resin: the odds of each resin step a plant rolls, and the texture that decides where a rich one pays. */
+        public ResinSheet resin() {
+            return resin;
+        }
+
+        public Traits withChemotype(Chemotype chemotype) {
+            return new Traits(chemotype, terpene, smokeColor, potency, jarColour, quality, resistances, resin);
+        }
+
+        public Traits withTerpene(ResourceKey<Terpene> terpene) {
+            return new Traits(chemotype, Optional.of(terpene), smokeColor, potency, jarColour, quality, resistances, resin);
+        }
+
+        public Traits withSmokeColor(int rgb) {
+            return new Traits(chemotype, terpene, Optional.of(rgb), potency, jarColour, quality, resistances, resin);
+        }
+
+        public Traits withPotency(Potency potency) {
+            return new Traits(chemotype, terpene, smokeColor, potency, jarColour, quality, resistances, resin);
+        }
+
+        public Traits withJarColour(int rgb) {
+            return new Traits(chemotype, terpene, smokeColor, potency, Optional.of(rgb), quality, resistances, resin);
+        }
+
+        public Traits withQuality(GrowQuality quality) {
+            return new Traits(chemotype, terpene, smokeColor, potency, jarColour, quality, resistances, resin);
+        }
+
+        public Traits withResistances(Resistances resistances) {
+            return new Traits(chemotype, terpene, smokeColor, potency, jarColour, quality, resistances, resin);
+        }
+
+        public Traits withResin(ResinSheet resin) {
+            return new Traits(chemotype, terpene, smokeColor, potency, jarColour, quality, resistances, resin);
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return this == other || other instanceof Traits that
+                    && chemotype == that.chemotype && terpene.equals(that.terpene)
+                    && smokeColor.equals(that.smokeColor) && potency.equals(that.potency)
+                    && jarColour.equals(that.jarColour) && quality.equals(that.quality)
+                    && resistances.equals(that.resistances) && resin.equals(that.resin);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(chemotype, terpene, smokeColor, potency, jarColour, quality, resistances, resin);
+        }
+
+        @Override
+        public String toString() {
+            return "Traits[chemotype=" + chemotype + ", terpene=" + terpene + ", smokeColor=" + smokeColor
+                    + ", potency=" + potency + ", jarColour=" + jarColour + ", quality=" + quality
+                    + ", resistances=" + resistances + ", resin=" + resin + "]";
+        }
+
+        /** The file's {@code plant} object: what a plant of the strain rolls at planting. */
+        private record PlantSheets(GrowQuality quality, Resistances resistances, ResinSheet resin) {
+            static final PlantSheets DEFAULT = new PlantSheets(GrowQuality.DEFAULT, Resistances.DEFAULT, ResinSheet.DEFAULT);
+
+            static final Codec<PlantSheets> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                    FileFields.written(GrowQuality.CODEC, "grow_quality", GrowQuality.DEFAULT).forGetter(PlantSheets::quality),
+                    // Always written, as every key here: the spread round neutral is also what four "neutral"s read
+                    // as, so a strain neutral on every phenomenon would otherwise lose its sheet from its file.
+                    FileFields.written(Resistances.CODEC, "resistances", Resistances.DEFAULT).forGetter(PlantSheets::resistances),
+                    FileFields.written(ResinSheet.CODEC, "resin", ResinSheet.DEFAULT).forGetter(PlantSheets::resin)
+            ).apply(instance, PlantSheets::new));
+        }
+
+        /** The traits' keys in a strain file, beside 2.1's. */
+        static final MapCodec<Traits> FIELDS = RecordCodecBuilder.mapCodec(instance -> instance.group(
+                FileFields.written(Chemotype.CODEC, "chemotype", Chemotype.THC_DOMINANT).forGetter(Traits::chemotype),
+                // By key, looked up when used: a strain naming a terpene the world does not define still
+                // loads, and smokes plain.
+                ResourceKey.codec(Terpene.REGISTRY_KEY).optionalFieldOf("terpene").forGetter(Traits::terpene),
+                Codec.INT.optionalFieldOf("smoke_color").forGetter(Traits::smokeColor),
+                FileFields.written(Potency.CODEC, "potency", Potency.DEFAULT).forGetter(Traits::potency),
+                Codec.INT.optionalFieldOf("jar_color").forGetter(Traits::jarColour),
+                FileFields.written(PlantSheets.CODEC, "plant", PlantSheets.DEFAULT)
+                        .forGetter(traits -> new PlantSheets(traits.quality, traits.resistances, traits.resin))
+        ).apply(instance, (chemotype, terpene, smokeColor, potency, jarColour, plant) -> new Traits(chemotype, terpene,
+                smokeColor, potency, jarColour, plant.quality(), plant.resistances(), plant.resin())));
     }
 
     /** The dynamic registry itself. Entries load from {@code data/<namespace>/hempdustry/strain/<id>.json}. */
@@ -394,16 +440,8 @@ public record Strain(String translationKey, int color, int modelIndex,
             Codec.INT.optionalFieldOf("dose_per_item", 1).forGetter(Strain::dosePerItem),
             SmokeEffect.CODEC.listOf().optionalFieldOf("effects", List.of()).forGetter(Strain::smokeEffects),
             Codec.FLOAT.optionalFieldOf("cough_factor", 1.0F).forGetter(Strain::coughFactor),
-            FileFields.written(Chemotype.CODEC, "chemotype", Chemotype.THC_DOMINANT).forGetter(Strain::chemotype),
-            // By key, looked up when used: a strain naming a terpene the world does not define still
-            // loads, and smokes plain.
-            ResourceKey.codec(Terpene.REGISTRY_KEY).optionalFieldOf("terpene").forGetter(Strain::terpene),
-            Codec.INT.optionalFieldOf("smoke_color").forGetter(Strain::smokeColor),
-            FileFields.written(Potency.CODEC, "potency", Potency.DEFAULT).forGetter(Strain::potency),
-            Codec.INT.optionalFieldOf("jar_color").forGetter(Strain::jarColour),
-            // The sixteenth field, the most one RecordCodecBuilder group takes. What a plant rolls at planting
-            // lives in the file's own "plant" object, and a field added later goes inside one of the objects.
-            Plant.FIELD.forGetter(Strain::plant)
+            // Every key a strain gained after 2.1, read into the one traits block; a key added later goes there.
+            Traits.FIELDS.forGetter(Strain::traits)
     ).apply(instance, Strain::new));
 
     /**
@@ -433,25 +471,6 @@ public record Strain(String translationKey, int color, int modelIndex,
     /** The strain registry as loaded for this world. */
     public static HolderLookup.RegistryLookup<Strain> registry(HolderLookup.Provider registries) {
         return registries.lookupOrThrow(REGISTRY_KEY);
-    }
-
-    /**
-     * The strain {@code block} is a plant of: the one whose seeds plant it, or whose wild flower it is.
-     * Empty for a plant no strain names (Industrial Hemp is fibre, not a smoking strain).
-     *
-     * <p>When a datapack strain names the same seeds or flower as one of the mod's, the plant stays the
-     * mod's own, then the lowest id, as {@link #fromBuds} rules: a datapack's {@code aaa:kush} reusing
-     * Purple Kush's seeds must not hand every Purple Kush plant its odds, while the plant's loot still
-     * stamps by its own table.
-     */
-    public static Optional<Holder.Reference<Strain>> ofPlant(Block block, HolderLookup.Provider registries) {
-        return registry(registries).listElements().filter(strain -> {
-            Strain value = strain.value();
-            return value.seedItem().filter(seed -> seed instanceof BlockItem blockItem
-                    && blockItem.getBlock() == block).isPresent()
-                    || value.wildFlower().filter(flower -> flower == block).isPresent();
-        }).min(Comparator.comparing((Holder.Reference<Strain> entry) -> !entry.key().identifier().getNamespace().equals(Hempdustry.MOD_ID))
-                .thenComparing(entry -> entry.key().identifier()));
     }
 
     /**
@@ -543,104 +562,12 @@ public record Strain(String translationKey, int color, int modelIndex,
     /**
      * As above, with every scaling <em>buff</em> raised by {@code buffBonus} levels on top of the
      * dose: how a bud loaded with a concentrate reaches past the cap. Costs are not raised, because
-     * the concentrate is potency, not a bigger dose of the plant.
+     * the concentrate is potency, not a bigger dose of the plant. The strain's own chemotype decides
+     * which effects there are: a balanced plant's bong of three is a THC dose of one.
      */
     public List<MobEffectInstance> effects(int dose, int durationTicks, boolean onExhale, int buffBonus,
                                               RandomGenerator random) {
-        // The strain's own chemotype: a balanced plant's bong of three is a THC dose of one however
-        // it is asked. A strainless entry (hash) is THC-dominant unless its file says otherwise.
-        return effects(dose, chemotype, durationTicks, onExhale, buffBonus, random);
-    }
-
-    /**
-     * As above, for {@code units} of material of {@code chemotype}: each effect reads what its
-     * {@link EffectLabel} says moves it. A {@link EffectLabel#THC THC} effect scales with the THC dose
-     * ({@link Chemotype#thcDose}) and is not there at all without THC; a {@link EffectLabel#SMOKE
-     * SMOKE} effect scales with the units burned; a {@link EffectLabel#STRAIN STRAIN} effect is flat;
-     * a {@link EffectLabel#CBD CBD} effect is flat, lasts by the CBD smoked
-     * ({@code SmokeContents#cbdTicks}) and is not there without CBD. For THC-dominant material the THC dose is the unit count, so every effect
-     * comes out exactly as it did before chemotypes existed.
-     */
-    public List<MobEffectInstance> effects(int units, Chemotype chemotype, int durationTicks, boolean onExhale,
-                                              int buffBonus, RandomGenerator random) {
-        return effects(units, chemotype.thcDose(units), chemotype, durationTicks, onExhale, buffBonus, random);
-    }
-
-    /**
-     * As above, with the THC dose given rather than read off the units: a bowl weighs a bud's THC by
-     * its potency band as well as its chemotype (see {@code SmokeContents.Entry#thcDose}), so a pipe of
-     * two extra-high buds is a dose of three. Every label lasts {@code durationTicks} but CBD's, which
-     * takes the smoked-CBD rule at the units' worth of CBD.
-     */
-    public List<MobEffectInstance> effects(int units, int thcDose, Chemotype chemotype, int durationTicks,
-                                              boolean onExhale, int buffBonus, RandomGenerator random) {
-        return effects(new Burn(units, thcDose, chemotype, durationTicks, durationTicks,
-                        SmokeContents.cbdTicks(units * (double) chemotype.cbdHalves() / Chemotype.FULL_WEIGHT),
-                        durationTicks + durationTicks * Math.max(0, units - 1) / 2),
-                onExhale, buffBonus, random);
-    }
-
-    /**
-     * One entry of a bowl as its effects read it: how many units burn, the THC dose that sets a THC
-     * effect's level, the chemotype, and how long each kind of effect lasts — {@code thcTicks} for a
-     * THC-labelled one (the exact dose buys time, {@code SmokeContents#thcTicks}), {@code ticks} for a
-     * strain- or smoke-labelled one (a bud past the buff cap buys time), {@code cbdTicks} for a
-     * CBD-labelled one ({@code SmokeContents#cbdTicks}), and {@code doseTicks} for a strain- or smoke-labelled one
-     * that {@link SmokeEffect#doseBuysTime} (each bud past the first buys half the device's duration).
-     */
-    public record Burn(int units, int thcDose, Chemotype chemotype, int thcTicks, int ticks, int cbdTicks,
-                       int doseTicks) {
-        /** As above, for a load where every bud past the first buys no time of its own ({@code doseTicks} = {@code ticks}). */
-        public Burn(int units, int thcDose, Chemotype chemotype, int thcTicks, int ticks, int cbdTicks) {
-            this(units, thcDose, chemotype, thcTicks, ticks, cbdTicks, ticks);
-        }
-    }
-
-    /** Fresh status-effect instances for one hit of {@code burn}, each label at its own level and length. */
-    public List<MobEffectInstance> effects(Burn burn, boolean onExhale, int buffBonus, RandomGenerator random) {
-        int units = burn.units();
-        int thcDose = burn.thcDose();
-        Chemotype chemotype = burn.chemotype();
-        List<MobEffectInstance> out = new ArrayList<>(smokeEffects.size());
-        for (SmokeEffect effect : smokeEffects) {
-            if (effect.onExhale() != onExhale) {
-                continue;
-            }
-            EffectLabel label = effect.label();
-            // Before the chance draw: an effect the chemotype rules out never takes a random number,
-            // so a THC-dominant load draws exactly what it always did.
-            // Cannabinoid-free material has none of the strain's own effects either, a hash's or a
-            // scorched bud's: only what any smoke does (schwag's Poison) is left.
-            if ((label == EffectLabel.THC && thcDose == 0) || (label == EffectLabel.CBD && chemotype.cbdHalves() == 0)
-                    || (label == EffectLabel.STRAIN && chemotype == Chemotype.CANNABINOID_FREE)) {
-                continue;
-            }
-            // A certain effect draws nothing, so every strain written before chance existed takes
-            // exactly the random numbers it always did.
-            if (effect.chance() < 1.0F && random.nextFloat() >= effect.chance()) {
-                continue;
-            }
-            int level = switch (label) {
-                case THC -> thcDose;
-                case SMOKE -> units;
-                case STRAIN, CBD -> 1;
-            };
-            int amplifier = effect.baseAmplifier() + Math.max(0, level - 1);
-            if (label.scales() && effect.effect().value().getCategory() == MobEffectCategory.BENEFICIAL) {
-                amplifier += buffBonus;
-            }
-            amplifier = Math.min(effect.maxAmplifier(), amplifier);
-            int ticks = switch (label) {
-                case THC -> burn.thcTicks();
-                case CBD -> burn.cbdTicks();
-                case STRAIN, SMOKE -> effect.doseBuysTime() ? burn.doseTicks() : burn.ticks();
-            };
-            // At least a tick: a datapack's 0 or negative factor is a very short effect, never one
-            // that silently does not exist.
-            int duration = Math.max(1, Math.round(ticks * effect.durationFactor()));
-            out.add(new MobEffectInstance(effect.effect(), duration, amplifier));
-        }
-        return out;
+        return Dosing.effects(this, dose, traits.chemotype(), durationTicks, onExhale, buffBonus, random);
     }
 
     /**
@@ -693,32 +620,10 @@ public record Strain(String translationKey, int color, int modelIndex,
                 Codec.BOOL.optionalFieldOf("dose_buys_time", false).forGetter(SmokeEffect::doseBuysTime)
         ).apply(instance, SmokeEffect::new));
 
-        /** Every effect written before {@code dose_buys_time} existed: a dose past the cap buys its time. */
-        public SmokeEffect(Holder<MobEffect> effect, int baseAmplifier, boolean scales,
-                           float durationFactor, boolean onExhale, float chance, int maxAmplifier,
-                           Optional<EffectLabel> declaredLabel) {
-            this(effect, baseAmplifier, scales, durationFactor, onExhale, chance, maxAmplifier, declaredLabel, false);
-        }
-
-        /** Every effect written before {@code label} existed: the label its {@code scales} stood for. */
+        /** Every effect written before {@code label} existed (2.1's shape): the label its {@code scales} stood for. */
         public SmokeEffect(Holder<MobEffect> effect, int baseAmplifier, boolean scales,
                            float durationFactor, boolean onExhale, float chance, int maxAmplifier) {
-            this(effect, baseAmplifier, scales, durationFactor, onExhale, chance, maxAmplifier, Optional.empty());
-        }
-
-        /** An effect with its label named, its {@code scales} flag kept in step for older readers. */
-        public SmokeEffect(Holder<MobEffect> effect, int baseAmplifier, EffectLabel label,
-                           float durationFactor, boolean onExhale, float chance, int maxAmplifier) {
-            this(effect, baseAmplifier, label.scales(), durationFactor, onExhale, chance, maxAmplifier,
-                    Optional.of(label));
-        }
-
-        /**
-         * A flat effect of the plant's own whose every bud past the first buys time, never a level (Maui
-         * Wowie's Water Breathing and Dolphin's Grace, which vanilla reads at no level).
-         */
-        public static SmokeEffect dosedByTime(Holder<MobEffect> effect) {
-            return new SmokeEffect(effect, 0, false, 1.0F, false, 1.0F, NO_CAP, Optional.of(EffectLabel.STRAIN), true);
+            this(effect, baseAmplifier, scales, durationFactor, onExhale, chance, maxAmplifier, Optional.empty(), false);
         }
 
         /** What the effect comes from: the label the file names, or the one {@code scales} stood for. */

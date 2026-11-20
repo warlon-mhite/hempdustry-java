@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.entity.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.warlonmhite.hempdustry.block.custom.DecarboxylatorBlock;
 import com.warlonmhite.hempdustry.block.entity.ImplementedInventory;
 import com.warlonmhite.hempdustry.block.entity.ModBlockEntities;
@@ -206,7 +207,7 @@ public class DecarboxylatorBlockEntity extends NamedMachineBlockEntity
         // The oven is one of the two doors into an edible, so it turns away the chemotypes that make
         // neither THC nor CBD: decarboxylated, they would make butter that does nothing.
         Chemotype chemotype = Chemotype.ofMatter(stack, world.registryAccess());
-        if (!chemotype.infusable()) {
+        if (!Chemotypes.infusable(chemotype)) {
             return ItemStack.EMPTY;
         }
         SingleRecipeInput input = new SingleRecipeInput(stack);

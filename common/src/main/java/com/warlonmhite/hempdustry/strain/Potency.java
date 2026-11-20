@@ -2,7 +2,7 @@ package com.warlonmhite.hempdustry.strain;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.util.RandomSource;
+import java.util.Map;
 
 /**
  * A strain's potency sheet: what one of its buds is worth at the oven, and the odds of each
@@ -10,62 +10,37 @@ import net.minecraft.util.RandomSource;
  *
  * <p>{@code base} is a mid bud's decarboxylated hemp, the number the bowl weighs a bud by (a bud of
  * base 4 is one dose of THC); every strain the mod ships has 4, which is what a bud baked into in 2.1.
- * The odds are weights, read in the order low, mid, high, extra-high; they need not add up to 100.
- * Extra-high is for breeders: rare or impossible on a native plant.
+ * The odds are a weight per band; they need not add up to 100. Extra-high is for breeders: rare or
+ * impossible on a native plant.
  *
  * <p>Written in a strain's file as {@code "potency": {"base": 4, "low": 25, "mid": 50, "high": 25,
- * "extra_high": 0}}; every key is optional, and a strain with no {@code potency} at all reads as
- * {@link #DEFAULT}.
+ * "extra_high": 0}}; every key is optional (a band left out reads as {@link #DEFAULT}'s weight), and a
+ * strain with no {@code potency} at all reads as {@link #DEFAULT}.
+ *
+ * @param base    a mid bud's decarboxylated hemp
+ * @param weights the weight of each band, one entry per band; a band the map leaves out weighs nothing
  */
-public record Potency(int base, int low, int mid, int high, int extraHigh) {
+public record Potency(int base, Map<PotencyBand, Integer> weights) {
 
     /** A mid bud's decarboxylated hemp, for every strain that names none. */
     public static final int DEFAULT_BASE = 4;
 
     /** Purple Kush's and Lemon Haze's sheet, and any strain's that names none. */
-    public static final Potency DEFAULT = new Potency(DEFAULT_BASE, 25, 50, 25, 0);
+    public static final Potency DEFAULT = new Potency(DEFAULT_BASE,
+            Map.of(PotencyBand.LOW, 25, PotencyBand.MID, 50, PotencyBand.HIGH, 25));
 
     public static final Codec<Potency> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             FileFields.written(Codec.intRange(1, 64), "base", DEFAULT.base).forGetter(Potency::base),
-            FileFields.written(Codec.intRange(0, 1000), "low", DEFAULT.low).forGetter(Potency::low),
-            FileFields.written(Codec.intRange(0, 1000), "mid", DEFAULT.mid).forGetter(Potency::mid),
-            FileFields.written(Codec.intRange(0, 1000), "high", DEFAULT.high).forGetter(Potency::high),
-            FileFields.written(Codec.intRange(0, 1000), "extra_high", DEFAULT.extraHigh).forGetter(Potency::extraHigh)
+            Keyed.codec(PotencyBand.class, Codec.intRange(0, 1000), DEFAULT::weight, Keyed::always)
+                    .forGetter(Potency::weights)
     ).apply(instance, Potency::new));
 
-    /** A sheet at the default base with these odds. */
-    public static Potency odds(int low, int mid, int high, int extraHigh) {
-        return new Potency(DEFAULT_BASE, low, mid, high, extraHigh);
+    public Potency {
+        weights = Keyed.complete(PotencyBand.class, weights, band -> 0);
     }
 
-    /** The weight of {@code band} among the four. */
+    /** The weight of {@code band}. */
     public int weight(PotencyBand band) {
-        return switch (band) {
-            case LOW -> low;
-            case MID -> mid;
-            case HIGH -> high;
-            case EXTRA_HIGH -> extraHigh;
-        };
-    }
-
-    /** One plant's band, drawn from the odds. A sheet whose odds are all zero is always mid. */
-    public PotencyBand roll(RandomSource random) {
-        int total = low + mid + high + extraHigh;
-        if (total <= 0) {
-            return PotencyBand.MID;
-        }
-        int pick = random.nextInt(total);
-        for (PotencyBand band : PotencyBand.values()) {
-            pick -= weight(band);
-            if (pick < 0) {
-                return band;
-            }
-        }
-        return PotencyBand.MID;
-    }
-
-    /** Decarboxylated hemp in one bud of {@code band}: the base moved by the band, never below one. */
-    public int decarbCount(PotencyBand band) {
-        return Math.max(1, base + band.offset());
+        return weights.get(band);
     }
 }

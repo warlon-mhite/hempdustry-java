@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.item.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.strain.Chemotype;
 import java.util.function.Consumer;
@@ -45,7 +46,7 @@ public class CannabutterItem extends Item {
         int cbd = stack.getOrDefault(ModComponents.CBD_STRENGTH, 0);
         // The chemotype word on any butter that came out of an Infuser; a bare stack names nothing.
         if (strength != null || cbd > 0) {
-            tooltip.accept(Chemotype.of(stack).tooltipLine());
+            tooltip.accept(Chemotypes.tooltipLine(Chemotype.of(stack)));
         }
         // The THC sum is the strength; CBD butter has none, and says only its CBD.
         if (strength != null && strength > 0) {

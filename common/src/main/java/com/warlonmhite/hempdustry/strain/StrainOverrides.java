@@ -29,12 +29,12 @@ import java.util.function.Function;
 public final class StrainOverrides {
     /** The keys a file of 2.1 never had, each with what a strain reads it as. */
     private static final Map<String, Function<Strain, Object>> KEYS_SINCE_2_2 = Map.of(
-            "chemotype", Strain::chemotype,
-            "terpene", Strain::terpene,
-            "smoke_color", Strain::smokeColor,
-            "potency", Strain::potency,
-            "jar_color", Strain::jarColour,
-            "plant", Strain::plant);
+            "chemotype", strain -> strain.traits().chemotype(),
+            "terpene", strain -> strain.traits().terpene(),
+            "smoke_color", strain -> strain.traits().smokeColor(),
+            "potency", strain -> strain.traits().potency(),
+            "jar_color", strain -> strain.traits().jarColour(),
+            "plant", strain -> List.of(strain.traits().quality(), strain.traits().resistances(), strain.traits().resin()));
 
     private StrainOverrides() {
     }

@@ -1,5 +1,7 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.strain.StressPhenomenon;
+import com.warlonmhite.hempdustry.strain.internal.Hardiness;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.strain.Resistance;
@@ -41,7 +43,7 @@ import org.jetbrains.annotations.Nullable;
  *       that stops movement, glass included, leaves not — and at a tenth of that,
  *       {@link #ONSET_OUTDOORS}, under open sky. Still air is what it thrives in.</li>
  *   <li><b>A plant's mildew resistance</b>, rolled at planting, scales its onset and the spread to it:
- *       very weak ×2 to very resistant ×¼ ({@link Resistance#factor}). A plant with no record is neutral.</li>
+ *       very weak ×2 to very resistant ×¼ ({@link Hardiness#factor}). A plant with no record is neutral.</li>
  *   <li><b>It spreads</b> one plant at a time: each random tick, a mildewed plant tries one of its
  *       eight neighbours, at {@link #SPREAD} if that neighbour is under a roof and
  *       {@link #SPREAD_OUTDOORS} if it stands in the open, where the wind thins the spores out. A
@@ -160,7 +162,7 @@ public enum Mildew implements StringRepresentable {
         BlockState plant = world.getBlockState(target);
         if (!plant.hasProperty(PROPERTY) || plant.getValue(PROPERTY) == MILDEWED
                 || world.getBlockState(target.below()).is(plant.getBlock())
-                || random.nextFloat() >= mildewStep(world, target).apply(roofed(world, target) ? SPREAD : SPREAD_OUTDOORS)
+                || random.nextFloat() >= Hardiness.apply(mildewStep(world, target), roofed(world, target) ? SPREAD : SPREAD_OUTDOORS)
                 || !canCatch(world, target, plant) || gassed(world, target)) {
             return;
         }
@@ -172,7 +174,7 @@ public enum Mildew implements StringRepresentable {
      * {@link #ONSET_OUTDOORS} in the open, scaled by its resistance.
      */
     private static float onsetFor(Level world, BlockPos lower) {
-        return mildewStep(world, lower).apply(roofed(world, lower) ? ONSET : ONSET_OUTDOORS);
+        return Hardiness.apply(mildewStep(world, lower), roofed(world, lower) ? ONSET : ONSET_OUTDOORS);
     }
 
     /**
@@ -180,7 +182,7 @@ public enum Mildew implements StringRepresentable {
      * both the onset and the spread to it, very resistant quarters them. A plant with no record is neutral.
      */
     private static Resistance mildewStep(Level world, BlockPos lower) {
-        return PlantRecordBlockEntity.resistancesAt(world, lower).mildew();
+        return PlantRecordBlockEntity.resistancesAt(world, lower).get(StressPhenomenon.MILDEW);
     }
 
     private static final int[][] NEIGHBOURS = {

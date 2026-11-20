@@ -1,5 +1,7 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.strain.internal.Hardiness;
+import com.warlonmhite.hempdustry.strain.internal.Rolls;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
@@ -75,38 +77,38 @@ public final class ResistanceGameTest {
         float[] factors = {2.0F, 1.5F, 1.0F, 0.5F, 0.25F};
         int[] lossAges = {3, 3, 4, 4, 4};
         for (Resistance step : Resistance.values()) {
-            context.assertValueEqual(step.factor(), factors[step.ordinal()], step + "'s factor");
-            context.assertValueEqual(step.lightLossAge(), lossAges[step.ordinal()], step + "'s light loss age");
+            context.assertValueEqual(Hardiness.factor(step), factors[step.ordinal()], step + "'s factor");
+            context.assertValueEqual(Hardiness.lightLossAge(step), lossAges[step.ordinal()], step + "'s light loss age");
             context.assertValueEqual(step.score(), step.ordinal() - 2, step + "'s place on the hardiness scale");
         }
-        context.assertValueEqual(Resistance.VERY_WEAK.apply(1.0F / 3), 2.0F / 3, "a very weak plant in a dry bed");
-        context.assertValueEqual(Resistance.VERY_RESISTANT.apply(1.0F / 3), 1.0F / 12, "a very resistant plant in a dry bed");
-        context.assertValueEqual(Resistance.VERY_WEAK.apply(0.75F), 1.0F, "a doubled chance past certain");
+        context.assertValueEqual(Hardiness.apply(Resistance.VERY_WEAK, 1.0F / 3), 2.0F / 3, "a very weak plant in a dry bed");
+        context.assertValueEqual(Hardiness.apply(Resistance.VERY_RESISTANT, 1.0F / 3), 1.0F / 12, "a very resistant plant in a dry bed");
+        context.assertValueEqual(Hardiness.apply(Resistance.VERY_WEAK, 0.75F), 1.0F, "a doubled chance past certain");
 
         int[][] rows = {{60, 25, 15, 0, 0}, {19, 62, 12, 7, 0}, {7, 12, 62, 12, 7}, {0, 7, 12, 62, 19}, {0, 0, 15, 25, 60}};
         for (Resistance step : Resistance.values()) {
             int[] row = rows[step.ordinal()];
-            ResistanceOdds expected = new ResistanceOdds(row[0], row[1], row[2], row[3], row[4]);
+            ResistanceOdds expected = Sheets.odds(row[0], row[1], row[2], row[3], row[4]);
             context.assertValueEqual(ResistanceOdds.spread(step), expected, "the spread around " + step);
-            context.assertValueEqual(ResistanceOdds.spread(step).mostLikelyIfSpread().orElse(null), step,
-                    "the spread around " + step + " read back");
+            context.assertValueEqual(encode(ResistanceOdds.CODEC, ResistanceOdds.spread(step)).getAsString(),
+                    step.getSerializedName(), "the spread around " + step + " written back as its step");
         }
-        context.assertTrue(new ResistanceOdds(0, 0, 100, 0, 0).mostLikelyIfSpread().isEmpty(),
+        context.assertTrue(encode(ResistanceOdds.CODEC, Sheets.odds(0, 0, 100, 0, 0)).isJsonObject(),
                 "an always-neutral phenomenon reads as the spread around neutral, so it would write as one");
 
         // A lost light: a resistant plant ignores it 1 time in 2, a very resistant one 3 in 4; one draw for those, none for the rest.
-        context.assertTrue(Resistance.RESISTANT.ignoresLostLight(decided(0.49F))
-                        && !Resistance.RESISTANT.ignoresLostLight(decided(0.51F))
-                        && Resistance.VERY_RESISTANT.ignoresLostLight(decided(0.74F))
-                        && !Resistance.VERY_RESISTANT.ignoresLostLight(decided(0.76F))
-                        && !Resistance.NEUTRAL.ignoresLostLight(decided(0.0F))
-                        && !Resistance.WEAK.ignoresLostLight(decided(0.0F)),
+        context.assertTrue(Hardiness.ignoresLostLight(Resistance.RESISTANT, decided(0.49F))
+                        && !Hardiness.ignoresLostLight(Resistance.RESISTANT, decided(0.51F))
+                        && Hardiness.ignoresLostLight(Resistance.VERY_RESISTANT, decided(0.74F))
+                        && !Hardiness.ignoresLostLight(Resistance.VERY_RESISTANT, decided(0.76F))
+                        && !Hardiness.ignoresLostLight(Resistance.NEUTRAL, decided(0.0F))
+                        && !Hardiness.ignoresLostLight(Resistance.WEAK, decided(0.0F)),
                 "a lost light is ignored at other odds than resistant 1 in 2, very resistant 3 in 4, nobody else");
         for (Resistance step : Resistance.values()) {
             long seed = new Random(20261113L + step.ordinal()).nextLong();
             RandomSource rolled = RandomSource.create(seed);
             RandomSource counted = RandomSource.create(seed);
-            step.ignoresLostLight(rolled);
+            Hardiness.ignoresLostLight(step, rolled);
             if (step.compareTo(Resistance.RESISTANT) >= 0) {
                 counted.nextFloat();
             }
@@ -122,7 +124,7 @@ public final class ResistanceGameTest {
             int rolls = 8000;
             Map<Resistance, Integer> seen = new EnumMap<>(Resistance.class);
             for (int roll = 0; roll < rolls; roll++) {
-                seen.merge(odds.roll(random), 1, Integer::sum);
+                seen.merge(Rolls.roll(odds, random), 1, Integer::sum);
             }
             for (Resistance step : Resistance.values()) {
                 double expected = odds.weight(step) / 100.0;
@@ -131,51 +133,63 @@ public final class ResistanceGameTest {
                         + share + " of the time, expected " + expected);
             }
         }
-        context.assertValueEqual(new ResistanceOdds(0, 0, 0, 0, 0).roll(decided(0.0F)), Resistance.NEUTRAL,
+        context.assertValueEqual(Rolls.roll(Sheets.odds(0, 0, 0, 0, 0), decided(0.0F)), Resistance.NEUTRAL,
                 "odds that are all zero");
 
         // The file: a step, or five weights; a step's spread writes back as the step.
         context.assertValueEqual(parse(ResistanceOdds.CODEC, "\"resistant\""), ResistanceOdds.spread(Resistance.RESISTANT),
                 "a phenomenon written as its most likely step");
         context.assertValueEqual(parse(ResistanceOdds.CODEC, "{\"weak\": 5, \"resistant\": 95}"),
-                new ResistanceOdds(0, 5, 0, 95, 0), "a phenomenon written as weights");
+                Sheets.odds(0, 5, 0, 95, 0), "a phenomenon written as weights");
         context.assertValueEqual(encode(ResistanceOdds.CODEC, ResistanceOdds.spread(Resistance.WEAK)).toString(),
                 "\"weak\"", "a spread written back");
-        context.assertTrue(encode(ResistanceOdds.CODEC, new ResistanceOdds(0, 5, 0, 95, 0)).isJsonObject(),
+        context.assertTrue(encode(ResistanceOdds.CODEC, Sheets.odds(0, 5, 0, 95, 0)).isJsonObject(),
                 "odds of their own written back as a step");
 
         // A strain file: a phenomenon it leaves out takes the spread around neutral, as naming "neutral" does,
         // so a file with no plant object, or no resistances, rolls the spread on all four.
         ResistanceOdds neutral = ResistanceOdds.spread(Resistance.NEUTRAL);
-        Resistances unnamed = new Resistances(neutral, neutral, neutral, neutral);
+        Resistances unnamed = Sheets.resistances(neutral, neutral, neutral, neutral);
         Strain bare = parse(Strain.CODEC, "{\"translation_key\":\"x\",\"color\":1,\"buds\":\"minecraft:wheat\"}");
-        context.assertValueEqual(bare.plant(), Strain.Plant.DEFAULT, "a strain file naming no plant");
-        context.assertValueEqual(bare.resistances(), unnamed, "a strain file naming no plant object");
+        context.assertValueEqual(bare.traits(), Strain.Traits.DEFAULT, "a strain file naming no trait");
+        context.assertValueEqual(bare.traits().resistances(), unnamed, "a strain file naming no plant object");
         Strain plain = parse(Strain.CODEC, "{\"translation_key\":\"x\",\"color\":1,\"buds\":\"minecraft:wheat\","
                 + "\"plant\":{}}");
-        context.assertValueEqual(plain.resistances(), unnamed, "a strain file naming no resistances");
+        context.assertValueEqual(plain.traits().resistances(), unnamed, "a strain file naming no resistances");
         Strain touchy = parse(Strain.CODEC, "{\"translation_key\":\"x\",\"color\":1,\"buds\":\"minecraft:wheat\","
                 + "\"plant\":{\"resistances\":{\"light\":\"very_weak\"}}}");
-        context.assertValueEqual(touchy.resistances(), new Resistances(neutral, neutral,
+        context.assertValueEqual(touchy.traits().resistances(), Sheets.resistances(neutral, neutral,
                         ResistanceOdds.spread(Resistance.VERY_WEAK), neutral),
                 "a strain file naming only its light");
-        context.assertValueEqual(parse(Resistances.CODEC, "{\"mildew\": {\"neutral\": 100}}").mildew(),
-                new ResistanceOdds(0, 0, 100, 0, 0), "a phenomenon a file keeps always neutral");
+        context.assertValueEqual(parse(Resistances.CODEC, "{\"mildew\": {\"neutral\": 100}}").odds(StressPhenomenon.MILDEW),
+                Sheets.odds(0, 0, 100, 0, 0), "a phenomenon a file keeps always neutral");
         // A sheet writes every phenomenon back, neutral ones too: a generated file names all four.
-        JsonElement written = encode(Resistances.CODEC, Resistances.of(Resistance.NEUTRAL, Resistance.RESISTANT,
+        JsonElement written = encode(Resistances.CODEC, Sheets.resistances(Resistance.NEUTRAL, Resistance.RESISTANT,
                 Resistance.NEUTRAL, Resistance.WEAK));
         context.assertValueEqual(written.toString(),
                 "{\"dry_ground\":\"neutral\",\"overwatering\":\"resistant\",\"light\":\"neutral\",\"mildew\":\"weak\"}",
                 "a sheet written back");
         // And a plant's sheet that is neutral on all four is still written, though it is the default.
-        JsonElement plantWritten = encode(Strain.Plant.CODEC, new Strain.Plant(GrowQuality.DEFAULT, unnamed,
-                touchy.resin()));
-        context.assertTrue(plantWritten.getAsJsonObject().has("resistances"),
+        Strain seeded = parse(Strain.CODEC, "{\"translation_key\":\"x\",\"color\":1,\"buds\":\"minecraft:wheat\","
+                + "\"seeds\":\"minecraft:wheat_seeds\"}");
+        JsonElement plantWritten = encode(Strain.CODEC, seeded).getAsJsonObject().get("plant");
+        context.assertTrue(plantWritten != null && plantWritten.getAsJsonObject().has("resistances"),
                 "a plant neutral on all four was written with no resistances: " + plantWritten);
         // Weights that add up to nothing are no odds: an error, not a plant that is always neutral.
         context.assertTrue(Resistances.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString("{\"mildew\": {}}")).isError(),
                 "a phenomenon written as no weights at all was read");
-        context.assertValueEqual(touchy.quality(), GrowQuality.DEFAULT, "a plant object naming no quality");
+        context.assertValueEqual(touchy.traits().quality(), GrowQuality.DEFAULT, "a plant object naming no quality");
+        // Lists, not slots: a phenomenon this build does not know (a later one, as bud rot) is no error and changes
+        // nothing; a phenomenon a sheet or a plant's record leaves out reads as before it existed.
+        context.assertValueEqual(parse(Resistances.CODEC, "{\"light\": \"resistant\", \"bud_rot\": \"weak\"}"),
+                new Resistances(Map.of(StressPhenomenon.LIGHT, ResistanceOdds.spread(Resistance.RESISTANT))),
+                "a sheet naming a phenomenon this build does not know");
+        context.assertValueEqual(parse(ResistanceGenes.CODEC, "{\"mildew\": \"weak\", \"bud_rot\": \"very_weak\"}"),
+                ResistanceGenes.NEUTRAL.with(StressPhenomenon.MILDEW, Resistance.WEAK),
+                "a plant's record naming a phenomenon this build does not know");
+        context.assertValueEqual(encode(ResistanceGenes.CODEC, ResistanceGenes.NEUTRAL.with(StressPhenomenon.LIGHT,
+                Resistance.VERY_RESISTANT)).toString(), "{\"light\":\"very_resistant\"}",
+                "a plant's record writes only what is not neutral");
         context.succeed();
     }
 
@@ -189,7 +203,7 @@ public final class ResistanceGameTest {
         for (Map.Entry<ResourceKey<Strain>, Resistance[]> profile : PROFILES.entrySet()) {
             Resistance[] steps = profile.getValue();
             Strain strain = Strain.registry(registries).getOrThrow(profile.getKey()).value();
-            context.assertValueEqual(strain.resistances(), Resistances.of(steps[0], steps[1], steps[2], steps[3]),
+            context.assertValueEqual(strain.traits().resistances(), Sheets.resistances(steps[0], steps[1], steps[2], steps[3]),
                     profile.getKey().identifier() + "'s resistance profile");
             int score = 0;
             int veryResistant = 0;
@@ -199,13 +213,13 @@ public final class ResistanceGameTest {
                 veryResistant += step == Resistance.VERY_RESISTANT ? 1 : 0;
                 veryWeak += step == Resistance.VERY_WEAK ? 1 : 0;
             }
-            if (strain.chemotype() != Chemotype.CANNABINOID_FREE) {
+            if (strain.traits().chemotype() != Chemotype.CANNABINOID_FREE) {
                 context.assertTrue(score >= -3 && score <= 3 && veryResistant <= 1 && veryWeak <= 1,
                         profile.getKey().identifier() + " breaks the hardiness rule: score " + score + ", "
                                 + veryResistant + " very resistant, " + veryWeak + " very weak");
             }
         }
-        context.assertValueEqual(IndustrialHempCropBlock.RESISTANCES, Resistances.of(Resistance.RESISTANT,
+        context.assertValueEqual(IndustrialHempCropBlock.RESISTANCES, Sheets.resistances(Resistance.RESISTANT,
                 Resistance.RESISTANT, Resistance.RESISTANT, Resistance.NEUTRAL), "Industrial Hemp's resistance profile");
         context.succeed();
     }
@@ -265,7 +279,7 @@ public final class ResistanceGameTest {
         int resistant = 0;
         for (int i = 0; i < 200; i++) {
             fibre.replant();
-            resistant += fibre.resistances().dryGround() == Resistance.RESISTANT ? 1 : 0;
+            resistant += fibre.resistances().get(StressPhenomenon.DRY_GROUND) == Resistance.RESISTANT ? 1 : 0;
         }
         context.assertTrue(resistant > 90 && resistant < 160, "Industrial Hemp rolled resistant to dry ground "
                 + resistant + " times in 200, against its sheet's 62 in 100");

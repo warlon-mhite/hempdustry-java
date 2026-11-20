@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.entity.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.mojang.serialization.Codec;
 import com.warlonmhite.hempdustry.block.custom.SiftingBoxBlock;
 import com.warlonmhite.hempdustry.block.entity.ModBlockEntities;
@@ -86,7 +87,7 @@ public class SiftingBoxBlockEntity extends BlockEntity {
     public Chemotype chemotype(int boxLevel) {
         int[] counts = levels.clone();
         counts[Chemotype.THC_DOMINANT.ordinal()] += unseen(boxLevel);
-        return Chemotype.dosage(counts);
+        return Chemotypes.dosage(counts);
     }
 
     /** The batch's tier on a screen at {@code boxLevel}: its levels' average, to the nearest tier, a half down. */

@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.strain.internal.Terpenes;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
 import com.warlonmhite.hempdustry.block.ModBlocks;
@@ -69,7 +70,7 @@ public final class TerpeneGameTest {
         context.assertValueEqual(registries.lookupOrThrow(Terpene.REGISTRY_KEY).listElements().count(), 12L,
                 "the terpenes loaded");
         COLOURS.forEach((key, colour) -> {
-            Optional<Terpene> terpene = Terpene.resolve(registries, key);
+            Optional<Terpene> terpene = Terpenes.resolve(registries, key);
             context.assertTrue(terpene.isPresent(), key.identifier() + " did not load");
             context.assertValueEqual(terpene.get().color(), colour, key.identifier() + "'s colour");
             context.assertValueEqual(terpene.get().translationKey(), "hempdustry.terpene." + key.identifier().getPath(),
@@ -83,23 +84,23 @@ public final class TerpeneGameTest {
             Strain value = strain.value();
             if (value.wildFlower().isEmpty()) {
                 // Hash, rosin, scorched hemp and schwag are no plant: no smell of their own.
-                context.assertTrue(value.terpene().isEmpty(), id + " is no plant but names a terpene");
+                context.assertTrue(value.traits().terpene().isEmpty(), id + " is no plant but names a terpene");
                 continue;
             }
             plants++;
-            context.assertTrue(value.terpene().isPresent(), id + " names no terpene");
-            ResourceKey<Terpene> key = value.terpene().get();
-            context.assertTrue(value.loadedTerpene(registries).isPresent(), id + "'s " + key.identifier() + " does not resolve");
+            context.assertTrue(value.traits().terpene().isPresent(), id + " names no terpene");
+            ResourceKey<Terpene> key = value.traits().terpene().get();
+            context.assertTrue(Terpenes.of(value, registries).isPresent(), id + "'s " + key.identifier() + " does not resolve");
             String other = namedBy.put(key, id);
             context.assertTrue(other == null, id + " and " + other + " share " + key.identifier());
         }
         Sweep.atLeast(context, "plant strains", plants, 10);
 
-        context.assertValueEqual(strain(world, ModStrains.SCHWAG).value().smokeTint(registries), Optional.of(0xA89A6E),
+        context.assertValueEqual(Terpenes.smokeTint(strain(world, ModStrains.SCHWAG).value(), registries), Optional.of(0xA89A6E),
                 "schwag's smoke, stale hay");
         for (ResourceKey<Strain> plain : List.of(ModStrains.HASHISH, ModStrains.CHARAS, ModStrains.FILTERED_HASHISH,
                 ModStrains.ROSIN, ModStrains.SCORCHED_HEMP)) {
-            context.assertValueEqual(strain(world, plain).value().smokeTint(registries), Optional.<Integer>empty(),
+            context.assertValueEqual(Terpenes.smokeTint(strain(world, plain).value(), registries), Optional.<Integer>empty(),
                     plain.identifier() + "'s smoke tint");
         }
 
@@ -126,12 +127,12 @@ public final class TerpeneGameTest {
         int linalool = COLOURS.get(Terpene.LINALOOL);
 
         assertTint(context, Smoking.tinted(world, ParticleTypes.CAMPFIRE_COSY_SMOKE, SmokeContents.of(kush, 3)),
-                ModParticles.TERPENE_SMOKE, Terpene.mix(WHITE, linalool, Terpene.SMOKE_SHARE), "a Purple Kush bong's exhale");
+                ModParticles.TERPENE_SMOKE, Terpenes.mix(WHITE, linalool, Terpenes.SMOKE_SHARE), "a Purple Kush bong's exhale");
         assertTint(context, Smoking.tinted(world, ParticleTypes.CLOUD, SmokeContents.of(kush, 2)),
-                ModParticles.TERPENE_VAPOUR, Terpene.mix(WHITE, linalool, Terpene.VAPOUR_SHARE), "a Purple Kush vaporizer's");
+                ModParticles.TERPENE_VAPOUR, Terpenes.mix(WHITE, linalool, Terpenes.VAPOUR_SHARE), "a Purple Kush vaporizer's");
         assertTint(context, Smoking.tinted(world, ParticleTypes.CAMPFIRE_COSY_SMOKE,
                         SmokeContents.of(strain(world, ModStrains.SCHWAG), 1)),
-                ModParticles.TERPENE_SMOKE, Terpene.mix(WHITE, 0xA89A6E, Terpene.SMOKE_SHARE), "a schwag pipe's exhale");
+                ModParticles.TERPENE_SMOKE, Terpenes.mix(WHITE, 0xA89A6E, Terpenes.SMOKE_SHARE), "a schwag pipe's exhale");
         context.assertTrue(Smoking.tinted(world, ParticleTypes.CAMPFIRE_COSY_SMOKE,
                         SmokeContents.of(strain(world, ModStrains.HASHISH), 2)) == ParticleTypes.CAMPFIRE_COSY_SMOKE,
                 "a hash bowl's exhale is not the plain smoke");
@@ -140,7 +141,7 @@ public final class TerpeneGameTest {
         JsonObject json = Strain.CODEC.encodeStart(JsonOps.INSTANCE, kush.value()).getOrThrow().getAsJsonObject();
         json.addProperty("terpene", "hempdustry-gametest:missing");
         Strain stray = Strain.CODEC.parse(JsonOps.INSTANCE, json).getOrThrow();
-        context.assertValueEqual(stray.terpene().map(key -> key.identifier()),
+        context.assertValueEqual(stray.traits().terpene().map(key -> key.identifier()),
                 Optional.of(Identifier.fromNamespaceAndPath("hempdustry-gametest", "missing")), "the stray strain's terpene key");
         context.assertTrue(Smoking.tinted(world, ParticleTypes.CLOUD, SmokeContents.of(Holder.direct(stray), 2)) == ParticleTypes.CLOUD,
                 "a strain naming a missing terpene does not vape plain");
@@ -148,16 +149,16 @@ public final class TerpeneGameTest {
         // Every plant strain's crop gives off its own wisp; the fibre crop, which no strain names, humulene's.
         for (Holder.Reference<Strain> strain : Strain.all(world.registryAccess())) {
             Optional<Item> seeds = strain.value().seedItem();
-            Optional<Terpene> terpene = strain.value().loadedTerpene(world.registryAccess());
+            Optional<Terpene> terpene = Terpenes.of(strain.value(), world.registryAccess());
             if (seeds.isEmpty() || !(seeds.get() instanceof BlockItem blockItem) || terpene.isEmpty()) {
                 continue;
             }
             assertTint(context, RipeAroma.wisp(world, blockItem.getBlock()), ModParticles.TERPENE_AROMA,
-                    Terpene.mix(WHITE, terpene.get().color(), Terpene.SMOKE_SHARE),
+                    Terpenes.mix(WHITE, terpene.get().color(), Terpenes.SMOKE_SHARE),
                     strain.key().identifier() + "'s ripe wisp");
         }
         assertTint(context, RipeAroma.wisp(world, ModBlocks.INDUSTRIAL_HEMP_CROP), ModParticles.TERPENE_AROMA,
-                Terpene.mix(WHITE, COLOURS.get(Terpene.HUMULENE), Terpene.SMOKE_SHARE), "Industrial Hemp's ripe wisp");
+                Terpenes.mix(WHITE, COLOURS.get(Terpene.HUMULENE), Terpenes.SMOKE_SHARE), "Industrial Hemp's ripe wisp");
         context.assertTrue(RipeAroma.wisp(world, net.minecraft.world.level.block.Blocks.WHEAT) == ModParticles.AROMA,
                 "a plant with no terpene (wheat) does not get the plain aroma");
         context.succeed();

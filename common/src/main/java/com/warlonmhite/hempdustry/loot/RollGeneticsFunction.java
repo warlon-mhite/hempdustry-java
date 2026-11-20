@@ -1,5 +1,9 @@
 package com.warlonmhite.hempdustry.loot;
 
+import com.warlonmhite.hempdustry.strain.internal.Rolls;
+import com.warlonmhite.hempdustry.strain.internal.Resins;
+import com.warlonmhite.hempdustry.strain.internal.Bands;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.warlonmhite.hempdustry.strain.BudTier;
@@ -51,13 +55,13 @@ public final class RollGeneticsFunction extends LootItemConditionalFunction {
         }
         Strain sheet = strain.get();
         RandomSource random = RandomSource.create(context.getRandom().nextLong());
-        PotencyBand band = sheet.potency().roll(random);
-        QualityGene gene = sheet.quality().roll(random);
-        BudTier tier = BudTier.roll(sheet.quality().baseLuck() + gene.luck(), random);
-        ResinStep resin = sheet.resin().roll(random);
-        PotencyBand.stamp(stack, band);
-        BudTier.stamp(stack, tier);
-        return ResinStep.stamp(stack, resin, sheet.resin().texture());
+        PotencyBand band = Rolls.roll(sheet.traits().potency(), random);
+        QualityGene gene = Rolls.roll(sheet.traits().quality(), random);
+        BudTier tier = Tiers.roll(sheet.traits().quality().baseLuck() + Rolls.luck(gene), random);
+        ResinStep resin = Rolls.roll(sheet.traits().resin(), random);
+        Bands.stamp(stack, band);
+        Tiers.stamp(stack, tier);
+        return Resins.stamp(stack, resin, sheet.traits().resin().texture());
     }
 
     /** The function as a loot table builder takes it. */

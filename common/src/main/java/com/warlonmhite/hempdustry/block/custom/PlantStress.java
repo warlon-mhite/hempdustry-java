@@ -1,5 +1,7 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.strain.StressPhenomenon;
+import com.warlonmhite.hempdustry.strain.internal.Hardiness;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
 import com.warlonmhite.hempdustry.strain.Resistance;
 import com.warlonmhite.hempdustry.strain.ResistanceGenes;
@@ -37,7 +39,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  *
  * <p>The odds are a neutral plant's. Each plant rolls its own resistance to each phenomenon at planting
  * ({@link ResistanceGenes}, kept on its record), and its step multiplies every cause of that phenomenon
- * ({@link Resistance#factor}): a very weak plant in a dry bed stresses 2 times in 3, a very resistant one 1 time
+ * ({@link Hardiness#factor}): a very weak plant in a dry bed stresses 2 times in 3, a very resistant one 1 time
  * in 12. A plant with no record is neutral.
  *
  * <p>Only a flowering plant is at risk, as with the light: a young one shrugs it off. When two causes
@@ -64,7 +66,7 @@ public final class PlantStress {
      * The age from which a light leaking into the night stresses a plant touchy about its light: a stage
      * before {@link GrowLight#FLOWERING_AGE}, the age a lost light stresses a weak plant from.
      */
-    public static final int TOUCHY_AGE = Resistance.WEAK_LIGHT_LOSS_AGE;
+    public static final int TOUCHY_AGE = Hardiness.WEAK_LIGHT_LOSS_AGE;
 
     private PlantStress() {
     }
@@ -117,9 +119,9 @@ public final class PlantStress {
         PlantRecordBlockEntity.recordSky(world, lower, fromAge, height);
         PlantRecordBlockEntity.recordTray(world, lower, fromAge);
         ResistanceGenes genes = PlantRecordBlockEntity.resistancesAt(world, lower);
-        GrowLight next = shy ? shyStep(world, lower, record, toAge, genes.light(), random)
-                : touchy ? touchyStep(world, lower, record, fromAge, toAge, height, genes.light(), random)
-                : lightStep(record, fromAge, GrowLight.over(world, lower, height), genes.light(), random);
+        GrowLight next = shy ? shyStep(world, lower, record, toAge, genes.get(StressPhenomenon.LIGHT), random)
+                : touchy ? touchyStep(world, lower, record, fromAge, toAge, height, genes.get(StressPhenomenon.LIGHT), random)
+                : lightStep(record, fromAge, GrowLight.over(world, lower, height), genes.get(StressPhenomenon.LIGHT), random);
         if (!stressable) {
             return next == GrowLight.STRESSED ? GrowLight.NATURAL : next;
         }
@@ -132,12 +134,12 @@ public final class PlantStress {
 
     /**
      * The light record after one step with {@code now} overhead, for a plant whose light step is {@code light}:
-     * the record's own ladder, a loss stressing from the step's {@link Resistance#lightLossAge}, and a resistant
+     * the record's own ladder, a loss stressing from the step's {@link Hardiness#lightLossAge}, and a resistant
      * plant ignoring the loss now and then, which leaves it the sun's record as a young plant's loss does.
      */
     static GrowLight lightStep(GrowLight record, int fromAge, GrowLight now, Resistance light, RandomSource random) {
-        GrowLight next = record.afterStep(fromAge, now, light.lightLossAge());
-        return next == GrowLight.STRESSED && record != GrowLight.STRESSED && light.ignoresLostLight(random)
+        GrowLight next = record.afterStep(fromAge, now, Hardiness.lightLossAge(light));
+        return next == GrowLight.STRESSED && record != GrowLight.STRESSED && Hardiness.ignoresLostLight(light, random)
                 ? GrowLight.NATURAL : next;
     }
 
@@ -172,13 +174,13 @@ public final class PlantStress {
             return GrowLight.STRESSED;
         }
         GrowLight fixture = GrowLight.fixtureOver(world, lower, height);
-        return fixture == GrowLight.NATURAL ? record : record.afterStep(fromAge, fixture, light.lightLossAge());
+        return fixture == GrowLight.NATURAL ? record : record.afterStep(fromAge, fixture, Hardiness.lightLossAge(light));
     }
 
     /**
      * The light record after one growth step of a plant that shuns light (Echo OG): <b>light is its lost
      * light</b>. A step taken where the light at the plant's top is above {@link EchoOgCropBlock#MAX_LIGHT}
-     * stresses it from its light step's {@link Resistance#lightLossAge} (age 3 for a weak or very weak plant,
+     * stresses it from its light step's {@link Hardiness#lightLossAge} (age 3 for a weak or very weak plant,
      * the strain's most likely, 4 for the rest), and a resistant plant shrugs it off now and then, as it does
      * a lost lamp. Otherwise the record stays as it was: no lamp ever counts for it, so it never climbs the
      * ladder. Its own growth in the dark needs that dark anyway, so only a step it is fed (experience) can
@@ -186,11 +188,11 @@ public final class PlantStress {
      */
     static GrowLight shyStep(Level world, BlockPos lower, GrowLight record, int toAge, Resistance light,
                              RandomSource random) {
-        if (record == GrowLight.STRESSED || toAge < light.lightLossAge()
+        if (record == GrowLight.STRESSED || toAge < Hardiness.lightLossAge(light)
                 || EchoOgCropBlock.lightAtTop(world, lower) <= EchoOgCropBlock.MAX_LIGHT) {
             return record;
         }
-        return light.ignoresLostLight(random) ? record : GrowLight.STRESSED;
+        return Hardiness.ignoresLostLight(light, random) ? record : GrowLight.STRESSED;
     }
 
     /** Day, night, or the twilight around the switch between them, as a plant touchy about its light keeps them. */

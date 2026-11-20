@@ -97,7 +97,7 @@ public class ModComponents {
     /**
      * What a piece of shared hemp matter carries from its plant: THC-dominant, balanced, CBD-dominant
      * and the two that make neither. Absent reads THC-dominant, everything 2.1 made, and that value is
-     * never written ({@link Chemotype#stamp}). Leaves, schwag, decarboxylated and scorched hemp and the
+     * never written ({@link com.warlonmhite.hempdustry.strain.internal.Chemotypes#stamp}). Leaves, schwag, decarboxylated and scorched hemp and the
      * whole hash family carry it, because the matter is the same item whatever plant it came from; a
      * bud and a seed never do, their strain is their chemotype. The stamped items, butter and the
      * edibles carry THC-dominant on their prototype (see {@link #putDefaulted}); a bud and a seed don't.

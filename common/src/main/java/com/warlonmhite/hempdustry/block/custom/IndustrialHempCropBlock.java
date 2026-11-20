@@ -1,5 +1,9 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import java.util.Map;
+import com.warlonmhite.hempdustry.strain.ResinStep;
+import com.warlonmhite.hempdustry.strain.ResistanceOdds;
+import com.warlonmhite.hempdustry.strain.StressPhenomenon;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.strain.ResinSheet;
@@ -46,15 +50,19 @@ public class IndustrialHempCropBlock extends SativaCropBlock {
      * them on its record, which rolls no band and no gene (it grows no bud); nothing in its own life reads them,
      * since it is never stressed and never catches mildew. They are what it passes on.
      */
-    public static final Resistances RESISTANCES = Resistances.of(Resistance.RESISTANT, Resistance.RESISTANT,
-            Resistance.RESISTANT, Resistance.NEUTRAL);
+    public static final Resistances RESISTANCES = new Resistances(Map.of(
+            StressPhenomenon.DRY_GROUND, ResistanceOdds.spread(Resistance.RESISTANT),
+            StressPhenomenon.OVERWATERING, ResistanceOdds.spread(Resistance.RESISTANT),
+            StressPhenomenon.LIGHT, ResistanceOdds.spread(Resistance.RESISTANT),
+            StressPhenomenon.MILDEW, ResistanceOdds.spread(Resistance.NEUTRAL)));
 
     /**
      * Fibre hemp's resin: the fewest trichomes of any plant, nearly every plant very low (fewer still than Dud Weed,
      * which it throws as a sport). It grows no bud and is never rubbed, so nothing reads the step it rolls; like its
      * resistances, it is what it passes on.
      */
-    public static final ResinSheet RESIN = new ResinSheet(92, 5, 3, 0, 0, ResinTexture.EVEN);
+    public static final ResinSheet RESIN = new ResinSheet(
+            Map.of(ResinStep.VERY_LOW, 92, ResinStep.LOW, 5, ResinStep.AVERAGE, 3), ResinTexture.EVEN);
 
     private static final float GROWTH_RESISTANCE = 25.0F;
 

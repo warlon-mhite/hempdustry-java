@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.item.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Bands;
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.warlonmhite.hempdustry.block.custom.ChemotypeBlocks;
 import com.warlonmhite.hempdustry.block.custom.HempLeavesBlock;
 import com.warlonmhite.hempdustry.block.custom.TierBlocks;
@@ -25,12 +28,12 @@ public class StampedBlockItem extends BlockItem {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, TooltipDisplay display,
                                 Consumer<Component> tooltip, TooltipFlag flag) {
-        tooltip.accept(ChemotypeBlocks.ofBlockItem(stack).tooltipLine());
-        if (HempLeavesBlock.markOfBlockItem(stack).marksLeaf()) {
-            tooltip.accept(PotencyBand.HIGH.tooltipLine());
+        tooltip.accept(Chemotypes.tooltipLine(ChemotypeBlocks.ofBlockItem(stack)));
+        if (Bands.marksLeaf(HempLeavesBlock.markOfBlockItem(stack))) {
+            tooltip.accept(Bands.tooltipLine(PotencyBand.HIGH));
         }
         if (TierBlocks.holdsTier(stack)) {
-            tooltip.accept(TierBlocks.ofBlockItem(stack).tooltipLine());
+            tooltip.accept(Tiers.tooltipLine(TierBlocks.ofBlockItem(stack)));
         }
         super.appendHoverText(stack, context, display, tooltip, flag);
     }

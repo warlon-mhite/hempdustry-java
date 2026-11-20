@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.warlonmhite.hempdustry.strain.BudTier;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +41,7 @@ public final class TierBlocks {
         } else {
             stack.set(DataComponents.BLOCK_STATE, new BlockItemStateProperties(kept));
         }
-        BudTier.stampRarity(stack, tier);
+        Tiers.stampRarity(stack, tier);
         return stack;
     }
 

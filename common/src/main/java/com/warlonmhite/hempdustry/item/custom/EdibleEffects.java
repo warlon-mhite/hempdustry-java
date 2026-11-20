@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.item.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.warlonmhite.hempdustry.strain.Chemotype;
 import com.warlonmhite.hempdustry.strain.EffectLabel;
 import com.warlonmhite.hempdustry.balance.EdibleBundle;
@@ -242,7 +243,7 @@ public final class EdibleEffects {
         if (potency <= 0 && cbd <= 0) {
             return;
         }
-        tooltip.accept(Chemotype.of(stack).tooltipLine());
+        tooltip.accept(Chemotypes.tooltipLine(Chemotype.of(stack)));
         if (potency > 0) {
             tooltip.accept(Component.translatable("hempdustry.edible.potency",
                     Component.translatable("enchantment.level." + potency)).withStyle(ChatFormatting.GRAY));

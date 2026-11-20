@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom.stash;
 
+import com.warlonmhite.hempdustry.strain.internal.Strains;
 import com.warlonmhite.hempdustry.component.StashContents;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.strain.Strain;
@@ -19,7 +20,7 @@ import java.util.Map;
  * The colours of the stash pieces a jar shows: one piece at low, three at mid, five when full, shared
  * out by each strain's part of what is inside.
  *
- * <p>A piece is a bud: a green body with a few pistils in its strain's colour ({@link Strain#jarColourOrDefault},
+ * <p>A piece is a bud: a green body with a few pistils in its strain's colour ({@link Strains#jarColour},
  * the strain's own {@code color} unless its file names a {@code jar_color}). The body green is one for every
  * strain, so a jar reads as a jar of weed and the strains tell themselves apart by their pistils. Schwag is
  * brown through and through, pistils and all; an item a pack put in the tag that grew on no strain is a
@@ -135,7 +136,7 @@ public final class StashPieces {
             var strain = Strain.fromBuds(registries, item.typeHolder().value());
             if (strain.isPresent()) {
                 return new Group("strain:" + strain.get().key().identifier(), BUD_GREEN,
-                        strain.get().value().jarColourOrDefault(), 0);
+                        Strains.jarColour(strain.get().value()), 0);
             }
         }
         return new Group("item:" + BuiltInRegistries.ITEM.getKey(item.typeHolder().value()), BUD_GREEN, PLAIN_PISTILS, 0);

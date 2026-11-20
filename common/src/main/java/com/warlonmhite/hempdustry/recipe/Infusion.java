@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.recipe;
 
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.item.custom.EdibleEffects;
@@ -58,7 +59,7 @@ public final class Infusion {
                     EdibleEffects.applyOffset(EdibleEffects.tierFromStrength(cbd), offset));
         }
         result.set(ModComponents.QUALITY, quality);
-        return Chemotype.stamp(result, Chemotype.of(butter));
+        return Chemotypes.stamp(result, Chemotype.of(butter));
     }
 
     /**
@@ -80,14 +81,14 @@ public final class Infusion {
         if (!any || !result.has(ModComponents.POTENCY)) {
             return result;
         }
-        Chemotype chemotype = Chemotype.dosage(counts);
+        Chemotype chemotype = Chemotypes.dosage(counts);
         if (!chemotype.hasThc()) {
             result.remove(ModComponents.POTENCY);
         }
         if (chemotype.cbdHalves() > 0) {
             result.set(ModComponents.CBD_POTENCY, 1);
         }
-        return Chemotype.stamp(result, chemotype);
+        return Chemotypes.stamp(result, chemotype);
     }
 
     /**
@@ -99,7 +100,7 @@ public final class Infusion {
         for (int slot = 0; slot < input.size(); slot++) {
             ItemStack stack = input.getItem(slot);
             if ((stack.is(ModItems.DECARBOXYLATED_HEMP) || stack.is(ModItems.WASHED_DECARBOXYLATED_HEMP))
-                    && !Chemotype.of(stack).infusable()) {
+                    && !Chemotypes.infusable(Chemotype.of(stack))) {
                 return false;
             }
         }

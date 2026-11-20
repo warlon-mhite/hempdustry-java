@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.entity.custom.InfuserBlockEntity;
@@ -65,9 +66,9 @@ public final class InfuserBreakGameTest {
         InfuserBlockEntity tub = place(context, MIXED, "{Progress:0,HaveMilk:1b}");
         int[] slots = InfuserBlockEntity.HEMP_SLOTS;
         tub.setItem(slots[0], new ItemStack(ModItems.DECARBOXYLATED_HEMP, 1));
-        tub.setItem(slots[1], Chemotype.stamp(new ItemStack(ModItems.DECARBOXYLATED_HEMP, 2), Chemotype.CBD_DOMINANT));
-        tub.setItem(slots[2], Chemotype.stamp(new ItemStack(ModItems.DECARBOXYLATED_HEMP, 2), Chemotype.BALANCED));
-        tub.setItem(slots[3], Chemotype.stamp(new ItemStack(ModItems.WASHED_DECARBOXYLATED_HEMP, 1), Chemotype.BALANCED));
+        tub.setItem(slots[1], Chemotypes.stamp(new ItemStack(ModItems.DECARBOXYLATED_HEMP, 2), Chemotype.CBD_DOMINANT));
+        tub.setItem(slots[2], Chemotypes.stamp(new ItemStack(ModItems.DECARBOXYLATED_HEMP, 2), Chemotype.BALANCED));
+        tub.setItem(slots[3], Chemotypes.stamp(new ItemStack(ModItems.WASHED_DECARBOXYLATED_HEMP, 1), Chemotype.BALANCED));
         BlockPos pos = context.absolutePos(MIXED);
         for (int tick = 0; tick < InfuserBlockEntity.absorbInterval() * 6; tick++) {
             tub.tick(world, pos, tub.getBlockState());

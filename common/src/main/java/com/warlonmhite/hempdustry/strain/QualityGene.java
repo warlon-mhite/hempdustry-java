@@ -5,29 +5,21 @@ import net.minecraft.util.StringRepresentable;
 
 /**
  * How well one plant is made to grow, as one of four steps rolled at planting from its strain's odds
- * ({@link GrowQuality}): poor, average, good and elite. Hidden: no seed, plant or bud shows it. It is
- * felt only at the harvest, where its {@link #luck} joins the plant's grow luck and moves the odds of
- * each {@link BudTier}.
+ * ({@link GrowQuality}): poor, average, good and elite, weakest first. Hidden: no seed, plant or bud shows it. It
+ * is felt only at the harvest, where it joins the plant's grow luck and moves the odds of each {@link BudTier}.
  */
 public enum QualityGene implements StringRepresentable {
-    POOR("poor", -1),
-    AVERAGE("average", 0),
-    GOOD("good", 1),
-    ELITE("elite", 2);
+    POOR("poor"),
+    AVERAGE("average"),
+    GOOD("good"),
+    ELITE("elite");
 
     public static final Codec<QualityGene> CODEC = StringRepresentable.fromEnum(QualityGene::values);
 
     private final String name;
-    private final int luck;
 
-    QualityGene(String name, int luck) {
+    QualityGene(String name) {
         this.name = name;
-        this.luck = luck;
-    }
-
-    /** What this gene adds to the plant's grow luck. */
-    public int luck() {
-        return luck;
     }
 
     @Override

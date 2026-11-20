@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.strain.internal.Terpenes;
 import com.mojang.serialization.JsonOps;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
@@ -292,16 +293,16 @@ public final class MauiWowieGameTest {
         ServerLevel world = context.getLevel();
         Holder<Strain> maui = world.registryAccess().lookupOrThrow(Strain.REGISTRY_KEY).getOrThrow(ModStrains.MAUI_WOWIE);
         Strain strain = maui.value();
-        context.assertTrue(strain.chemotype() == Chemotype.THC_DOMINANT, "Maui Wowie is not Type I");
-        context.assertValueEqual(strain.terpene(), Optional.of(Terpene.OCIMENE), "Maui Wowie's terpene");
-        context.assertValueEqual(Terpene.resolve(world.registryAccess(), Terpene.OCIMENE).map(Terpene::color),
+        context.assertTrue(strain.traits().chemotype() == Chemotype.THC_DOMINANT, "Maui Wowie is not Type I");
+        context.assertValueEqual(strain.traits().terpene(), Optional.of(Terpene.OCIMENE), "Maui Wowie's terpene");
+        context.assertValueEqual(Terpenes.resolve(world.registryAccess(), Terpene.OCIMENE).map(Terpene::color),
                 Optional.of(0x4A7BD8), "ocimene's colour");
         context.assertTrue(strain.wildFlower().filter(f -> f == ModBlocks.MAUI_WOWIE_FLOWER).isPresent(),
                 "Maui Wowie's wild plant is " + strain.wildFlower());
         context.assertTrue(world.recipeAccess().byKey(ResourceKey.create(Registries.RECIPE,
                         Identifier.fromNamespaceAndPath("hempdustry", "decarboxylating/maui_wowie_buds"))).isPresent(),
                 "the oven turns Maui Wowie buds away");
-        context.assertValueEqual(strain.resistances(), com.warlonmhite.hempdustry.strain.Resistances.of(Resistance.WEAK,
+        context.assertValueEqual(strain.traits().resistances(), Sheets.resistances(Resistance.WEAK,
                 Resistance.VERY_RESISTANT, Resistance.NEUTRAL, Resistance.VERY_RESISTANT), "Maui Wowie's resistances");
 
         int bong = DeviceType.BONG.builtInStats().durationTicks();

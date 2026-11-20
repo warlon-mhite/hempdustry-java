@@ -1,5 +1,9 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.strain.internal.Strains;
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
+import com.warlonmhite.hempdustry.strain.internal.Bands;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -85,7 +89,7 @@ public final class StashJarGameTest {
                 ModItems.MAUI_WOWIE_BUDS)) {
             kinds.add(new ItemStack(bud));
         }
-        kinds.add(Chemotype.stamp(new ItemStack(ModItems.SCHWAG), Chemotype.CBD_DOMINANT));
+        kinds.add(Chemotypes.stamp(new ItemStack(ModItems.SCHWAG), Chemotype.CBD_DOMINANT));
         for (String name : List.of("Ma's", "Pa's", "Nan's")) {
             ItemStack named = new ItemStack(ModItems.INDICA_BUDS);
             named.set(DataComponents.CUSTOM_NAME, Component.literal(name));
@@ -153,7 +157,7 @@ public final class StashJarGameTest {
 
         StashContents.Mutable schwag = StashContents.EMPTY.mutable();
         schwag.insert(new ItemStack(ModItems.SCHWAG, 1), stashJar);
-        schwag.insert(Chemotype.stamp(new ItemStack(ModItems.SCHWAG, 1), Chemotype.CBD_DOMINANT), stashJar);
+        schwag.insert(Chemotypes.stamp(new ItemStack(ModItems.SCHWAG, 1), Chemotype.CBD_DOMINANT), stashJar);
         context.assertTrue(schwag.toImmutable().size() == 2 && schwag.insert(new ItemStack(ModItems.INDICA_BUDS), stashJar) == 0,
                 "schwag of two chemotypes did not take a slot each");
 
@@ -467,11 +471,11 @@ public final class StashJarGameTest {
     public static void aStrainsJarColourIsOptional(GameTestHelper context) {
         String plain = "{\"translation_key\":\"x\",\"color\":1,\"buds\":\"minecraft:wheat\"}";
         Strain without = Strain.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(plain)).getOrThrow();
-        context.assertTrue(without.jarColour().isEmpty() && without.jarColourOrDefault() == 1,
-                "a strain file without jar_color (color 1) reads " + without.jarColourOrDefault());
+        context.assertTrue(without.traits().jarColour().isEmpty() && Strains.jarColour(without) == 1,
+                "a strain file without jar_color (color 1) reads " + Strains.jarColour(without));
         Strain with = Strain.CODEC.parse(JsonOps.INSTANCE,
                 JsonParser.parseString(plain.replace("}", ",\"jar_color\":4660}"))).getOrThrow();
-        context.assertTrue(with.jarColourOrDefault() == 4660, "jar_color 4660 reads " + with.jarColourOrDefault());
+        context.assertTrue(Strains.jarColour(with) == 4660, "jar_color 4660 reads " + Strains.jarColour(with));
         context.succeed();
     }
 
@@ -707,7 +711,7 @@ public final class StashJarGameTest {
         // A chemotype never blends: schwag is one entry per chemotype; strains never blend with each other.
         StashContents.Mutable schwag = StashContents.EMPTY.mutable();
         schwag.insert(new ItemStack(ModItems.SCHWAG, 5), 256);
-        schwag.insert(Chemotype.stamp(new ItemStack(ModItems.SCHWAG, 5), Chemotype.CBD_DOMINANT), 256);
+        schwag.insert(Chemotypes.stamp(new ItemStack(ModItems.SCHWAG, 5), Chemotype.CBD_DOMINANT), 256);
         schwag.insert(new ItemStack(ModItems.SATIVA_BUDS, 5), 256);
         schwag.insert(new ItemStack(ModItems.INDICA_BUDS, 5), 256);
         context.assertTrue(schwag.toImmutable().size() == 4, "THC and CBD schwag and two strains made "
@@ -751,7 +755,7 @@ public final class StashJarGameTest {
     }
 
     private static ItemStack bud(int count, BudTier tier, PotencyBand band) {
-        return PotencyBand.stamp(BudTier.stamp(new ItemStack(ModItems.INDICA_BUDS, count), tier), band);
+        return Bands.stamp(Tiers.stamp(new ItemStack(ModItems.INDICA_BUDS, count), tier), band);
     }
 
     private static StashContents blend(List<ItemStack> stacks) {

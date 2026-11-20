@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.strain.internal.Dosing;
+import com.warlonmhite.hempdustry.strain.internal.Rolls;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.warlonmhite.hempdustry.block.custom.HydroTrayBlock;
 import com.mojang.serialization.JsonOps;
 import com.google.gson.JsonParser;
@@ -88,16 +91,16 @@ public final class TierGameTest {
     private static final Map<ResourceKey<Strain>, GrowQuality> SHEETS = new LinkedHashMap<>();
 
     static {
-        SHEETS.put(ModStrains.INDICA, new GrowQuality(0, 20, 50, 25, 5));
-        SHEETS.put(ModStrains.SATIVA, new GrowQuality(0, 25, 50, 20, 5));
-        SHEETS.put(ModStrains.BELDIA, new GrowQuality(-1, 25, 50, 20, 5));
-        SHEETS.put(ModStrains.WARPED_KUSH, new GrowQuality(2, 15, 50, 25, 10));
-        SHEETS.put(ModStrains.CRIMSON, new GrowQuality(2, 15, 50, 25, 10));
-        SHEETS.put(ModStrains.ENDER_HAZE, new GrowQuality(0, 15, 45, 30, 10));
-        SHEETS.put(ModStrains.RUDERALIS, new GrowQuality(0, 30, 50, 18, 2));
-        SHEETS.put(ModStrains.CHERRY_WINE, new GrowQuality(0, 20, 50, 25, 5));
-        SHEETS.put(ModStrains.WHITE_WIDOW, new GrowQuality(0, 18, 48, 28, 6));
-        SHEETS.put(ModStrains.DUD_WEED, new GrowQuality(0, 30, 50, 18, 2));
+        SHEETS.put(ModStrains.INDICA, Sheets.quality(0, 20, 50, 25, 5));
+        SHEETS.put(ModStrains.SATIVA, Sheets.quality(0, 25, 50, 20, 5));
+        SHEETS.put(ModStrains.BELDIA, Sheets.quality(-1, 25, 50, 20, 5));
+        SHEETS.put(ModStrains.WARPED_KUSH, Sheets.quality(2, 15, 50, 25, 10));
+        SHEETS.put(ModStrains.CRIMSON, Sheets.quality(2, 15, 50, 25, 10));
+        SHEETS.put(ModStrains.ENDER_HAZE, Sheets.quality(0, 15, 45, 30, 10));
+        SHEETS.put(ModStrains.RUDERALIS, Sheets.quality(0, 30, 50, 18, 2));
+        SHEETS.put(ModStrains.CHERRY_WINE, Sheets.quality(0, 20, 50, 25, 5));
+        SHEETS.put(ModStrains.WHITE_WIDOW, Sheets.quality(0, 18, 48, 28, 6));
+        SHEETS.put(ModStrains.DUD_WEED, Sheets.quality(0, 30, 50, 18, 2));
     }
 
     /** The spec's odds table in whole percent, Mids / Dank / Top Shelf / Epic, at L −1 to 8. */
@@ -114,16 +117,16 @@ public final class TierGameTest {
             int luck = i - 1;
             int total = 0;
             for (BudTier tier : BudTier.values()) {
-                total += tier.weightAt(luck);
+                total += Tiers.weightAt(tier, luck);
             }
             for (BudTier tier : BudTier.values()) {
-                int percent = Math.round(100.0F * tier.weightAt(luck) / total);
+                int percent = Math.round(100.0F * Tiers.weightAt(tier, luck) / total);
                 context.assertValueEqual(percent, TABLE[i][tier.ordinal()], tier + "'s share at L " + luck);
             }
         }
-        context.assertValueEqual(BudTier.EPIC.weightAt(3), 0, "Epic's weight at L 3: it appears only from L 4");
-        context.assertTrue(BudTier.EPIC.weightAt(4) > 0, "Epic's weight at L 4");
-        context.assertValueEqual(BudTier.TOP_SHELF.weightAt(0.5F), 3, "Top Shelf's weight at a fractional L 0.5");
+        context.assertValueEqual(Tiers.weightAt(BudTier.EPIC, 3), 0, "Epic's weight at L 3: it appears only from L 4");
+        context.assertTrue(Tiers.weightAt(BudTier.EPIC, 4) > 0, "Epic's weight at L 4");
+        context.assertValueEqual(Tiers.weightAt(BudTier.TOP_SHELF, 0.5F), 3, "Top Shelf's weight at a fractional L 0.5");
 
         // Rolled at several L, on seeds drawn from a seeded java.util.Random: within 1.5 % of the table.
         Random seeds = new Random(20261112L);
@@ -132,16 +135,16 @@ public final class TierGameTest {
             int rolls = 20000;
             int[] seen = new int[BudTier.values().length];
             for (int roll = 0; roll < rolls; roll++) {
-                seen[BudTier.roll(luck, random).ordinal()]++;
+                seen[Tiers.roll(luck, random).ordinal()]++;
             }
             int total = 0;
             for (BudTier tier : BudTier.values()) {
-                total += tier.weightAt(luck);
+                total += Tiers.weightAt(tier, luck);
             }
             for (BudTier tier : BudTier.values()) {
-                double expected = (double) tier.weightAt(luck) / total;
+                double expected = (double) Tiers.weightAt(tier, luck) / total;
                 double share = (double) seen[tier.ordinal()] / rolls;
-                context.assertTrue(tier.weightAt(luck) == 0 ? seen[tier.ordinal()] == 0 : Math.abs(share - expected) < 0.015,
+                context.assertTrue(Tiers.weightAt(tier, luck) == 0 ? seen[tier.ordinal()] == 0 : Math.abs(share - expected) < 0.015,
                         tier + " came up " + share + " of the time at L " + luck + ", expected " + expected);
             }
         }
@@ -151,7 +154,7 @@ public final class TierGameTest {
             long seed = seeds.nextLong();
             RandomSource rolled = RandomSource.create(seed);
             RandomSource counted = RandomSource.create(seed);
-            BudTier.roll(luck, rolled);
+            Tiers.roll(luck, rolled);
             counted.nextInt(1000);
             context.assertValueEqual(rolled.nextLong(), counted.nextLong(), "the draw after a roll at L " + luck
                     + ": a roll took other than one draw");
@@ -168,16 +171,16 @@ public final class TierGameTest {
         ServerLevel world = context.getLevel();
         HolderLookup.Provider registries = world.registryAccess();
         for (Map.Entry<ResourceKey<Strain>, GrowQuality> sheet : SHEETS.entrySet()) {
-            context.assertValueEqual(Strain.registry(registries).getOrThrow(sheet.getKey()).value().quality(), sheet.getValue(),
+            context.assertValueEqual(Strain.registry(registries).getOrThrow(sheet.getKey()).value().traits().quality(), sheet.getValue(),
                     sheet.getKey().identifier() + "'s quality sheet");
         }
         for (GrowQuality quality : SHEETS.values()) {
-            int total = quality.poor() + quality.average() + quality.good() + quality.elite();
+            int total = quality.weight(QualityGene.POOR) + quality.weight(QualityGene.AVERAGE) + quality.weight(QualityGene.GOOD) + quality.weight(QualityGene.ELITE);
             RandomSource random = RandomSource.create(new Random(20261112L + quality.hashCode()).nextLong());
             int rolls = 8000;
             Map<QualityGene, Integer> seen = new EnumMap<>(QualityGene.class);
             for (int roll = 0; roll < rolls; roll++) {
-                seen.merge(quality.roll(random), 1, Integer::sum);
+                seen.merge(Rolls.roll(quality, random), 1, Integer::sum);
             }
             for (QualityGene gene : QualityGene.values()) {
                 double expected = (double) quality.weight(gene) / total;
@@ -188,7 +191,7 @@ public final class TierGameTest {
         }
         Strain bare = Strain.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(
                 "{\"translation_key\":\"x\",\"color\":1,\"buds\":\"minecraft:wheat\"}")).getOrThrow();
-        context.assertValueEqual(bare.quality(), GrowQuality.DEFAULT, "a strain file naming no quality");
+        context.assertValueEqual(bare.traits().quality(), GrowQuality.DEFAULT, "a strain file naming no quality");
 
         // Planted, a root has its gene; it lives through a save; set back to age 0, the plant rolls again.
         BlockPos pos = context.absolutePos(ROOT);
@@ -228,15 +231,15 @@ public final class TierGameTest {
         BlockState ruderalis = ModBlocks.RUDERALIS_CROP.defaultBlockState();
         int ruderalisCeiling = ceiling(ModStrains.RUDERALIS, registries, ruderalis, false);
         context.assertValueEqual(ruderalisCeiling, 2, "Ruderalis's ceiling");
-        context.assertValueEqual(BudTier.EPIC.weightAt(ruderalisCeiling), 0, "Epic's weight at Ruderalis's ceiling");
-        context.assertValueEqual(BudTier.EPIC.weightAt(ruderalisCeiling + 1), 0,
+        context.assertValueEqual(Tiers.weightAt(BudTier.EPIC, ruderalisCeiling), 0, "Epic's weight at Ruderalis's ceiling");
+        context.assertValueEqual(Tiers.weightAt(BudTier.EPIC, ruderalisCeiling + 1), 0,
                 "Epic's weight at Ruderalis's ceiling with its own Luck smoke");
         context.succeed();
     }
 
     /** A strain's best L without player luck: base, an elite gene, and the care {@code best} shows. */
     private static int ceiling(ResourceKey<Strain> strain, HolderLookup.Provider registries, BlockState best, boolean tray) {
-        return Strain.registry(registries).getOrThrow(strain).value().quality().baseLuck() + QualityGene.ELITE.luck()
+        return Strain.registry(registries).getOrThrow(strain).value().traits().quality().baseLuck() + Rolls.luck(QualityGene.ELITE)
                 + GrowLuck.care(best, false, tray);
     }
 
@@ -476,15 +479,15 @@ public final class TierGameTest {
                     "a " + tier + " Cherry Wine bud's Regeneration, a CBD-labelled effect on its own clock");
         }
         // Extra-high and Epic: the band's ×2 cap, then the tier's ×1.5 — three times the device.
-        SmokeContents strongest = SmokeContents.of(kush, 1, Chemotype.THC_DOMINANT, 20).withTiers(
+        SmokeContents strongest = Dosing.withTiers(Dosing.load(kush, 1, Chemotype.THC_DOMINANT, 20), 
                 java.util.Optional.of(BudTier.EPIC), java.util.Optional.empty());
         context.assertValueEqual(duration(strongest, device, MobEffects.HUNGER), 3 * device,
                 "an Epic bud far past the band's cap");
 
         // Each entry its own: an Epic Lemon Haze bud with Mids hash.
         SmokeContents spliff = new SmokeContents(List.of(
-                new SmokeContents.Entry(haze, 1).withTier(BudTier.EPIC),
-                new SmokeContents.Entry(hashish, 1).withTier(BudTier.MIDS)));
+                Dosing.withTier(new SmokeContents.Entry(haze, 1), BudTier.EPIC),
+                Dosing.withTier(new SmokeContents.Entry(hashish, 1), BudTier.MIDS)));
         context.assertValueEqual(duration(spliff, device, MobEffects.SPEED), 1500, "the Epic bud's Speed in a hash spliff");
         context.assertValueEqual(duration(spliff, device, MobEffects.NIGHT_VISION), 750, "the Mids hash's Night Vision in it");
 
@@ -522,11 +525,11 @@ public final class TierGameTest {
         context.assertValueEqual(packed.getOrDefault(ModComponents.SMOKE_CONTENTS, SmokeContents.EMPTY).entries().getFirst().tier(),
                 BudTier.MIDS, "a bong packed with an Epic bud and a Mids one");
         ItemStack kiefPipe = PackingRecipe.INSTANCE.assemble(CraftingInput.of(2, 1, List.of(new ItemStack(ModItems.WOODEN_PIPE),
-                BudTier.stamp(new ItemStack(ModItems.HASHISH), BudTier.TOP_SHELF))), registries);
+                Tiers.stamp(new ItemStack(ModItems.HASHISH), BudTier.TOP_SHELF))), registries);
         context.assertValueEqual(kiefPipe.getOrDefault(ModComponents.SMOKE_CONTENTS, SmokeContents.EMPTY).entries().getFirst().tier(),
                 BudTier.TOP_SHELF, "a pipe of Top Shelf hashish");
         ItemStack moonRock = craft(world, CraftingInput.of(3, 1, List.of(bud(ModItems.INDICA_BUDS, BudTier.EPIC),
-                BudTier.stamp(new ItemStack(ModItems.ROSIN), BudTier.EPIC), BudTier.stamp(new ItemStack(ModItems.HASHISH), BudTier.TOP_SHELF))));
+                Tiers.stamp(new ItemStack(ModItems.ROSIN), BudTier.EPIC), Tiers.stamp(new ItemStack(ModItems.HASHISH), BudTier.TOP_SHELF))));
         SmokeContents rock = moonRock.getOrDefault(ModComponents.SMOKE_CONTENTS, SmokeContents.EMPTY);
         context.assertTrue(moonRock.is(ModItems.MOON_ROCK) && rock.entries().size() == 2
                         && rock.entries().get(0).tier() == BudTier.EPIC && rock.entries().get(1).tier() == BudTier.TOP_SHELF,
@@ -557,8 +560,8 @@ public final class TierGameTest {
         context.assertTrue(ItemStack.isSameItemSameComponents(plain, dank) && dank.getComponentsPatch().isEmpty(),
                 "an explicit Dank bud does not stack with an old one: " + dank.getComponentsPatch());
         context.assertTrue(ItemStack.isSameItemSameComponents(plain,
-                        BudTier.stamp(bud(ModItems.INDICA_BUDS, BudTier.EPIC), BudTier.DANK))
-                        && BudTier.stamp(bud(ModItems.INDICA_BUDS, BudTier.EPIC), BudTier.DANK).getComponentsPatch().isEmpty(),
+                        Tiers.stamp(bud(ModItems.INDICA_BUDS, BudTier.EPIC), BudTier.DANK))
+                        && Tiers.stamp(bud(ModItems.INDICA_BUDS, BudTier.EPIC), BudTier.DANK).getComponentsPatch().isEmpty(),
                 "an Epic bud stamped back to Dank keeps a patch");
         context.assertValueEqual(bud(ModItems.INDICA_BUDS, BudTier.MIDS).getRarity(), Rarity.COMMON, "a Mids bud's rarity");
         context.assertValueEqual(bud(ModItems.INDICA_BUDS, BudTier.TOP_SHELF).getRarity(), Rarity.RARE, "a Top Shelf bud's rarity");
@@ -583,7 +586,7 @@ public final class TierGameTest {
                     "a " + tier + " bud's tooltip " + lines + " does not read potency, tier, terpene");
         }
         List<String> kief = new ArrayList<>();
-        for (Component line : BudTier.stamp(new ItemStack(ModItems.KIEF), BudTier.TOP_SHELF)
+        for (Component line : Tiers.stamp(new ItemStack(ModItems.KIEF), BudTier.TOP_SHELF)
                 .getTooltipLines(Item.TooltipContext.of(world), null, TooltipFlag.NORMAL)) {
             kief.add(line.getString());
         }
@@ -674,15 +677,15 @@ public final class TierGameTest {
                     "the batch gave " + out);
 
             // The Press keeps the tier.
-            ItemStack pressed = HempPressBlockEntity.resultFor(world, BudTier.stamp(new ItemStack(ModItems.KIEF), BudTier.TOP_SHELF));
+            ItemStack pressed = HempPressBlockEntity.resultFor(world, Tiers.stamp(new ItemStack(ModItems.KIEF), BudTier.TOP_SHELF));
             context.assertTrue(pressed.is(ModItems.HASHISH) && BudTier.of(pressed) == BudTier.TOP_SHELF,
                     "Top Shelf kief pressed into " + pressed);
-            ItemStack rosin = HempPressBlockEntity.resultFor(world, BudTier.stamp(new ItemStack(ModItems.FILTERED_HASHISH), BudTier.EPIC));
+            ItemStack rosin = HempPressBlockEntity.resultFor(world, Tiers.stamp(new ItemStack(ModItems.FILTERED_HASHISH), BudTier.EPIC));
             context.assertTrue(rosin.is(ModItems.ROSIN) && BudTier.of(rosin) == BudTier.EPIC
                             && rosin.getRarity() == Rarity.EPIC, "Epic filtered hashish pressed into " + rosin);
 
             // A bar takes nine of one tier, keeps it placed and cut, and refuses two.
-            List<ItemStack> nine = new ArrayList<>(Collections.nCopies(9, BudTier.stamp(new ItemStack(ModItems.HASHISH), BudTier.TOP_SHELF)));
+            List<ItemStack> nine = new ArrayList<>(Collections.nCopies(9, Tiers.stamp(new ItemStack(ModItems.HASHISH), BudTier.TOP_SHELF)));
             ItemStack bar = craft(world, CraftingInput.of(3, 3, nine));
             context.assertTrue(bar.is(ModBlocks.HASHISH_BAR.asItem()) && TierBlocks.ofBlockItem(bar) == BudTier.TOP_SHELF
                     && bar.getRarity() == Rarity.RARE, "nine Top Shelf hashish made " + bar);
@@ -751,11 +754,11 @@ public final class TierGameTest {
     }
 
     private static SmokeContents tiered(Holder<Strain> strain, int count, BudTier tier) {
-        return SmokeContents.of(strain, count).withTiers(java.util.Optional.of(tier), java.util.Optional.of(tier));
+        return Dosing.withTiers(SmokeContents.of(strain, count), java.util.Optional.of(tier), java.util.Optional.of(tier));
     }
 
     private static ItemStack bud(Item item, BudTier tier) {
-        return BudTier.stamp(new ItemStack(item), tier);
+        return Tiers.stamp(new ItemStack(item), tier);
     }
 
     /** How long {@code effect} lasts on a hit of {@code contents} from a device of {@code device} ticks. */

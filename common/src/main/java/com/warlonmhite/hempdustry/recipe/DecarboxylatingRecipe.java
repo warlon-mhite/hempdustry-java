@@ -79,7 +79,7 @@ public record DecarboxylatingRecipe(Ingredient ingredient, ItemStackTemplate res
     private static Optional<Integer> strainBase(Item item, HolderLookup.Provider registries) {
         return Strain.fromBuds(registries, item)
                 .filter(strain -> strain.value().wildFlower().isPresent())
-                .map(strain -> strain.value().potency().base());
+                .map(strain -> strain.value().traits().potency().base());
     }
 
     /**

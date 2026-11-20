@@ -1,5 +1,9 @@
 package com.warlonmhite.hempdustry.recipe;
 
+import com.warlonmhite.hempdustry.strain.internal.Dosing;
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
+import com.warlonmhite.hempdustry.strain.internal.Bands;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.ChemotypeBlocks;
 import com.warlonmhite.hempdustry.block.custom.HempLeavesBlock;
@@ -31,7 +35,7 @@ import net.minecraft.world.item.crafting.CraftingInput;
  *
  * A crafting grid holding two chemotypes of stamped matter matches nothing, the way two strains in
  * one bowl pack nothing: nine leaves make a block of one kind, and a spliff burns one material. Only
- * the Infuser, the sieve and bhang mix chemotypes, by their dosage ({@link Chemotype#dosage}). A bud
+ * the Infuser, the sieve and bhang mix chemotypes, by their dosage ({@link Chemotypes#dosage}). A bud
  * in the grid is not stamped matter: it is its strain, and the result names its strain already. So a
  * bud may meet stamped matter of another chemotype (a Beldía bud with THC hashish in a hash spliff, a
  * Purple Kush bud with CBD kief in a moon rock): the load then holds two entries, each keeping its
@@ -193,7 +197,7 @@ public final class Stamping {
         for (int slot = 0; slot < input.size(); slot++) {
             Optional<BudTier> tier = resinTierOf(input.getItem(slot));
             if (tier.isPresent()) {
-                weakest = weakest == null ? tier.get() : BudTier.weaker(weakest, tier.get());
+                weakest = weakest == null ? tier.get() : Tiers.weaker(weakest, tier.get());
             }
         }
         return Optional.ofNullable(weakest);
@@ -206,7 +210,7 @@ public final class Stamping {
             ItemStack stack = input.getItem(slot);
             if (stack.getItem() instanceof StrainPlantItem.Buds) {
                 BudTier tier = BudTier.of(stack);
-                weakest = weakest == null ? tier : BudTier.weaker(weakest, tier);
+                weakest = weakest == null ? tier : Tiers.weaker(weakest, tier);
             }
         }
         return Optional.ofNullable(weakest);
@@ -227,7 +231,7 @@ public final class Stamping {
      */
     public static ItemStack applyTier(ItemStack result, BudTier tier) {
         if (result.getItem() instanceof StampedItem.Resin) {
-            return BudTier.stamp(result, tier);
+            return Tiers.stamp(result, tier);
         }
         if (TierBlocks.holdsTier(result)) {
             return TierBlocks.stampBlockItem(result, tier);
@@ -247,7 +251,7 @@ public final class Stamping {
         Optional<PotencyBand> mark = sharedMark(input);
         if (mark != null && mark.isPresent()) {
             if (result.is(ModItems.HEMP_LEAF)) {
-                PotencyBand.stamp(result, mark.get().marksLeaf() ? PotencyBand.HIGH : PotencyBand.MID);
+                Bands.stamp(result, Bands.marksLeaf(mark.get()) ? PotencyBand.HIGH : PotencyBand.MID);
             } else if (result.is(ModBlocks.HEMP_LEAVES.asItem())) {
                 HempLeavesBlock.markBlockItem(result, mark.get());
             }
@@ -259,12 +263,12 @@ public final class Stamping {
         Optional<Integer> potency = budPotency(input);
         SmokeContents contents = result.get(ModComponents.SMOKE_CONTENTS);
         if (potency.isPresent() && potency.get() != 0 && contents != null && !contents.isEmpty()) {
-            contents = contents.withPotency(potency.get());
+            contents = Dosing.withPotency(contents, potency.get());
             result.set(ModComponents.SMOKE_CONTENTS, contents);
         }
         Optional<BudTier> budTier = weakestBudTier(input);
         if (contents != null && !contents.isEmpty() && (budTier.isPresent() || resinTier.isPresent())) {
-            result.set(ModComponents.SMOKE_CONTENTS, contents.withTiers(budTier, resinTier));
+            result.set(ModComponents.SMOKE_CONTENTS, Dosing.withTiers(contents, budTier, resinTier));
         }
         return result;
     }
@@ -276,7 +280,7 @@ public final class Stamping {
      */
     public static ItemStack apply(ItemStack result, Chemotype chemotype) {
         if (result.getItem() instanceof StampedItem) {
-            return Chemotype.stamp(result, chemotype);
+            return Chemotypes.stamp(result, chemotype);
         }
         if (result.getItem() instanceof StampedBlockItem) {
             return ChemotypeBlocks.stampBlockItem(result, chemotype);
@@ -287,7 +291,7 @@ public final class Stamping {
             for (SmokeContents.Entry entry : contents.entries()) {
                 stamped.add(entry.strain().value().wildFlower().isPresent()
                         ? entry
-                        : entry.withStamp(chemotype));
+                        : Dosing.withStamp(entry, chemotype));
             }
             result.set(ModComponents.SMOKE_CONTENTS, new SmokeContents(stamped));
         }

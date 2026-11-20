@@ -36,6 +36,16 @@ import net.minecraft.world.level.Level;
  * {@code com.warlonmhite.hempdustry.strain.Strain} — which is what makes a listener compilable.
  * Everything else in the mod stays internal and may move without warning.
  *
+ * <p><b>Facts, not rules.</b> The promise covers what these types say a strain, a stack or a load
+ * <em>is</em>: a strain's sheet ({@code Strain.traits()}), and the chemotype, potency band, bud tier and
+ * resin step a stack carries ({@code Chemotype.of}, {@code PotencyBand.of}, {@code BudTier.of},
+ * {@code ResinStep.of}). How the mod acts on them (rolls, stamps, doses) lives in
+ * {@code com.warlonmhite.hempdustry.strain.internal}, which no event names and nothing promises.
+ *
+ * <p><b>A strain may have no registry id.</b> From the breeding update a bred strain is carried by its
+ * seeds and buds and listed in no registry. Read a {@code Holder<Strain>} through {@code value()} and
+ * {@code is(key)}, never {@code unwrapKey().orElseThrow()}.
+ *
  * <h2>Threading and sides</h2>
  *
  * Every event here fires <b>on the server thread only</b>. A listener may read and change world

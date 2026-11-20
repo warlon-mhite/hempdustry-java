@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Resins;
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.warlonmhite.hempdustry.block.entity.custom.SiftingBoxBlockEntity;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.strain.BudTier;
@@ -509,9 +512,9 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
      */
     public static float sieveChance(ItemStack stack, HolderLookup.Provider registries) {
         if (stack.is(ModTags.Items.SIFTABLE_RESINOUS) || stack.is(ModTags.Items.SIFTABLE_FLOWER)) {
-            ResinStep step = ResinStep.written(stack).orElse(null);
+            ResinStep step = Resins.written(stack).orElse(null);
             if (step != null) {
-                return FLOWER_CHANCE * step.sieveFactor(textureOf(stack, registries));
+                return FLOWER_CHANCE * Resins.sieveFactor(step, textureOf(stack, registries));
             }
         }
         if (stack.is(ModTags.Items.SIFTABLE_RESINOUS)) {
@@ -530,7 +533,7 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
     private static ResinTexture textureOf(ItemStack stack, HolderLookup.Provider registries) {
         return Strain.fromBuds(registries, stack.getItem())
                 .map(Holder::value)
-                .map(strain -> strain.resin().texture())
+                .map(strain -> strain.traits().resin().texture())
                 .orElse(ResinTexture.EVEN);
     }
 
@@ -591,7 +594,7 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
         }
         Vec3 spawn = Vec3.atLowerCornerWithOffset(pos, 0.5, 1.01, 0.5).offsetRandom(world.getRandom(), 0.7F);
         ItemEntity dropped = new ItemEntity(world, spawn.x(), spawn.y(), spawn.z(),
-                BudTier.stamp(Chemotype.stamp(new ItemStack(yield, YIELD), chemotypeOf(world, pos, state)),
+                Tiers.stamp(Chemotypes.stamp(new ItemStack(yield, YIELD), chemotypeOf(world, pos, state)),
                         tierOf(world, pos, state)));
         dropped.setDefaultPickUpDelay();
         world.addFreshEntity(dropped);
@@ -618,7 +621,7 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
      * an empty screen.
      */
     public static BudTier averageTier(int sum, int levels) {
-        return levels <= 0 ? BudTier.DANK : BudTier.ofRank((2 * sum + levels - 1) / (2 * levels));
+        return levels <= 0 ? BudTier.DANK : Tiers.ofRank((2 * sum + levels - 1) / (2 * levels));
     }
 
     /**
@@ -632,7 +635,7 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
 
     /**
      * The chemotype of the batch in the box at {@code pos}, the dosage of the levels each chemotype
-     * added ({@link Chemotype#dosage}); a level its record never saw (a 2.1 box's) reads THC-dominant.
+     * added ({@link Chemotypes#dosage}); a level its record never saw (a 2.1 box's) reads THC-dominant.
      */
     public static Chemotype chemotypeOf(BlockGetter world, BlockPos pos, BlockState state) {
         SiftingBoxBlockEntity box = SiftingBoxBlockEntity.of(world, pos);
@@ -641,6 +644,6 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
 
     /** Whether matter of {@code chemotype} has a THC share to mix by: THC, balanced or CBD. */
     private static boolean mixes(Chemotype chemotype) {
-        return chemotype.infusable();
+        return Chemotypes.infusable(chemotype);
     }
 }

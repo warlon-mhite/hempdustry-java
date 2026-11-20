@@ -1,5 +1,7 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.mojang.serialization.MapCodec;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.strain.BudTier;
@@ -235,7 +237,7 @@ public class HashishBarBlock extends Block {
         int cuts = state.getValue(CUTS);
         if (world instanceof ServerLevel serverWorld) {
             popResourceFromFace(serverWorld, pos, Direction.UP,
-                    BudTier.stamp(Chemotype.stamp(new ItemStack(piece(), YIELD[cuts]), ChemotypeBlocks.of(state)),
+                    Tiers.stamp(Chemotypes.stamp(new ItemStack(piece(), YIELD[cuts]), ChemotypeBlocks.of(state)),
                             TierBlocks.of(state)));
             // The blade is the whole cost of a cut: nothing else is spent, and the bar itself is
             // what shrinks. Same slot dance as Defoliation.tryCut.

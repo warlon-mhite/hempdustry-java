@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.item.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Dosing;
 import com.warlonmhite.hempdustry.balance.DeviceStats;
 import com.warlonmhite.hempdustry.balance.GreenOut;
 import com.warlonmhite.hempdustry.component.ModComponents;
@@ -120,7 +121,7 @@ public class SpliffItem extends Item {
         // The inhale is the draw's own sound, begun when the draw was.
         boolean lockedOut = Smoking.takeDrawnHit(world, player, stack, contents, stats.durationTicks(),
                 stats.coughOneIn(), stats.nauseaOneIn(),
-                Smoking.greenOutChanceOneIn(greenOut, contents.thcDose(), stats.greenOutFactor()),
+                Smoking.greenOutChanceOneIn(greenOut, Dosing.thcDose(contents), stats.greenOutFactor()),
                 ParticleTypes.CAMPFIRE_COSY_SMOKE, Draw.SPLIFF_TICKS);
         // Marks the stack before it shrinks: what is left of it is what the player smoked
         // from, and that is what the cooldown swipe should sit on.

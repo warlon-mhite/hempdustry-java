@@ -1,5 +1,9 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.strain.internal.Dosing;
+import com.warlonmhite.hempdustry.strain.internal.Rolls;
+import com.warlonmhite.hempdustry.strain.internal.Bands;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
 import com.warlonmhite.hempdustry.block.custom.EnderHazeCropBlock;
@@ -79,16 +83,16 @@ public final class PotencyGameTest {
     private static final Map<ResourceKey<Strain>, Potency> SHEETS = new LinkedHashMap<>();
 
     static {
-        SHEETS.put(ModStrains.INDICA, Potency.odds(25, 50, 25, 0));
-        SHEETS.put(ModStrains.SATIVA, Potency.odds(25, 50, 25, 0));
-        SHEETS.put(ModStrains.BELDIA, Potency.odds(30, 50, 20, 0));
-        SHEETS.put(ModStrains.WARPED_KUSH, Potency.odds(20, 50, 25, 5));
-        SHEETS.put(ModStrains.CRIMSON, Potency.odds(20, 50, 25, 5));
-        SHEETS.put(ModStrains.ENDER_HAZE, Potency.odds(28, 50, 20, 2));
-        SHEETS.put(ModStrains.RUDERALIS, Potency.odds(50, 40, 10, 0));
-        SHEETS.put(ModStrains.CHERRY_WINE, Potency.odds(40, 50, 10, 0));
-        SHEETS.put(ModStrains.WHITE_WIDOW, Potency.odds(20, 50, 25, 5));
-        SHEETS.put(ModStrains.DUD_WEED, Potency.odds(60, 40, 0, 0));
+        SHEETS.put(ModStrains.INDICA, Bands.odds(25, 50, 25, 0));
+        SHEETS.put(ModStrains.SATIVA, Bands.odds(25, 50, 25, 0));
+        SHEETS.put(ModStrains.BELDIA, Bands.odds(30, 50, 20, 0));
+        SHEETS.put(ModStrains.WARPED_KUSH, Bands.odds(20, 50, 25, 5));
+        SHEETS.put(ModStrains.CRIMSON, Bands.odds(20, 50, 25, 5));
+        SHEETS.put(ModStrains.ENDER_HAZE, Bands.odds(28, 50, 20, 2));
+        SHEETS.put(ModStrains.RUDERALIS, Bands.odds(50, 40, 10, 0));
+        SHEETS.put(ModStrains.CHERRY_WINE, Bands.odds(40, 50, 10, 0));
+        SHEETS.put(ModStrains.WHITE_WIDOW, Bands.odds(20, 50, 25, 5));
+        SHEETS.put(ModStrains.DUD_WEED, Bands.odds(60, 40, 0, 0));
     }
 
     /**
@@ -189,20 +193,20 @@ public final class PotencyGameTest {
     public static void aPlantRollsItsBandFromItsStrainsOdds(GameTestHelper context) {
         HolderLookup.Provider registries = context.getLevel().registryAccess();
         for (Map.Entry<ResourceKey<Strain>, Potency> sheet : SHEETS.entrySet()) {
-            Potency potency = Strain.registry(registries).getOrThrow(sheet.getKey()).value().potency();
+            Potency potency = Strain.registry(registries).getOrThrow(sheet.getKey()).value().traits().potency();
             context.assertValueEqual(potency, sheet.getValue(), sheet.getKey().identifier() + "'s potency sheet");
         }
         for (Holder.Reference<Strain> strain : Strain.all(registries)) {
             if (strain.value().wildFlower().isEmpty()) {
                 continue;
             }
-            Potency potency = strain.value().potency();
-            int total = potency.low() + potency.mid() + potency.high() + potency.extraHigh();
+            Potency potency = strain.value().traits().potency();
+            int total = potency.weight(PotencyBand.LOW) + potency.weight(PotencyBand.MID) + potency.weight(PotencyBand.HIGH) + potency.weight(PotencyBand.EXTRA_HIGH);
             int rolls = 8000;
             int[] counts = new int[PotencyBand.values().length];
             RandomSource random = RandomSource.create(20261109L);
             for (int roll = 0; roll < rolls; roll++) {
-                counts[potency.roll(random).ordinal()]++;
+                counts[Rolls.roll(potency, random).ordinal()]++;
             }
             for (PotencyBand band : PotencyBand.values()) {
                 double expected = (double) potency.weight(band) / total;
@@ -243,11 +247,11 @@ public final class PotencyGameTest {
                     context.assertTrue(got.getItem() == plain.get(i).getItem() && got.getCount() == plain.get(i).getCount(),
                             "a " + band + " plant dropped " + banded + " where the same seed drops " + plain);
                     PotencyBand expected = got.is(ModItems.INDICA_BUDS) ? (band == PotencyBand.MID ? null : band)
-                            : got.is(ModItems.HEMP_LEAF) && band.marksLeaf() ? PotencyBand.HIGH : null;
+                            : got.is(ModItems.HEMP_LEAF) && Bands.marksLeaf(band) ? PotencyBand.HIGH : null;
                     // Mid writes nothing: a stack with no band of its own is the plain one 2.1 made, once its
                     // harvest's tier is taken off it (TierGameTest holds the tier).
                     context.assertTrue(PotencyBand.of(got) == (expected == null ? PotencyBand.MID : expected)
-                                    && (expected != null || BudTier.stamp(got.copy(), BudTier.DANK).getComponentsPatch().isEmpty()),
+                                    && (expected != null || Tiers.stamp(got.copy(), BudTier.DANK).getComponentsPatch().isEmpty()),
                             "the band on " + got + " from a " + band + " plant: expected " + expected);
                 }
             }
@@ -274,7 +278,7 @@ public final class PotencyGameTest {
             Defoliation.tryCut(world, pos, growing, Defoliation.EARLY_MIN_AGE, shears, player, InteractionHand.MAIN_HAND);
             List<ItemStack> leaves = pickUp(world, pos);
             context.assertTrue(leaves.size() == 1 && leaves.getFirst().is(ModItems.HEMP_LEAF)
-                            && PotencyBand.of(leaves.getFirst()) == (band.marksLeaf() ? PotencyBand.HIGH : PotencyBand.MID),
+                            && PotencyBand.of(leaves.getFirst()) == (Bands.marksLeaf(band) ? PotencyBand.HIGH : PotencyBand.MID),
                     "trimming a " + band + " plant gave " + leaves);
         }
         context.succeed();
@@ -289,7 +293,7 @@ public final class PotencyGameTest {
         HolderLookup.Provider registries = world.registryAccess();
         int[] baked = {3, 4, 5, 6};
         for (PotencyBand band : PotencyBand.values()) {
-            ItemStack bud = PotencyBand.stamp(new ItemStack(ModItems.INDICA_BUDS), band);
+            ItemStack bud = Bands.stamp(new ItemStack(ModItems.INDICA_BUDS), band);
             context.assertValueEqual(DecarboxylatorBlockEntity.resultFor(world, bud).getCount(), baked[band.ordinal()],
                     "a " + band + " Purple Kush bud's decarboxylated hemp");
         }
@@ -302,24 +306,24 @@ public final class PotencyGameTest {
 
         Holder<Strain> kush = Strain.registry(registries).getOrThrow(ModStrains.INDICA);
         Holder<Strain> beldia = Strain.registry(registries).getOrThrow(ModStrains.BELDIA);
-        context.assertValueEqual(SmokeContents.of(kush, 2, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT,
-                PotencyBand.EXTRA_HIGH).thcDose(), 3, "an extra-high pipe of two's THC dose, a full green-out");
-        context.assertValueEqual(SmokeContents.of(kush, 3, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT,
-                PotencyBand.LOW).thcDose(), 2, "a low bong of three's THC dose");
-        context.assertValueEqual(SmokeContents.of(kush, 1, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT,
-                PotencyBand.LOW).thcDose(), 1, "a single low bud's THC dose, which never drops below one");
-        context.assertValueEqual(SmokeContents.of(kush, 3).thcDose(), 3, "a mid bong of three's THC dose");
-        context.assertValueEqual(SmokeContents.of(beldia, 2, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT,
-                PotencyBand.EXTRA_HIGH).thcDose(), 1, "an extra-high balanced pipe of two's THC dose");
-        context.assertValueEqual(hunger(SmokeContents.of(kush, 2, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT,
+        context.assertValueEqual(Dosing.thcDose(Dosing.load(kush, 2, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT,
+                PotencyBand.EXTRA_HIGH)), 3, "an extra-high pipe of two's THC dose, a full green-out");
+        context.assertValueEqual(Dosing.thcDose(Dosing.load(kush, 3, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT,
+                PotencyBand.LOW)), 2, "a low bong of three's THC dose");
+        context.assertValueEqual(Dosing.thcDose(Dosing.load(kush, 1, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT,
+                PotencyBand.LOW)), 1, "a single low bud's THC dose, which never drops below one");
+        context.assertValueEqual(Dosing.thcDose(SmokeContents.of(kush, 3)), 3, "a mid bong of three's THC dose");
+        context.assertValueEqual(Dosing.thcDose(Dosing.load(beldia, 2, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT,
+                PotencyBand.EXTRA_HIGH)), 1, "an extra-high balanced pipe of two's THC dose");
+        context.assertValueEqual(hunger(Dosing.load(kush, 2, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT,
                 PotencyBand.EXTRA_HIGH)), 2, "an extra-high pipe of two's Hunger amplifier");
         context.assertValueEqual(hunger(SmokeContents.of(kush, 2)), 1, "a mid pipe of two's Hunger amplifier");
         // An entry's dose has no cap of its own: a bong of three Extra-High Warped Kush is dose 4. The load's
         // dose, the green-out, stops at 3, a buff at maxBuffLevel, and only a cost feels the rest -- Hunger IV,
         // the price of the strongest bowl, as vanilla's Turtle Master pays for its Resistance with Slowness IV.
-        SmokeContents strongest = SmokeContents.of(Strain.registry(registries).getOrThrow(ModStrains.WARPED_KUSH), 3,
+        SmokeContents strongest = Dosing.load(Strain.registry(registries).getOrThrow(ModStrains.WARPED_KUSH), 3,
                 com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT, PotencyBand.EXTRA_HIGH);
-        context.assertValueEqual(strongest.thcDose(), 3, "an extra-high Warped Kush bong of three's green-out dose");
+        context.assertValueEqual(Dosing.thcDose(strongest), 3, "an extra-high Warped Kush bong of three's green-out dose");
         context.assertValueEqual(hunger(strongest), 3, "an extra-high Warped Kush bong of three's Hunger amplifier");
         context.assertValueEqual(amplifier(strongest, MobEffects.JUMP_BOOST), 1,
                 "an extra-high Warped Kush bong of three's Jump Boost amplifier, a buff held at II");
@@ -328,7 +332,7 @@ public final class PotencyGameTest {
         Tag mid = SmokeContents.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE),
                 SmokeContents.of(kush, 2)).getOrThrow();
         context.assertTrue(!mid.toString().contains("band_offset"), "a mid load wrote its band: " + mid);
-        SmokeContents highLoad = SmokeContents.of(kush, 2, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT, PotencyBand.HIGH);
+        SmokeContents highLoad = Dosing.load(kush, 2, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT, PotencyBand.HIGH);
         Tag high = SmokeContents.CODEC.encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), highLoad).getOrThrow();
         context.assertValueEqual(SmokeContents.CODEC.parse(registries.createSerializationContext(NbtOps.INSTANCE), high).getOrThrow(),
                 highLoad, "a high load read back");
@@ -341,10 +345,10 @@ public final class PotencyGameTest {
         SmokeContents mixed = PackingRecipe.INSTANCE.assemble(CraftingInput.of(4, 1, List.of(new ItemStack(ModItems.BONG),
                 low(), low(), new ItemStack(ModItems.INDICA_BUDS))), registries)
                 .getOrDefault(ModComponents.SMOKE_CONTENTS, SmokeContents.EMPTY);
-        context.assertValueEqual(mixed, SmokeContents.of(kush, 3, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT, -2),
+        context.assertValueEqual(mixed, Dosing.load(kush, 3, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT, -2),
                 "a bong packed with two low buds and a mid one");
         // 3 + 3 + 4 decarboxylated hemp is 10 of a mid bong's 12: a dose of two, where three mid buds are three.
-        context.assertValueEqual(mixed.thcDose(), 2, "two low buds and a mid one's THC dose");
+        context.assertValueEqual(Dosing.thcDose(mixed), 2, "two low buds and a mid one's THC dose");
         ItemStack spliff = craft(world, CraftingInput.of(2, 2, List.of(high(ModItems.INDICA_BUDS, 1), high(ModItems.INDICA_BUDS, 1),
                 new ItemStack(Items.PAPER), new ItemStack(Items.PAPER))));
         context.assertValueEqual(spliff.getOrDefault(ModComponents.SMOKE_CONTENTS, SmokeContents.EMPTY), highLoad,
@@ -352,7 +356,7 @@ public final class PotencyGameTest {
         ItemStack mixedSpliff = craft(world, CraftingInput.of(2, 2, List.of(high(ModItems.INDICA_BUDS, 1),
                 new ItemStack(ModItems.INDICA_BUDS), new ItemStack(Items.PAPER), new ItemStack(Items.PAPER))));
         context.assertValueEqual(mixedSpliff.getOrDefault(ModComponents.SMOKE_CONTENTS, SmokeContents.EMPTY),
-                SmokeContents.of(kush, 2, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT, 1),
+                Dosing.load(kush, 2, com.warlonmhite.hempdustry.strain.Chemotype.THC_DOMINANT, 1),
                 "a spliff rolled from a high and a mid bud");
 
         // Nine marked leaves make a marked block and come back out marked; eight and a plain one, nothing.
@@ -374,18 +378,18 @@ public final class PotencyGameTest {
         List<ItemStack> plain = Block.getDrops(world.getBlockState(pos), world, pos, null);
         context.assertTrue(plain.size() == 1 && ItemStack.isSameItemSameComponents(plain.getFirst(), new ItemStack(ModBlocks.HEMP_LEAVES)),
                 "a placed plain block broke into " + plain + ", which no longer stacks with 2.1's");
-        context.assertTrue(PotencyBand.stamp(new ItemStack(ModItems.INDICA_BUDS), PotencyBand.MID).getComponentsPatch().isEmpty()
+        context.assertTrue(Bands.stamp(new ItemStack(ModItems.INDICA_BUDS), PotencyBand.MID).getComponentsPatch().isEmpty()
                         && !new ItemStack(ModBlocks.HEMP_LEAVES).has(DataComponents.BLOCK_STATE),
                 "a mid bud or a plain block item carries a value 2.1's do not");
         context.succeed();
     }
 
     private static ItemStack high(Item item, int count) {
-        return PotencyBand.stamp(new ItemStack(item, count), PotencyBand.HIGH);
+        return Bands.stamp(new ItemStack(item, count), PotencyBand.HIGH);
     }
 
     private static ItemStack low() {
-        return PotencyBand.stamp(new ItemStack(ModItems.INDICA_BUDS), PotencyBand.LOW);
+        return Bands.stamp(new ItemStack(ModItems.INDICA_BUDS), PotencyBand.LOW);
     }
 
     private static int hunger(SmokeContents contents) {

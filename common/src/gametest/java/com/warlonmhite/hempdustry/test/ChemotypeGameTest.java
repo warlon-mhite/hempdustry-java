@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.strain.internal.Dosing;
+import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.warlonmhite.hempdustry.balance.EdibleBundle;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.ChemotypeBlocks;
@@ -69,7 +72,7 @@ public final class ChemotypeGameTest {
     private static final BlockPos TUB = new BlockPos(3, 1, 1);
 
     private static ItemStack stamped(Item item, int count, Chemotype chemotype) {
-        return Chemotype.stamp(new ItemStack(item, count), chemotype);
+        return Chemotypes.stamp(new ItemStack(item, count), chemotype);
     }
 
     /** The furnace, the oven, the press and the cauldron each keep what went in. */
@@ -172,7 +175,7 @@ public final class ChemotypeGameTest {
             for (ItemStack stack : drops(world, origin, ripe(ModBlocks.INDICA_CROP), seed)) {
                 // A harvest with no plant record rolls no tier and gives Mids: the tier is the one thing a
                 // bud may carry beyond 2.1's, and taken off, the bud is 2.1's again.
-                context.assertTrue(BudTier.stamp(stack.copy(), BudTier.DANK).getComponentsPatch().isEmpty(),
+                context.assertTrue(Tiers.stamp(stack.copy(), BudTier.DANK).getComponentsPatch().isEmpty(),
                         "a ripe Purple Kush dropped stamped " + stack + ", which no longer stacks with 2.1's");
             }
             BlockState hemp = ModBlocks.INDUSTRIAL_HEMP_CROP.defaultBlockState()
@@ -197,16 +200,16 @@ public final class ChemotypeGameTest {
         Holder<Strain> kush = strain(world, ModStrains.INDICA);
         Holder<Strain> schwag = strain(world, ModStrains.SCHWAG);
 
-        context.assertValueEqual(SmokeContents.of(kush, 3).thcDose(), 3, "a Purple Kush bong of three's THC dose");
-        context.assertValueEqual(SmokeContents.of(beldia, 1).thcDose(), 1,
+        context.assertValueEqual(Dosing.thcDose(SmokeContents.of(kush, 3)), 3, "a Purple Kush bong of three's THC dose");
+        context.assertValueEqual(Dosing.thcDose(SmokeContents.of(beldia, 1)), 1,
                 "a single balanced bud's THC dose, which never drops below one");
-        context.assertValueEqual(SmokeContents.of(beldia, 3).thcDose(), 1, "a balanced bong of three's THC dose");
+        context.assertValueEqual(Dosing.thcDose(SmokeContents.of(beldia, 3)), 1, "a balanced bong of three's THC dose");
         // A 2.1 load naming Beldía carries no stamp, and still reads balanced: a bud is its strain.
-        context.assertValueEqual(SmokeContents.of(beldia, 2, Chemotype.THC_DOMINANT).thcDose(), 1,
+        context.assertValueEqual(Dosing.thcDose(Dosing.load(beldia, 2, Chemotype.THC_DOMINANT)), 1,
                 "a Beldía load read its stamp instead of its strain");
 
-        SmokeContents cbdSchwag = SmokeContents.of(schwag, 2, Chemotype.CBD_DOMINANT);
-        context.assertValueEqual(cbdSchwag.thcDose(), 0, "CBD schwag's THC dose");
+        SmokeContents cbdSchwag = Dosing.load(schwag, 2, Chemotype.CBD_DOMINANT);
+        context.assertValueEqual(Dosing.thcDose(cbdSchwag), 0, "CBD schwag's THC dose");
         List<Holder<MobEffect>> effects = new ArrayList<>();
         for (MobEffectInstance effect : cbdSchwag.effects(700, false, () -> 0L)) {
             effects.add(effect.getEffect());

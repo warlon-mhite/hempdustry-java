@@ -1,5 +1,7 @@
 package com.warlonmhite.hempdustry.recipe;
 
+import com.warlonmhite.hempdustry.strain.internal.Dosing;
+import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.mojang.serialization.MapCodec;
 import com.warlonmhite.hempdustry.balance.DeviceStats;
 import com.warlonmhite.hempdustry.component.ModComponents;
@@ -167,7 +169,7 @@ public class PackingRecipe extends CustomRecipe {
                 // the load keeps the sum of their offsets, which is what their THC averages to.
                 potency += Stamping.budOffset(stack, registries);
                 // The weakest piece sets the load's tier: a bowl of Epic buds and one Mids bud smokes as Mids.
-                tier = tier == null ? BudTier.of(stack) : BudTier.weaker(tier, BudTier.of(stack));
+                tier = tier == null ? BudTier.of(stack) : Tiers.weaker(tier, BudTier.of(stack));
                 strain = budStrain;
                 // One item from each slot, never the stack's count: crafting takes one per slot,
                 // and counting the stack packed three buds' worth out of one. And one item is not
@@ -185,7 +187,7 @@ public class PackingRecipe extends CustomRecipe {
             }
             contents = preloaded;
         } else if (strain != null && dose >= 1) {
-            contents = SmokeContents.of(strain, dose, stamp, potency).withTiers(Optional.of(tier), Optional.of(tier));
+            contents = Dosing.withTiers(Dosing.load(strain, dose, stamp, potency), Optional.of(tier), Optional.of(tier));
         } else {
             return null;
         }

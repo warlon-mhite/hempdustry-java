@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.strain.internal.Terpenes;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.particle.ModParticles;
 import com.warlonmhite.hempdustry.strain.Terpene;
@@ -82,13 +83,13 @@ public final class RipeAroma {
     }
 
     /**
-     * The wisp a plant of {@code block} lets off: tinted by its terpene ({@link Terpene#ofPlant}), mixed
+     * The wisp a plant of {@code block} lets off: tinted by its terpene ({@link Terpenes#ofPlant}), mixed
      * toward white by the smoke's share so it stays a faint cast, or the plain one for a plant with none.
      */
     public static ParticleOptions wisp(Level world, Block block) {
-        return Terpene.ofPlant(block, world.registryAccess())
+        return Terpenes.ofPlant(block, world.registryAccess())
                 .<ParticleOptions>map(terpene -> ColorParticleOption.create(ModParticles.TERPENE_AROMA,
-                        ARGB.opaque(Terpene.mix(0xFFFFFF, terpene.color(), Terpene.SMOKE_SHARE))))
+                        ARGB.opaque(Terpenes.mix(0xFFFFFF, terpene.color(), Terpenes.SMOKE_SHARE))))
                 .orElse(ModParticles.AROMA);
     }
 }
