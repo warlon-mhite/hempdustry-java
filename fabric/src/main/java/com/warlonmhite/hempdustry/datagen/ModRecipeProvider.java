@@ -769,6 +769,19 @@ public class ModRecipeProvider extends FabricRecipeProvider {
                 .unlockedBy(getHasName(Items.COPPER_INGOT), has(Items.COPPER_INGOT))
                 .save(output, id("grow_fan"));
 
+        // A copper coil in an iron cabinet, and a sponge for the desiccant: the ocean monument's, of which one
+        // monument gives dozens, so the dry room is a step a player takes after the sea.
+        shaped(RecipeCategory.REDSTONE, ModBlocks.DEHUMIDIFIER)
+                .pattern("ICI")
+                .pattern("CSC")
+                .pattern("IRI")
+                .define('I', Items.IRON_INGOT)
+                .define('C', Items.COPPER_INGOT)
+                .define('S', Items.SPONGE)
+                .define('R', Items.REDSTONE)
+                .unlockedBy(getHasName(Items.SPONGE), has(Items.SPONGE))
+                .save(output, id("dehumidifier"));
+
         // A Grow Pot plumbed into a copper reservoir with a pump in it. Copper is the mod's
         // electrical metal (the lamp's housing, and vanilla's own copper bulb); the redstone is the
         // pump, which is also what the block needs a signal for once it is placed.

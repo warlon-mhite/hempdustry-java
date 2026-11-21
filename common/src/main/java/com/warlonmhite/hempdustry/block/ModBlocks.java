@@ -27,6 +27,7 @@ import com.warlonmhite.hempdustry.block.custom.DecarboxylatorBlock;
 import com.warlonmhite.hempdustry.block.custom.SiftingBoxBlock;
 import com.warlonmhite.hempdustry.block.custom.FilteredHashishBarBlock;
 import com.warlonmhite.hempdustry.block.custom.HashishBarBlock;
+import com.warlonmhite.hempdustry.block.custom.DehumidifierBlock;
 import com.warlonmhite.hempdustry.block.custom.GrowFanBlock;
 import com.warlonmhite.hempdustry.block.custom.GrowLampBlock;
 import com.warlonmhite.hempdustry.block.custom.GrowPotBlock;
@@ -566,6 +567,17 @@ public class ModBlocks {
             BlockBehaviour.Properties.of()
                     .noOcclusion()
                     .mapColor(MapColor.COLOR_ORANGE)
+                    .strength(3.0F, 6.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.COPPER));
+
+    /**
+     * The Dehumidifier — a grey cabinet with a sight tube; see {@link DehumidifierBlock}. Iron-block hardness for
+     * the cabinet and copper sounds for its coil.
+     */
+    public static final Block DEHUMIDIFIER = registerBlock("dehumidifier", DehumidifierBlock::new,
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
                     .strength(3.0F, 6.0F)
                     .requiresCorrectToolForDrops()
                     .sound(SoundType.COPPER));

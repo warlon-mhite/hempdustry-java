@@ -86,6 +86,8 @@ public class Schema1460Mixin {
         schema.registerSimple(blockEntities, "hempdustry:plant_record");
         // A Sifting Box's batch record, the same: no item, but a block entity all the same.
         schema.registerSimple(blockEntities, "hempdustry:sifting_box");
+        // A Dehumidifier's condensate short of a level, the same.
+        schema.registerSimple(blockEntities, "hempdustry:dehumidifier");
         // A placed Stash Jar keeps its stash as a list of entries under contents, each naming its item
         // as a stack under item, typed so the item fixes reach every bud inside it on a Minecraft update.
         schema.register(blockEntities, "hempdustry:stash_jar",

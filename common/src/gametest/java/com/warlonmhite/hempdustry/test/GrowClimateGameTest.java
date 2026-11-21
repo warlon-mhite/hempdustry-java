@@ -4,6 +4,8 @@ import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.Climate;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
+import com.warlonmhite.hempdustry.block.custom.DehumidifierBlock;
+import com.warlonmhite.hempdustry.block.custom.HydroTrayBlock;
 import com.warlonmhite.hempdustry.block.custom.GrowFanBlock;
 import com.warlonmhite.hempdustry.block.custom.IndicaCropBlock;
 import com.warlonmhite.hempdustry.block.custom.Mildew;
@@ -12,14 +14,22 @@ import com.warlonmhite.hempdustry.item.ModItems;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.BonemealSource;
 import net.minecraft.world.level.block.CropBlock;
+import net.minecraft.world.level.block.ComparatorBlock;
+import net.minecraft.world.level.block.LayeredCauldronBlock;
+import net.minecraft.world.level.block.entity.ComparatorBlockEntity;
 import net.minecraft.world.level.block.FarmlandBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.AttachFace;
@@ -162,7 +172,239 @@ public final class GrowClimateGameTest {
         context.succeed();
     }
 
+    /**
+     * A running Dehumidifier dries every roofed plant in its reach two steps: a plant on a full Hydro Tray under
+     * glass goes from damp to dry. Its reach is 9 x 9, two blocks up and down. It does nothing under the open sky,
+     * nothing switched off, and nothing once its tank is full with nowhere to drip (a Hydro Tray under it is
+     * nowhere); a cauldron under it starts it again.
+     */
+    public static void aDehumidifierDriesARoofedRoom(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        fillBiome(context, CROP, "minecraft:plains");
+        context.setBlock(ROOF, Blocks.GLASS);
+        near(context, onTray(context), 3 * 2 * FIELD, "a plant on a full tray under glass, no Dehumidifier");
+        BlockPos drier = CROP.east(4);
+        dehumidifier(context, drier, 0, true);
+        near(context, onTray(context), 3 * 0.5F * FIELD, "a plant on a full tray under glass, a running Dehumidifier 4 blocks off");
+        near(context, odds(context, ModBlocks.INDICA_CROP), 3 * 0.5F * FIELD,
+                "a plant on farmland under glass, a running Dehumidifier 4 blocks off");
+
+        // Switched off; full with nowhere to drip; then a cauldron under it.
+        context.setBlock(drier.east(), Blocks.AIR);
+        near(context, onTray(context), 3 * 2 * FIELD, "a plant on a full tray beside a Dehumidifier with no signal");
+        dehumidifier(context, drier, DehumidifierBlock.MAX_LEVEL, true);
+        near(context, onTray(context), 3 * 2 * FIELD, "a plant beside a running Dehumidifier with a full tank and nowhere to drip");
+        context.setBlock(drier.below(), ModBlocks.HYDRO_TRAY.defaultBlockState());
+        near(context, onTray(context), 3 * 2 * FIELD, "a plant beside a running Dehumidifier with a full tank over a dry Hydro Tray");
+        context.setBlock(drier.below(), Blocks.CAULDRON);
+        context.assertTrue(context.getBlockState(drier.below()).is(Blocks.WATER_CAULDRON)
+                        && context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 0,
+                "a cauldron set under a full Dehumidifier did not take its tank: the cauldron is "
+                        + context.getBlockState(drier.below()) + ", the tank " + context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL));
+        near(context, onTray(context), 3 * 0.5F * FIELD, "a plant beside a running Dehumidifier with a cauldron under it");
+        clearDehumidifier(context, drier);
+
+        // Out of reach, a block further on or three blocks up.
+        for (BlockPos far : List.of(CROP.east(5), CROP.east(3).above(3))) {
+            dehumidifier(context, far, 0, true);
+            near(context, onTray(context), 3 * 2 * FIELD, "a plant on a full tray with a running Dehumidifier at " + far.subtract(CROP));
+            clearDehumidifier(context, far);
+        }
+
+        // Under the open sky: the weather is not a room.
+        dehumidifier(context, drier, 0, true);
+        context.setBlock(ROOF, Blocks.AIR);
+        context.setBlock(new BlockPos(CROP.getX(), 8, CROP.getZ()), Blocks.AIR);
+        near(context, onTray(context), 2 * FIELD, "a plant on a full tray under open sky beside a running Dehumidifier");
+        context.succeed();
+    }
+
+    /**
+     * The water a Dehumidifier takes out of the air is the plants' own: 64 growth steps of the roofed plants it
+     * dries make a level of its tank, or drip straight into a cauldron with room under it, as a pointed dripstone's
+     * water does. A Hydro Tray under it takes none. A plant under the open sky gives it nothing.
+     */
+    public static void aDehumidifierFillsFromThePlantsItDries(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        context.setBlock(ROOF, Blocks.GLASS);
+        sow(context, ModBlocks.INDICA_CROP, 2);
+        BlockPos root = context.absolutePos(CROP);
+        BlockPos drier = CROP.east(2);
+        dehumidifier(context, drier, 0, true);
+        int perLevel = GrowClimate.of(world.registryAccess()).dehumidifier().stepsPerLevel();
+        context.assertTrue(perLevel == 64, "a level of condensate is " + perLevel + " dried steps, not 64");
+        for (int step = 1; step < perLevel; step++) {
+            Climate.afterStep(world, root, 2);
+        }
+        context.assertTrue(context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 0,
+                "63 dried steps already filled a level");
+        Climate.afterStep(world, root, 2);
+        context.assertTrue(context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 1,
+                "64 dried steps filled no level of the tank");
+
+        // A Hydro Tray under it takes nothing; a cauldron takes the level, and the next ones as they are made.
+        context.setBlock(drier.below(), ModBlocks.HYDRO_TRAY.defaultBlockState().setValue(HydroTrayBlock.LEVEL, 1));
+        context.assertTrue(context.getBlockState(drier.below()).getValue(HydroTrayBlock.LEVEL) == 1
+                        && context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 1,
+                "a tray set under a Dehumidifier with a level in it took the level");
+        for (int step = 0; step < perLevel; step++) {
+            Climate.afterStep(world, root, 2);
+        }
+        context.assertTrue(context.getBlockState(drier.below()).getValue(HydroTrayBlock.LEVEL) == 1
+                        && context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 2,
+                "a level made over a tray dripped into it");
+        context.setBlock(drier.below(), Blocks.CAULDRON);
+        context.assertTrue(context.getBlockState(drier.below()).is(Blocks.WATER_CAULDRON)
+                        && context.getBlockState(drier.below()).getValue(LayeredCauldronBlock.LEVEL) == 2
+                        && context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 0,
+                "a cauldron set under a Dehumidifier with two levels in it did not take them");
+        for (int step = 0; step < perLevel; step++) {
+            Climate.afterStep(world, root, 2);
+        }
+        context.assertTrue(context.getBlockState(drier.below()).getValue(LayeredCauldronBlock.LEVEL) == 3
+                        && context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 0,
+                "a level made over a cauldron with room did not drip into it");
+
+        // A field plant gives it nothing.
+        context.setBlock(ROOF, Blocks.AIR);
+        context.setBlock(new BlockPos(CROP.getX(), 8, CROP.getZ()), Blocks.AIR);
+        context.setBlock(drier.below(), Blocks.STONE);
+        for (int step = 0; step < perLevel; step++) {
+            Climate.afterStep(world, root, 2);
+        }
+        context.assertTrue(context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 0,
+                "a plant under open sky filled the Dehumidifier beside it");
+        context.succeed();
+    }
+
+    /**
+     * Its tank is taken out as a cauldron's water is: a bottle a level, a bucket a full tank. A real comparator beside
+     * it reads the tank, a level to a step, and follows every change of it: a bottle, a bucket, a drip into a
+     * cauldron set under it.
+     */
+    public static void aDehumidifierEmptiesAsACauldronDoes(GameTestHelper context) {
+        ServerPlayer player = Players.survival(context);
+        BlockPos drier = new BlockPos(3, 2, 3);
+        BlockPos comparator = drier.north();
+        // The comparator first: one set down reads nothing until its input changes.
+        context.setBlock(comparator.below(), Blocks.STONE);
+        context.setBlock(comparator, Blocks.COMPARATOR.defaultBlockState().setValue(ComparatorBlock.FACING, Direction.SOUTH));
+        dehumidifier(context, drier, 2, false);
+        context.startSequence()
+                .thenWaitUntil(() -> compared(context, comparator, 2, "with a tank of two"))
+                .thenExecute(() -> {
+                    Players.click(context, player, drier, new ItemStack(Items.GLASS_BOTTLE));
+                    ItemStack bottle = player.getMainHandItem();
+                    context.assertTrue(bottle.is(Items.POTION) && bottle.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY).is(Potions.WATER),
+                            "a glass bottle on a Dehumidifier came back as " + bottle);
+                    context.assertTrue(context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 1, "a bottle took no level");
+                })
+                .thenWaitUntil(() -> compared(context, comparator, 1, "after a bottle took a level"))
+                .thenExecute(() -> {
+                    Players.click(context, player, drier, new ItemStack(Items.BUCKET));
+                    context.assertTrue(player.getMainHandItem().is(Items.BUCKET) && context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 1,
+                            "a bucket took a tank that was not full");
+                    dehumidifier(context, drier, DehumidifierBlock.MAX_LEVEL, false);
+                })
+                .thenWaitUntil(() -> compared(context, comparator, DehumidifierBlock.MAX_LEVEL, "with a full tank"))
+                .thenExecute(() -> {
+                    Players.click(context, player, drier, new ItemStack(Items.BUCKET));
+                    context.assertTrue(player.getMainHandItem().is(Items.WATER_BUCKET) && context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 0,
+                            "a bucket on a full tank came back as " + player.getMainHandItem() + ", the tank at "
+                                    + context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL));
+                })
+                .thenWaitUntil(() -> compared(context, comparator, 0, "after a bucket took the tank"))
+                .thenExecute(() -> {
+                    dehumidifier(context, drier, 2, false);
+                })
+                .thenWaitUntil(() -> compared(context, comparator, 2, "with a tank of two again"))
+                .thenExecute(() -> {
+                    context.setBlock(drier.below(), Blocks.CAULDRON);
+                    context.assertTrue(context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 0,
+                            "a cauldron set under a tank of two left " + context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL));
+                })
+                .thenWaitUntil(() -> compared(context, comparator, 0, "after its tank dripped into a cauldron"))
+                .thenSucceed();
+    }
+
+    /**
+     * A pipe takes its water through the loader's own fluid API, as it takes a water cauldron's: on Fabric a bottle a
+     * level, on NeoForge a whole bucket once the tank is full. Nothing goes in. A rolled-back transaction leaves the
+     * tank as it was, two lookups in one transaction take the water once, and a comparator beside the tank sees
+     * what the pipe took.
+     */
+    public static void aPipeTakesADehumidifiersWater(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        BlockPos drier = new BlockPos(3, 2, 3);
+        BlockPos at = context.absolutePos(drier);
+        boolean fabric = TestPlatform.INSTANCE.loaderName().equals("fabric");
+        BlockPos comparator = drier.north();
+        context.setBlock(comparator.below(), Blocks.STONE);
+        context.setBlock(comparator, Blocks.COMPARATOR.defaultBlockState().setValue(ComparatorBlock.FACING, Direction.SOUTH));
+        dehumidifier(context, drier, DehumidifierBlock.MAX_LEVEL, false);
+        // The comparator settles on the full tank first, so what it reads at the end is the pipe's doing.
+        context.startSequence()
+                .thenWaitUntil(() -> compared(context, comparator, DehumidifierBlock.MAX_LEVEL, "with a full tank"))
+                .thenExecute(() -> {
+                    int one = TestPlatform.INSTANCE.extractWater(world, at, Direction.UP, 1, 1, false);
+                    context.assertTrue(one == (fabric ? 1 : 0), "a pipe asking a full tank for a bottle took " + one);
+                    context.assertTrue(context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == (fabric ? 2 : 3),
+                            "the tank after a pipe asked for a bottle: " + context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL));
+                })
+                .thenExecute(() -> dehumidifier(context, drier, DehumidifierBlock.MAX_LEVEL, false))
+                .thenWaitUntil(() -> compared(context, comparator, DehumidifierBlock.MAX_LEVEL, "with a full tank again"))
+                .thenExecute(() -> {
+                    int aborted = TestPlatform.INSTANCE.extractWater(world, at, Direction.UP, 3, 1, true);
+                    context.assertTrue(aborted == 3 && context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 3,
+                            "a rolled-back bucket took " + aborted + " and left the tank at " + context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL));
+                    int twice = TestPlatform.INSTANCE.extractWater(world, at, Direction.UP, 3, 2, false);
+                    context.assertTrue(twice == 3 && context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 0,
+                            "two lookups asking a full tank for a bucket each took " + twice + " bottles in all, the tank left at "
+                                    + context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL));
+                })
+                .thenWaitUntil(() -> compared(context, comparator, 0, "after a pipe emptied the tank"))
+                .thenSucceed();
+    }
+
     // ----- helpers -----
+
+    /** A comparator at {@code comparator} puts out {@code expected}. */
+    private static void compared(GameTestHelper context, BlockPos comparator, int expected, String when) {
+        int signal = context.getBlockEntity(comparator, ComparatorBlockEntity.class).getOutputSignal();
+        context.assertTrue(signal == expected, "a comparator by a Dehumidifier " + when + " reads " + signal + ", not " + expected);
+    }
+
+    /** A Dehumidifier at {@code at} holding {@code level}, on stone, running if {@code running} (a redstone block east of it). */
+    private static void dehumidifier(GameTestHelper context, BlockPos at, int level, boolean running) {
+        context.setBlock(at.below(), Blocks.STONE);
+        context.setBlock(at, ModBlocks.DEHUMIDIFIER.defaultBlockState().setValue(DehumidifierBlock.LEVEL, level));
+        if (running) {
+            context.setBlock(at.east(), Blocks.REDSTONE_BLOCK);
+        }
+        context.assertTrue(context.getBlockState(at).getValue(DehumidifierBlock.POWERED) == running
+                        && context.getBlockState(at).getValue(DehumidifierBlock.LEVEL) == level,
+                "test setup: the Dehumidifier at " + at + " did not come up as set");
+    }
+
+    private static void clearDehumidifier(GameTestHelper context, BlockPos at) {
+        context.setBlock(at.east(), Blocks.AIR);
+        context.setBlock(at, Blocks.AIR);
+        context.setBlock(at.below(), Blocks.AIR);
+    }
+
+    /** The onset odds of a fresh neutral Purple Kush at age 2 on a fed, full Hydro Tray at {@link #SOIL}. */
+    private static float onTray(GameTestHelper context) {
+        for (int y = 2; y >= 0; y--) {
+            if (context.getBlockState(CROP.above(y)).getBlock() instanceof CropBlock) {
+                context.setBlock(CROP.above(y), Blocks.AIR);
+            }
+        }
+        context.setBlock(SOIL, ModBlocks.HYDRO_TRAY.defaultBlockState().setValue(HydroTrayBlock.LEVEL, HydroTrayBlock.MAX_LEVEL));
+        context.setBlock(CROP, Defoliation.unworked(ModBlocks.INDICA_CROP.defaultBlockState()).setValue(BlockStateProperties.AGE_7, 2));
+        Genes.neutral(context, CROP);
+        BlockPos at = context.absolutePos(CROP);
+        return Mildew.onsetFor(context.getLevel(), at, context.getLevel().getBlockState(at));
+    }
 
     /**
      * A Grow Fan at {@code at}, fixed as {@code face} and blowing {@code facing}, on the block it hangs from: a
@@ -198,7 +440,7 @@ public final class GrowClimateGameTest {
         };
     }
 
-    /** The onset odds of a fresh neutral plant of {@code crop} at age 2 under the glass roof. */
+    /** The onset odds of a fresh neutral plant of {@code crop} at age 2 on moist farmland under the glass roof. */
     private static float odds(GameTestHelper context, Block crop) {
         context.setBlock(ROOF, Blocks.GLASS);
         sow(context, crop, 2);

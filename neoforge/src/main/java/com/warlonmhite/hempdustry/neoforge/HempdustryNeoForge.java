@@ -5,6 +5,7 @@ import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
 
 import com.warlonmhite.hempdustry.Hempdustry;
+import com.warlonmhite.hempdustry.block.entity.ModBlockEntities;
 import com.warlonmhite.hempdustry.neoforge.data.NeoForgeData;
 import com.warlonmhite.hempdustry.platform.Services;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -69,6 +70,9 @@ public final class HempdustryNeoForge {
                 expose(event, type);
             }
         }
+        // A Dehumidifier's tank gives its water to a pipe, as a water cauldron does.
+        event.registerBlockEntity(Capabilities.Fluid.BLOCK, ModBlockEntities.DEHUMIDIFIER,
+                (tank, side) -> tank.transferHandler(NeoForgeDehumidifierHandler::new));
     }
 
     private static <T extends BlockEntity> void expose(RegisterCapabilitiesEvent event, BlockEntityType<T> type) {

@@ -201,6 +201,7 @@ public class ModBlockTagProvider extends FabricTagsProvider.BlockTagsProvider {
                 .add(ModBlocks.SIFTING_BOX)
                 .add(ModBlocks.GROW_POT)
                 .add(ModBlocks.HYDRO_TRAY)
+                .add(ModBlocks.DEHUMIDIFIER)
                 .add(ModBlocks.SPACE_CAKE);
 
         // HEMP_LEAVES joins the vanilla leaves tag, which is the only route to shears' 15x mining
@@ -222,7 +223,8 @@ public class ModBlockTagProvider extends FabricTagsProvider.BlockTagsProvider {
                 .add(ModBlocks.GROW_LAMP)
                 .add(ModBlocks.GROW_POT)
                 .add(ModBlocks.HYDRO_TRAY)
-                .add(ModBlocks.GROW_FAN);
+                .add(ModBlocks.GROW_FAN)
+                .add(ModBlocks.DEHUMIDIFIER);
 
         valueLookupBuilder(ModTags.Blocks.GROW_LAMPS).add(ModBlocks.GROW_LAMP);
         // Empty on purpose, so the file exists for a datapack or an addon crop to join: see Mildew.

@@ -32,9 +32,10 @@ import net.minecraft.util.ExtraCodecs;
  * @param wetReach     how far, in blocks, standing water around a roofed plant makes its room wet
  * @param trimmed      the factor for a plant trimmed in either window: a thinner canopy
  * @param fan          how far ahead of it, and how wide, a running Grow Fan blows
+ * @param dehumidifier how far a running Dehumidifier dries the air, by how much, and what fills its tank
  */
 public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity humidity, BiomeRule biome, int wetReach,
-                          float trimmed, Fan fan) {
+                          float trimmed, Fan fan, Drier dehumidifier) {
 
     public static final ResourceKey<Registry<GrowClimate>> REGISTRY_KEY =
             ResourceKey.createRegistryKey(Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "grow_climate"));
@@ -92,6 +93,39 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
         ).apply(instance, Fan::new));
     }
 
+    /**
+     * A device's reach, from where it stands: {@code reach} blocks each way across, the plants it reaches standing
+     * at most {@code below} blocks under it and {@code above} blocks over it (each plant by its root).
+     */
+    public record Reach(int reach, int below, int above) {
+        private static final Codec<Integer> BLOCKS = Codec.intRange(0, 8);
+        public static final Codec<Reach> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                BLOCKS.fieldOf("reach").forGetter(Reach::reach),
+                BLOCKS.fieldOf("below").forGetter(Reach::below),
+                BLOCKS.fieldOf("above").forGetter(Reach::above)
+        ).apply(instance, Reach::new));
+    }
+
+    /**
+     * A Dehumidifier: its reach, as a fan's; the humidity steps it takes off a roofed plant there ({@code dries});
+     * and the growth steps of the plants it dries that make one level of condensate ({@code steps_per_level}).
+     */
+    public record Drier(int reach, int below, int above, int dries, int stepsPerLevel) {
+        private static final Codec<Integer> BLOCKS = Codec.intRange(0, 8);
+        public static final Codec<Drier> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                BLOCKS.fieldOf("reach").forGetter(Drier::reach),
+                BLOCKS.fieldOf("below").forGetter(Drier::below),
+                BLOCKS.fieldOf("above").forGetter(Drier::above),
+                Codec.intRange(0, 3).fieldOf("dries").forGetter(Drier::dries),
+                ExtraCodecs.POSITIVE_INT.fieldOf("steps_per_level").forGetter(Drier::stepsPerLevel)
+        ).apply(instance, Drier::new));
+
+        /** Its reach alone. */
+        public Reach area() {
+            return new Reach(reach, below, above);
+        }
+    }
+
     public static final Codec<GrowClimate> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ExtraCodecs.POSITIVE_INT.fieldOf("onset_one_in").forGetter(GrowClimate::onsetOneIn),
             ExtraCodecs.POSITIVE_INT.fieldOf("spread_one_in").forGetter(GrowClimate::spreadOneIn),
@@ -100,7 +134,8 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
             BiomeRule.CODEC.fieldOf("biome").forGetter(GrowClimate::biome),
             Codec.intRange(0, 4).fieldOf("wet_reach").forGetter(GrowClimate::wetReach),
             FACTOR.fieldOf("trimmed").forGetter(GrowClimate::trimmed),
-            Fan.CODEC.fieldOf("fan").forGetter(GrowClimate::fan)
+            Fan.CODEC.fieldOf("fan").forGetter(GrowClimate::fan),
+            Drier.CODEC.fieldOf("dehumidifier").forGetter(GrowClimate::dehumidifier)
     ).apply(instance, GrowClimate::new));
 
     /**
@@ -108,8 +143,10 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
      * 2.1's open sky did; glass triples both, a sealed room six times them, and a swamp's hydro room 24 times.
      * A trim takes a quarter off: real but modest, as leaf removal is in a vineyard. A fan blows a lane 9 blocks long
      * and 5 wide ahead of its grille, so two side by side cover a 9 x 9 plot from one edge (the plot one water source
-     * keeps farmland wet across), 45 plants a fan, about the 49 of a square around it; it reaches from a plant one
-     * block above it (one on the floor beside a pot) to three below it (one hung from the ceiling over a field).
+     * keeps farmland wet across, and one Dehumidifier dries), 45 plants a fan, about the 49 of a square around it;
+     * it reaches from a plant one block above it (one on the floor beside a pot) to three below it (one hung from the
+     * ceiling over a field). A Dehumidifier dries a 9 x 9 room two steps, two blocks up and down, and 64 dried steps
+     * make a level of its tank: a 9 x 9 grow of 81 plants, seven steps each, empties it about once.
      */
     public static final GrowClimate BUILT_IN = new GrowClimate(
             1500, 100,
@@ -118,7 +155,8 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
             new BiomeRule(0.3F, 0.85F, 0.5F),
             2,
             0.75F,
-            new Fan(9, 2, 3, 1));
+            new Fan(9, 2, 3, 1),
+            new Drier(4, 2, 2, 2, 64));
 
     public static void bootstrap(BootstrapContext<GrowClimate> registerable) {
         registerable.register(DEFAULT, BUILT_IN);

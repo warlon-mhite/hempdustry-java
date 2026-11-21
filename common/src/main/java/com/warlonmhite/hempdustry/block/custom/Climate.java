@@ -1,6 +1,7 @@
 package com.warlonmhite.hempdustry.block.custom;
 
 import com.warlonmhite.hempdustry.balance.GrowClimate;
+import com.warlonmhite.hempdustry.block.entity.custom.DehumidifierBlockEntity;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
 import com.warlonmhite.hempdustry.platform.Services;
 import net.minecraft.core.BlockPos;
@@ -9,9 +10,12 @@ import net.minecraft.core.QuartPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.StringRepresentable;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.BlockState;
+
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The climate a plant grows in, as powdery mildew reads it: its <b>air</b> and its <b>humidity</b>. Every
@@ -27,7 +31,8 @@ import net.minecraft.world.level.block.state.BlockState;
  *   <li><b>Humidity</b>: {@link Humidity#NORMAL}, one drier in a biome with almost no rain (a desert, the
  *       badlands, a savanna, the Nether), one wetter in a warm, rainy one (a jungle, a swamp, the mushroom
  *       fields), and one wetter again in a wet room: the plant's own bed a Hydro Tray, or, under a roof,
- *       standing water within reach. Never past {@link Humidity#DRY} or {@link Humidity#SOAKED}.</li>
+ *       standing water within reach. Under a roof, a running {@link DehumidifierBlock Dehumidifier} in reach
+ *       takes two steps off. Never past {@link Humidity#DRY} or {@link Humidity#SOAKED}.</li>
  *   <li><b>A plant in water</b> never catches it, nor is it reached: free water washes the spores off
  *       and bursts them, which is why the fungus is a dry-leaf, humid-air one.</li>
  *   <li><b>A trimmed plant</b>, in either window, is a little less at risk: a thinner canopy.</li>
@@ -159,18 +164,53 @@ public final class Climate {
     }
 
     /**
-     * What a plant's growth step from {@code fromAge} tells its record of its climate: whether it grew in a fan's
-     * wind. Called from the crops' own step, before the mildew roll.
+     * What a plant's growth step from {@code fromAge} tells its climate: its record keeps whether it grew in a fan's
+     * wind, and a Dehumidifier drying it, under a roof, takes the step's water into its tank. Called from the crops'
+     * own step, before the mildew roll.
      */
     public static void afterStep(Level world, BlockPos root, int fromAge) {
-        if (!world.isClientSide()) {
-            PlantRecordBlockEntity.recordVentilation(world, root, fromAge, ventilated(world, root));
+        if (world.isClientSide()) {
+            return;
+        }
+        PlantRecordBlockEntity.recordVentilation(world, root, fromAge, ventilated(world, root));
+        if (!inWater(world, root) && Mildew.roofed(world, root)) {
+            BlockPos drier = drier(world, root, GrowClimate.of(world.registryAccess()));
+            if (drier != null && world.getBlockEntity(drier) instanceof DehumidifierBlockEntity tank) {
+                tank.collect(world);
+            }
         }
     }
 
+    /** A device a reach looks for: a block, read where it stands. */
+    @FunctionalInterface
+    interface Device {
+        boolean at(BlockGetter world, BlockPos pos, BlockState state);
+    }
+
     /**
-     * The humidity at {@code pos}: the biome's step, and one more for a wet room — a Hydro Tray as the bed
-     * ({@code onTray}), or under a roof ({@code roofed}) standing water within {@link GrowClimate#wetReach}.
+     * The first block {@code device} accepts where {@code reach} reaches the plant rooted at {@code root}: the layers
+     * from the lowest up, each row by row.
+     */
+    @Nullable
+    static BlockPos find(Level world, BlockPos root, GrowClimate.Reach reach, Device device) {
+        BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+        for (int dy = -reach.above(); dy <= reach.below(); dy++) {
+            for (int dx = -reach.reach(); dx <= reach.reach(); dx++) {
+                for (int dz = -reach.reach(); dz <= reach.reach(); dz++) {
+                    at.setWithOffset(root, dx, dy, dz);
+                    if (device.at(world, at, world.getBlockState(at))) {
+                        return at.immutable();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * The humidity at {@code pos}: the biome's step, one more for a wet room — a Hydro Tray as the bed
+     * ({@code onTray}), or under a roof ({@code roofed}) standing water within {@link GrowClimate#wetReach} — and,
+     * under a roof, the steps a running Dehumidifier in reach takes off.
      */
     public static Humidity humidity(Level world, BlockPos pos, boolean roofed, boolean onTray) {
         GrowClimate climate = GrowClimate.of(world.registryAccess());
@@ -178,7 +218,16 @@ public final class Climate {
         if (onTray || roofed && waterNear(world, pos, climate.wetReach())) {
             steps++;
         }
+        if (roofed && drier(world, pos, climate) != null) {
+            steps -= climate.dehumidifier().dries();
+        }
         return Humidity.fromNormal(steps);
+    }
+
+    /** The running Dehumidifier whose reach takes in {@code pos}, if there is one; the first found. */
+    @Nullable
+    public static BlockPos drier(Level world, BlockPos pos, GrowClimate climate) {
+        return find(world, pos, climate.dehumidifier().area(), DehumidifierBlock::working);
     }
 
     /**

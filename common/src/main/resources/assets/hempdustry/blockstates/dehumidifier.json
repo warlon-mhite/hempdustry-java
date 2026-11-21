@@ -1,0 +1,124 @@
+{
+  "variants": {
+    "facing=north,level=0,powered=false": {
+      "model": "hempdustry:block/dehumidifier_0"
+    },
+    "facing=north,level=0,powered=true": {
+      "model": "hempdustry:block/dehumidifier_0_on"
+    },
+    "facing=north,level=1,powered=false": {
+      "model": "hempdustry:block/dehumidifier_1"
+    },
+    "facing=north,level=1,powered=true": {
+      "model": "hempdustry:block/dehumidifier_1_on"
+    },
+    "facing=north,level=2,powered=false": {
+      "model": "hempdustry:block/dehumidifier_2"
+    },
+    "facing=north,level=2,powered=true": {
+      "model": "hempdustry:block/dehumidifier_2_on"
+    },
+    "facing=north,level=3,powered=false": {
+      "model": "hempdustry:block/dehumidifier_3"
+    },
+    "facing=north,level=3,powered=true": {
+      "model": "hempdustry:block/dehumidifier_3_on"
+    },
+    "facing=east,level=0,powered=false": {
+      "model": "hempdustry:block/dehumidifier_0",
+      "y": 90
+    },
+    "facing=east,level=0,powered=true": {
+      "model": "hempdustry:block/dehumidifier_0_on",
+      "y": 90
+    },
+    "facing=east,level=1,powered=false": {
+      "model": "hempdustry:block/dehumidifier_1",
+      "y": 90
+    },
+    "facing=east,level=1,powered=true": {
+      "model": "hempdustry:block/dehumidifier_1_on",
+      "y": 90
+    },
+    "facing=east,level=2,powered=false": {
+      "model": "hempdustry:block/dehumidifier_2",
+      "y": 90
+    },
+    "facing=east,level=2,powered=true": {
+      "model": "hempdustry:block/dehumidifier_2_on",
+      "y": 90
+    },
+    "facing=east,level=3,powered=false": {
+      "model": "hempdustry:block/dehumidifier_3",
+      "y": 90
+    },
+    "facing=east,level=3,powered=true": {
+      "model": "hempdustry:block/dehumidifier_3_on",
+      "y": 90
+    },
+    "facing=south,level=0,powered=false": {
+      "model": "hempdustry:block/dehumidifier_0",
+      "y": 180
+    },
+    "facing=south,level=0,powered=true": {
+      "model": "hempdustry:block/dehumidifier_0_on",
+      "y": 180
+    },
+    "facing=south,level=1,powered=false": {
+      "model": "hempdustry:block/dehumidifier_1",
+      "y": 180
+    },
+    "facing=south,level=1,powered=true": {
+      "model": "hempdustry:block/dehumidifier_1_on",
+      "y": 180
+    },
+    "facing=south,level=2,powered=false": {
+      "model": "hempdustry:block/dehumidifier_2",
+      "y": 180
+    },
+    "facing=south,level=2,powered=true": {
+      "model": "hempdustry:block/dehumidifier_2_on",
+      "y": 180
+    },
+    "facing=south,level=3,powered=false": {
+      "model": "hempdustry:block/dehumidifier_3",
+      "y": 180
+    },
+    "facing=south,level=3,powered=true": {
+      "model": "hempdustry:block/dehumidifier_3_on",
+      "y": 180
+    },
+    "facing=west,level=0,powered=false": {
+      "model": "hempdustry:block/dehumidifier_0",
+      "y": 270
+    },
+    "facing=west,level=0,powered=true": {
+      "model": "hempdustry:block/dehumidifier_0_on",
+      "y": 270
+    },
+    "facing=west,level=1,powered=false": {
+      "model": "hempdustry:block/dehumidifier_1",
+      "y": 270
+    },
+    "facing=west,level=1,powered=true": {
+      "model": "hempdustry:block/dehumidifier_1_on",
+      "y": 270
+    },
+    "facing=west,level=2,powered=false": {
+      "model": "hempdustry:block/dehumidifier_2",
+      "y": 270
+    },
+    "facing=west,level=2,powered=true": {
+      "model": "hempdustry:block/dehumidifier_2_on",
+      "y": 270
+    },
+    "facing=west,level=3,powered=false": {
+      "model": "hempdustry:block/dehumidifier_3",
+      "y": 270
+    },
+    "facing=west,level=3,powered=true": {
+      "model": "hempdustry:block/dehumidifier_3_on",
+      "y": 270
+    }
+  }
+}

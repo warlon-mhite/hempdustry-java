@@ -154,4 +154,12 @@ public interface TestPlatform {
      */
     int[] insertThroughTwoLookupsAndAbort(ServerLevel level, BlockPos pos, Direction side, ItemStack first,
                                           ItemStack second, boolean nested);
+
+    /**
+     * Takes water out of the fluid storage the block at {@code pos} exposes on {@code side}, through the loader's own
+     * fluid API: {@code lookups} lookups in one root transaction, each asking for {@code bottles} bottles' worth (a
+     * third of a bucket each; three is a whole bucket on any loader), then commits, or rolls back if {@code abort}.
+     * Answers the water taken in all, in bottles, or -1 when nothing there exposes a fluid storage.
+     */
+    int extractWater(ServerLevel level, BlockPos pos, Direction side, int bottles, int lookups, boolean abort);
 }

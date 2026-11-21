@@ -2,7 +2,7 @@
 
     python3 textures-src/grow_climate.py common/src/main/resources/assets/hempdustry
 
-Writes textures/block/grow_fan_*.png (and the animation's .mcmeta). The colours are the mod's own: the
+Writes textures/block/grow_fan_*.png (and the animation's .mcmeta) and dehumidifier_*.png. The colours are the mod's own: the
 Grow Lamp's copper ramp (textures-src/grow_lamp.mctex) for every housing, the Hydro Tray's greys and its
 airline's light metal (textures-src/hydro_tray.mctex) for the blades and the grille. Nothing new.
 
@@ -115,6 +115,64 @@ def back():
     return img
 
 
+WATER = ['2E4F6B', '43718F', '6699B5', '86B4CC']  # the Hydro Tray's water, deepest to highlight
+
+
+def cabinet_side():
+    """The Dehumidifier's grey cabinet: a moulded panel, and a grille of vents low down where the air goes in."""
+    img = Image.new('RGBA', (16, 16))
+    for y in range(16):
+        for x in range(16):
+            c = GREY[4]
+            if x == 0 or y == 0:
+                c = GREY[7]
+            elif x == 15 or y == 15:
+                c = GREY[2]
+            elif 9 <= y <= 13 and 2 <= x <= 13:
+                c = GREY[1] if y % 2 == 1 else GREY[5]
+            img.putpixel((x, y), rgb(c))
+    return img
+
+
+def cabinet_top():
+    """The top: the panel, a copper carry handle across it, the outlet grille behind."""
+    img = cabinet_side()
+    for x in range(2, 14):
+        for y in range(2, 7):
+            img.putpixel((x, y), rgb(GREY[1] if y % 2 == 0 else GREY[5]))
+    for x in range(4, 12):
+        img.putpixel((x, 10), rgb(COPPER[4]))
+        img.putpixel((x, 11), rgb(COPPER[1]))
+    for y in (9, 10, 11):
+        img.putpixel((4, y), rgb(COPPER[3]))
+        img.putpixel((11, y), rgb(COPPER[2]))
+    return img
+
+
+def cabinet_front(level, running):
+    """The front: the sight tube on the left showing {level} thirds of water, the vents, the indicator lit if {running}."""
+    img = cabinet_side()
+    # The sight tube: a dark frame, the tube's inside 3 wide and 9 tall (rows 3..11), water from the bottom up.
+    for y in range(2, 13):
+        for x in range(2, 7):
+            img.putpixel((x, y), rgb('2A2C30'))
+    for y in range(3, 12):
+        filled = (11 - y) < level * 3
+        for x in range(3, 6):
+            c = (WATER[2] if x == 3 else WATER[1]) if filled else GREY[1]
+            if filled and (11 - y) == level * 3 - 1:
+                c = WATER[3]
+            img.putpixel((x, y), rgb(c))
+    # The intake grille, right of the tube.
+    for y in range(3, 12):
+        for x in range(8, 14):
+            img.putpixel((x, y), rgb(GREY[1] if y % 2 == 1 else GREY[5]))
+    # The indicator, bottom right: green when running, as the Hydro Tray's pump.
+    img.putpixel((12, 13), rgb('5FBF5F' if running else '1F3A1F'))
+    img.putpixel((13, 13), rgb('3E8E3E' if running else '2E5A2E'))
+    return img
+
+
 def main(assets):
     out = os.path.join(assets, 'textures', 'block')
     casing().save(os.path.join(out, 'grow_fan_casing.png'))
@@ -127,6 +185,11 @@ def main(assets):
     strip.save(os.path.join(out, 'grow_fan_front_on.png'))
     with open(os.path.join(out, 'grow_fan_front_on.png.mcmeta'), 'w') as meta:
         meta.write('{\n  "animation": {\n    "frametime": 1\n  }\n}\n')
+    cabinet_side().save(os.path.join(out, 'dehumidifier_side.png'))
+    cabinet_top().save(os.path.join(out, 'dehumidifier_top.png'))
+    for level in range(4):
+        cabinet_front(level, False).save(os.path.join(out, f'dehumidifier_front_{level}.png'))
+        cabinet_front(level, True).save(os.path.join(out, f'dehumidifier_front_{level}_on.png'))
 
 
 if __name__ == '__main__':

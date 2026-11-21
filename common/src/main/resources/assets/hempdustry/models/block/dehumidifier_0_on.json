@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "hempdustry:block/dehumidifier_top",
+    "side": "hempdustry:block/dehumidifier_side",
+    "front": "hempdustry:block/dehumidifier_front_0_on"
+  }
+}

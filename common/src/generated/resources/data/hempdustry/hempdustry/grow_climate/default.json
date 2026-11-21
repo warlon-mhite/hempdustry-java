@@ -9,6 +9,13 @@
     "wet_from_downfall": 0.85,
     "wet_from_temperature": 0.5
   },
+  "dehumidifier": {
+    "above": 2,
+    "below": 2,
+    "dries": 2,
+    "reach": 4,
+    "steps_per_level": 64
+  },
   "fan": {
     "above": 1,
     "ahead": 9,

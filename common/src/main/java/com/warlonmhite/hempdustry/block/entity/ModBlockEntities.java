@@ -5,6 +5,7 @@ import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.entity.custom.BongBlockEntity;
 import com.warlonmhite.hempdustry.block.entity.custom.DecarboxylatorBlockEntity;
+import com.warlonmhite.hempdustry.block.entity.custom.DehumidifierBlockEntity;
 import com.warlonmhite.hempdustry.block.entity.custom.HempPressBlockEntity;
 import com.warlonmhite.hempdustry.block.entity.custom.InfuserBlockEntity;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
@@ -65,6 +66,12 @@ public class ModBlockEntities {
             Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE,
                     Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "sifting_box"),
                     Services.REGISTRATION.blockEntityType(SiftingBoxBlockEntity::new, ModBlocks.SIFTING_BOX));
+
+    // A Dehumidifier's condensate short of a level (see DehumidifierBlockEntity).
+    public static final BlockEntityType<DehumidifierBlockEntity> DEHUMIDIFIER =
+            Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE,
+                    Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "dehumidifier"),
+                    Services.REGISTRATION.blockEntityType(DehumidifierBlockEntity::new, ModBlocks.DEHUMIDIFIER));
 
     public static void registerBlockEntities() {
         Hempdustry.LOGGER.info("Registering Block Entities for " + Hempdustry.MOD_ID);

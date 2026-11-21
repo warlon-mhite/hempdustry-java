@@ -6,6 +6,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.fluid.FluidResource;
+import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.transfer.ResourceHandler;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import com.mojang.authlib.GameProfile;
@@ -148,5 +150,25 @@ public final class NeoForgeTestPlatform implements TestPlatform {
         ResourceHandler<ItemResource> b = level.getCapability(Capabilities.Item.BLOCK, pos, side);
         int tookB = b.insert(ItemResource.of(second), second.getCount(), transaction);
         return new int[]{tookA, tookB};
+    }
+
+    @Override
+    public int extractWater(ServerLevel level, BlockPos pos, Direction side, int bottles, int lookups, boolean abort) {
+        // A bottle is a third of NeoForge's thousand-millibucket bucket; three ask for the whole bucket.
+        int asked = bottles >= 3 ? 1000 * (bottles / 3) : bottles * 333;
+        long taken = 0;
+        try (Transaction root = Transaction.openRoot()) {
+            for (int i = 0; i < lookups; i++) {
+                ResourceHandler<FluidResource> handler = level.getCapability(Capabilities.Fluid.BLOCK, pos, side);
+                if (handler == null) {
+                    return -1;
+                }
+                taken += handler.extract(FluidResource.of(Fluids.WATER), asked, root);
+            }
+            if (!abort) {
+                root.commit();
+            }
+        }
+        return (int) (taken * 3 / 1000);
     }
 }

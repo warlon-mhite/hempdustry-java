@@ -238,6 +238,7 @@ public class ModLootTableProvider extends FabricBlockLootSubProvider {
         add(ModBlocks.HEMP_PRESS, createNameableBlockEntityTable(ModBlocks.HEMP_PRESS));
         dropSelf(ModBlocks.GROW_LAMP);
         dropSelf(ModBlocks.GROW_FAN);
+        dropSelf(ModBlocks.DEHUMIDIFIER);
         add(ModBlocks.GROW_POT, growPotDrops());
         // The tray drops empty — you drain a reservoir before you move it — so it needs no
         // copy_state, unlike the pot, which keeps its soil.

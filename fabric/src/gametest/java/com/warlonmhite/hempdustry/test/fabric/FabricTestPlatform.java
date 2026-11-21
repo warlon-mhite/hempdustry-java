@@ -8,6 +8,10 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidConstants;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.minecraft.world.level.material.Fluids;
 import com.mojang.authlib.GameProfile;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.api.HempdustryEvents;
@@ -121,5 +125,25 @@ public final class FabricTestPlatform implements TestPlatform {
         Storage<ItemVariant> b = ItemStorage.SIDED.find(level, pos, side);
         long tookB = b.insert(ItemVariant.of(second), second.getCount(), transaction);
         return new int[]{(int) tookA, (int) tookB};
+    }
+
+    @Override
+    public int extractWater(ServerLevel level, BlockPos pos, Direction side, int bottles, int lookups, boolean abort) {
+        long taken = 0;
+        try (Transaction outer = Transaction.openOuter()) {
+            for (int i = 0; i < lookups; i++) {
+                Storage<FluidVariant> storage = FluidStorage.SIDED.find(level, pos, side);
+                if (storage == null) {
+                    return -1;
+                }
+                taken += storage.extract(FluidVariant.of(Fluids.WATER), bottles * FluidConstants.BOTTLE, outer);
+            }
+            if (abort) {
+                outer.abort();
+            } else {
+                outer.commit();
+            }
+        }
+        return (int) (taken / FluidConstants.BOTTLE);
     }
 }
