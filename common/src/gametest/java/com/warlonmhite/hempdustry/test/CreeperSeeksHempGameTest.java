@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 public final class CreeperSeeksHempGameTest {
 
     private static final int FIELD = 7;
+    private static final int FLOWERING_AGE = com.warlonmhite.hempdustry.block.custom.GrowLight.FLOWERING_AGE;
     private static final BlockPos CENTRE = new BlockPos(4, 2, 4);
     /** Samples enough to hit a 7×7 field in a 7×7 search square every time. */
     private static final int ALWAYS = 256;
@@ -60,10 +61,13 @@ public final class CreeperSeeksHempGameTest {
                 "a field under a glass roof drew a creeper; only open fields may");
         roof(context, Blocks.AIR);
 
+        // A flowering field holds one creeper (a ripe one two: ripeHempDrawsMoreCreepers).
+        field(context, FLOWERING_AGE);
         Creeper first = interested(context, CENTRE.offset(1, 0, 1));
         context.assertTrue(SeekHempCropGoal.findCover(creeper, 3, ALWAYS) == null,
-                "a field another creeper is already in drew a second one");
+                "a flowering field another creeper is already in drew a second one");
         first.discard();
+        field(context, IndicaCropBlock.MAX_AGE);
 
 
         // It notices the field sooner or later -- a glance is only 8 columns in a 49x49 square, so
@@ -98,16 +102,18 @@ public final class CreeperSeeksHempGameTest {
                     "a creeper that has just left a field went straight back to it instead of resting");
         }
 
-        // An indifferent creeper never notices, however many times it looks. Alone in the field:
-        // with another creeper in it the "taken" rule refuses first and this proves nothing.
+        // A creeper that cares only for ripe hemp never notices a flowering field, however many times it
+        // looks. Alone in the field: with another creeper in it the "taken" rule refuses first and this
+        // proves nothing.
         creeper.discard();
+        field(context, FLOWERING_AGE);
         Creeper indifferent = context.spawn(EntityTypes.CREEPER, CENTRE.offset(-1, 0, -1));
-        indifferent.setUUID(new UUID(0L, 1L));
+        indifferent.setUUID(new UUID(0L, 3L));
         SeekHempCropGoal indifferentGoal = goalOf(indifferent);
         for (int glance = 0; glance < 2000; glance++) {
             indifferentGoal.trigger();
             context.assertFalse(indifferentGoal.canUse(),
-                    "a creeper whose UUID says it ignores hemp noticed a field");
+                    "a creeper whose UUID says it cares only for ripe hemp noticed a flowering field");
         }
 
         indifferent.discard();
@@ -126,6 +132,71 @@ public final class CreeperSeeksHempGameTest {
                     "a creeper was still lurking " + LURK_OVER_BY_TICK + " ticks after it arrived; a lurk is 2-6 s");
             context.succeed();
         });
+    }
+
+    /**
+     * The pull grows with the crop: half of all creepers care for a grown plant, three quarters for a
+     * flowering one, all for a ripe one, read off the plant the glance lands on; a ripe field holds two
+     * creepers, a third switches it off.
+     */
+    public static void ripeHempDrawsMoreCreepers(GameTestHelper context) {
+        // Who cares for what, off the UUID's two low bits.
+        int[] needed = {SeekHempCropGoal.GROWN, SeekHempCropGoal.FLOWERING, SeekHempCropGoal.GROWN, SeekHempCropGoal.RIPE};
+        for (int bits = 0; bits < 4; bits++) {
+            Creeper probe = context.spawn(EntityTypes.CREEPER, new BlockPos(0, 2, 0));
+            probe.setUUID(new UUID(7L, 4L * 1234L + bits));
+            context.assertTrue(SeekHempCropGoal.pullNeeded(probe) == needed[bits], "a creeper with UUID bits " + bits
+                    + " needs pull " + SeekHempCropGoal.pullNeeded(probe) + ", not " + needed[bits]);
+            probe.discard();
+        }
+        // The stage each age pulls with.
+        context.assertTrue(SeekHempCropGoal.hempPull(crop(FLOWERING_AGE - 1)) == SeekHempCropGoal.GROWN,
+                "a plant before flowering pulled as " + SeekHempCropGoal.hempPull(crop(FLOWERING_AGE - 1)));
+        context.assertTrue(SeekHempCropGoal.hempPull(crop(FLOWERING_AGE)) == SeekHempCropGoal.FLOWERING,
+                "a flowering plant pulled as " + SeekHempCropGoal.hempPull(crop(FLOWERING_AGE)));
+        context.assertTrue(SeekHempCropGoal.hempPull(crop(IndicaCropBlock.MAX_AGE)) == SeekHempCropGoal.RIPE,
+                "a ripe plant pulled as " + SeekHempCropGoal.hempPull(crop(IndicaCropBlock.MAX_AGE)));
+        context.assertTrue(SeekHempCropGoal.hempPull(Blocks.WHEAT.defaultBlockState()) == SeekHempCropGoal.NO_PULL,
+                "wheat pulled a creeper");
+
+        floor(context);
+        openSky(context);
+        field(context, FLOWERING_AGE);
+        Creeper ripeOnly = creeper(context, CENTRE, 3L);
+        context.assertTrue(SeekHempCropGoal.findCover(ripeOnly, 3, ALWAYS) == null,
+                "a creeper that cares only for ripe hemp noticed a flowering field");
+        ripeOnly.discard();
+        Creeper flowering = creeper(context, CENTRE, 1L);
+        context.assertTrue(SeekHempCropGoal.findCover(flowering, 3, ALWAYS) != null,
+                "a creeper that cares for flowering hemp missed a flowering field");
+        flowering.discard();
+
+        field(context, IndicaCropBlock.MAX_AGE);
+        ripeOnly = creeper(context, CENTRE, 3L);
+        context.assertTrue(SeekHempCropGoal.findCover(ripeOnly, 3, ALWAYS) != null,
+                "a creeper missed a ripe field; every creeper cares for ripe hemp");
+        Creeper second = creeper(context, CENTRE.offset(1, 0, 1), 2L);
+        context.assertTrue(SeekHempCropGoal.findCover(ripeOnly, 3, ALWAYS) != null,
+                "a ripe field with one other creeper in it drew no second; a ripe field holds two");
+        Creeper third = creeper(context, CENTRE.offset(-1, 0, -1), 0L);
+        context.assertTrue(SeekHempCropGoal.findCover(ripeOnly, 3, ALWAYS) == null,
+                "a ripe field with two creepers in it drew a third");
+        second.discard();
+        third.discard();
+        ripeOnly.discard();
+        context.succeed();
+    }
+
+    private static Creeper creeper(GameTestHelper context, BlockPos at, long bits) {
+        Creeper creeper = context.spawn(EntityTypes.CREEPER, at);
+        creeper.setUUID(new UUID(creeper.getUUID().getMostSignificantBits(), bits));
+        creeper.setNoAi(true);
+        return creeper;
+    }
+
+    private static net.minecraft.world.level.block.state.BlockState crop(int age) {
+        return ModBlocks.INDICA_CROP.defaultBlockState().setValue(IndicaCropBlock.AGE, age)
+                .setValue(IndicaCropBlock.HALF, DoubleBlockHalf.LOWER);
     }
 
     /** A creeper whose UUID puts it in the half that notices hemp. */

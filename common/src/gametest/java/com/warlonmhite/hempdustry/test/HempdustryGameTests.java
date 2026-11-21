@@ -43,6 +43,7 @@ public final class HempdustryGameTests {
         register("dry_screen_fills_and_yields_kief",
                 SiftingBoxGameTest::dryScreenFillsAndYieldsKief);
         register("creeper_seeks_hemp_crop", CreeperSeeksHempGameTest::creeperSeeksHempCrop);
+        register("ripe_hemp_draws_more_creepers", CreeperSeeksHempGameTest::ripeHempDrawsMoreCreepers);
         register("hemp_leaf_is_a_loom_pattern_item",
                 BannerPatternGameTest::hempLeafIsALoomPatternItem);
         register("bar_cuts_into_nine_pieces", HashishBarGameTest::barCutsIntoNinePieces);
