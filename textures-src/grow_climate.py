@@ -2,7 +2,7 @@
 
     python3 textures-src/grow_climate.py common/src/main/resources/assets/hempdustry
 
-Writes textures/block/grow_fan_*.png (and the animation's .mcmeta) and dehumidifier_*.png. The colours are the mod's own: the
+Writes textures/block/grow_fan_*.png (and the animation's .mcmeta), dehumidifier_*.png and hygrometer_*.png. The colours are the mod's own: the
 Grow Lamp's copper ramp (textures-src/grow_lamp.mctex) for every housing, the Hydro Tray's greys and its
 airline's light metal (textures-src/hydro_tray.mctex) for the blades and the grille. Nothing new.
 
@@ -173,6 +173,41 @@ def cabinet_front(level, running):
     return img
 
 
+# The dial's face takes the colour of the step it reads, so the room's air shows from across the room: the retted
+# stem's straw when dry, the Infuser's milk white when normal, the Hydro Tray's light water when damp and its deep
+# water when soaked (base, then the shadow along the bottom and right). A 12 x 12 plate, an item frame's size.
+FACE = {'dry': ('C3B78E', '998A63'), 'normal': ('E7E2D2', 'DDD7C4'), 'damp': ('86B4CC', '6699B5'),
+        'soaked': ('43718F', '37607F')}
+NEEDLE = GREY[0]
+STEPS = ['dry', 'normal', 'damp', 'soaked']
+
+# The needle, pixel by pixel on the 10 x 10 inside, from the copper hub at the bottom: low to the left when dry,
+# steep to the left when normal, and the same to the right for damp and soaked.
+LEFT = {'dry': [(3, 7), (2, 7), (1, 6), (0, 6)], 'normal': [(4, 7), (3, 6), (3, 5), (2, 4), (2, 3)]}
+NEEDLES = dict(LEFT, damp=[(9 - x, y) for x, y in LEFT['normal']], soaked=[(9 - x, y) for x, y in LEFT['dry']])
+
+
+def dial(step):
+    """The Hygrometer's face (u 2..13, v 2..13): a copper rim, the face in {step}'s colour, the needle at {step}."""
+    img = Image.new('RGBA', (16, 16))
+    for y in range(16):
+        for x in range(16):
+            img.putpixel((x, y), rgb(COPPER[2]))
+    base, shadow = FACE[step]
+    for y in range(2, 14):
+        for x in range(2, 14):
+            if x in (2, 13) or y in (2, 13):
+                c = COPPER[4] if x == 2 or y == 2 else COPPER[1]
+            else:
+                c = shadow if x == 12 or y == 12 else base
+            img.putpixel((x, y), rgb(c))
+    for x, y in NEEDLES[step]:
+        img.putpixel((3 + x, 3 + y), rgb(NEEDLE))
+    img.putpixel((7, 11), rgb(COPPER[3]))
+    img.putpixel((8, 11), rgb(COPPER[1]))
+    return img
+
+
 def main(assets):
     out = os.path.join(assets, 'textures', 'block')
     casing().save(os.path.join(out, 'grow_fan_casing.png'))
@@ -190,6 +225,8 @@ def main(assets):
     for level in range(4):
         cabinet_front(level, False).save(os.path.join(out, f'dehumidifier_front_{level}.png'))
         cabinet_front(level, True).save(os.path.join(out, f'dehumidifier_front_{level}_on.png'))
+    for step in STEPS:
+        dial(step).save(os.path.join(out, f'hygrometer_{step}.png'))
 
 
 if __name__ == '__main__':

@@ -4,9 +4,11 @@ import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.ModDispenserBehaviors;
 import com.warlonmhite.hempdustry.block.custom.Climate;
+import com.warlonmhite.hempdustry.block.custom.Climate.Humidity;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
 import com.warlonmhite.hempdustry.block.custom.DehumidifierBlock;
 import com.warlonmhite.hempdustry.block.custom.HydroTrayBlock;
+import com.warlonmhite.hempdustry.block.custom.HygrometerBlock;
 import com.warlonmhite.hempdustry.block.custom.GrowFanBlock;
 import com.warlonmhite.hempdustry.block.custom.IndicaCropBlock;
 import com.warlonmhite.hempdustry.block.custom.Mildew;
@@ -420,7 +422,122 @@ public final class GrowClimateGameTest {
         });
     }
 
+    /**
+     * A Hygrometer's needle shows the air where it hangs as a plant there would feel it, read once a second: normal
+     * in a plains room, damp with a pool beside it, dry once a running Dehumidifier takes two steps off. A comparator
+     * reads the room's own damp, the Dehumidifier left out, so a dial wired to one never switches it off for drying
+     * the room: 8 while the room is damp of itself, nothing once it is not. It hangs on a wall, and falls with it.
+     */
+    public static void aHygrometerReadsTheAir(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        BlockPos dial = new BlockPos(3, 3, 3);
+        BlockPos at = context.absolutePos(dial);
+        fillBiome(context, dial, "minecraft:plains");
+        context.setBlock(dial.south(), Blocks.STONE);
+        context.setBlock(dial, ModBlocks.HYGROMETER.defaultBlockState());
+        context.startSequence()
+                .thenWaitUntil(() -> needle(context, dial, Humidity.NORMAL, "in a plains room"))
+                .thenExecute(() -> {
+                    context.assertTrue(signal(context, dial) == 0, "a comparator by a dial in normal air reads " + signal(context, dial));
+                    pool(context, dial.west(2).below());
+                })
+                .thenWaitUntil(() -> needle(context, dial, Humidity.DAMP, "with a pool two blocks off"))
+                .thenExecute(() -> {
+                    context.assertTrue(signal(context, dial) == HygrometerBlock.DAMP_SIGNAL,
+                            "a comparator by a dial in a damp room reads " + signal(context, dial));
+                    dehumidifier(context, dial.east(3), 0, true);
+                })
+                .thenWaitUntil(() -> needle(context, dial, Humidity.DRY, "with a pool and a running Dehumidifier"))
+                .thenExecute(() -> {
+                    context.assertTrue(signal(context, dial) == HygrometerBlock.DAMP_SIGNAL,
+                            "a comparator by a dial a Dehumidifier dries reads " + signal(context, dial)
+                                    + ": it reads the room's own damp, the Dehumidifier left out");
+                    context.setBlock(dial.west(2).below(), Blocks.STONE);
+                })
+                .thenWaitUntil(() -> needle(context, dial, Humidity.DRY, "with a running Dehumidifier and no pool"))
+                .thenExecute(() -> {
+                    context.assertTrue(signal(context, dial) == 0,
+                            "a comparator by a dial in a room no longer damp reads " + signal(context, dial));
+                    context.setBlock(dial.south(), Blocks.AIR);
+                    context.assertTrue(context.getBlockState(dial).isAir(), "a dial stayed up when its wall went");
+                    context.assertTrue(!world.getBlockState(at).is(ModBlocks.HYGROMETER), "the dial is still there");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * A dial reads the plants around it, not the air where it hangs: the dampest plant out of water within a
+     * Dehumidifier's reach of it (9 x 9, two blocks up and down), as that plant feels it. Hung high on a hydro
+     * room's wall, it reads the plant on a tray two blocks below it (a tray with no plant counts for nothing); a
+     * running Dehumidifier drying the plants moves its needle but not its comparator; a plant three blocks under it
+     * is out of its reach.
+     */
+    public static void aHygrometerReadsThePlantsAroundIt(GameTestHelper context) {
+        BlockPos dial = new BlockPos(3, 5, 3);
+        BlockPos onTray = new BlockPos(1, 3, 3);
+        BlockPos onSoil = new BlockPos(4, 3, 1);
+        BlockPos drier = new BlockPos(5, 3, 5);
+        for (BlockPos at : List.of(dial, onTray, onSoil, onTray.below(2))) {
+            fillBiome(context, at, "minecraft:plains");
+        }
+        context.setBlock(dial.south(), Blocks.STONE);
+        context.setBlock(dial, ModBlocks.HYGROMETER.defaultBlockState());
+        context.setBlock(onTray.below(), ModBlocks.HYDRO_TRAY.defaultBlockState().setValue(HydroTrayBlock.LEVEL, HydroTrayBlock.MAX_LEVEL));
+        context.startSequence()
+                .thenWaitUntil(() -> needle(context, dial, Humidity.NORMAL, "over a hydro tray with no plant on it"))
+                .thenExecute(() -> {
+                    plant(context, onTray);
+                    context.setBlock(onSoil.below(), Blocks.FARMLAND.defaultBlockState().setValue(FarmlandBlock.MOISTURE, FarmlandBlock.MAX_MOISTURE));
+                    plant(context, onSoil);
+                })
+                .thenWaitUntil(() -> needle(context, dial, Humidity.DAMP, "two blocks over a plant on a tray and one on farmland"))
+                .thenExecute(() -> {
+                    context.assertTrue(signal(context, dial) == HygrometerBlock.DAMP_SIGNAL,
+                            "a comparator by a dial over a plant on a tray reads " + signal(context, dial));
+                    dehumidifier(context, drier, 0, true);
+                })
+                .thenWaitUntil(() -> needle(context, dial, Humidity.DRY, "over plants a running Dehumidifier dries"))
+                .thenExecute(() -> {
+                    context.assertTrue(signal(context, dial) == HygrometerBlock.DAMP_SIGNAL,
+                            "a comparator by a dial over plants a Dehumidifier dries reads " + signal(context, dial)
+                                    + ": it reads their own damp, the Dehumidifier left out");
+                    clearDehumidifier(context, drier);
+                    // The tray plant moved a block down: three under the dial, out of its reach.
+                    context.setBlock(onTray, Blocks.AIR);
+                    context.setBlock(onTray.below(), Blocks.AIR);
+                    context.setBlock(onTray.below(2), ModBlocks.HYDRO_TRAY.defaultBlockState().setValue(HydroTrayBlock.LEVEL, HydroTrayBlock.MAX_LEVEL));
+                    plant(context, onTray.below());
+                })
+                .thenWaitUntil(() -> needle(context, dial, Humidity.NORMAL, "with the tray plant three blocks under it"))
+                .thenSucceed();
+    }
+
+    /** A fresh neutral Purple Kush at age 2 at {@code root}, one block tall, on whatever bed is under it. */
+    private static void plant(GameTestHelper context, BlockPos root) {
+        context.setBlock(root, Defoliation.unworked(ModBlocks.INDICA_CROP.defaultBlockState()).setValue(BlockStateProperties.AGE_7, 2));
+        context.assertTrue(context.getBlockState(root).is(ModBlocks.INDICA_CROP), "test setup: no plant came up at " + root);
+    }
+
     // ----- helpers -----
+
+    private static void needle(GameTestHelper context, BlockPos dial, Humidity expected, String where) {
+        Humidity now = context.getBlockState(dial).getValue(HygrometerBlock.HUMIDITY);
+        context.assertTrue(now == expected, "a dial " + where + " reads " + now + ", not " + expected);
+    }
+
+    private static int signal(GameTestHelper context, BlockPos dial) {
+        BlockPos at = context.absolutePos(dial);
+        return context.getBlockState(dial).getAnalogOutputSignal(context.getLevel(), at, Direction.NORTH);
+    }
+
+    /** A water source at {@code at}, walled in on every side but the top, so it stands and never flows. */
+    private static void pool(GameTestHelper context, BlockPos at) {
+        context.setBlock(at.below(), Blocks.STONE);
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            context.setBlock(at.relative(side), Blocks.STONE);
+        }
+        context.setBlock(at, Blocks.WATER);
+    }
 
     private static int leaves(GameTestHelper context) {
         AABB box = new AABB(context.absolutePos(BlockPos.ZERO)).inflate(8);

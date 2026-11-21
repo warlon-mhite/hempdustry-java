@@ -1,0 +1,64 @@
+{
+  "variants": {
+    "facing=north,humidity=dry": {
+      "model": "hempdustry:block/hygrometer_dry"
+    },
+    "facing=north,humidity=normal": {
+      "model": "hempdustry:block/hygrometer_normal"
+    },
+    "facing=north,humidity=damp": {
+      "model": "hempdustry:block/hygrometer_damp"
+    },
+    "facing=north,humidity=soaked": {
+      "model": "hempdustry:block/hygrometer_soaked"
+    },
+    "facing=east,humidity=dry": {
+      "model": "hempdustry:block/hygrometer_dry",
+      "y": 90
+    },
+    "facing=east,humidity=normal": {
+      "model": "hempdustry:block/hygrometer_normal",
+      "y": 90
+    },
+    "facing=east,humidity=damp": {
+      "model": "hempdustry:block/hygrometer_damp",
+      "y": 90
+    },
+    "facing=east,humidity=soaked": {
+      "model": "hempdustry:block/hygrometer_soaked",
+      "y": 90
+    },
+    "facing=south,humidity=dry": {
+      "model": "hempdustry:block/hygrometer_dry",
+      "y": 180
+    },
+    "facing=south,humidity=normal": {
+      "model": "hempdustry:block/hygrometer_normal",
+      "y": 180
+    },
+    "facing=south,humidity=damp": {
+      "model": "hempdustry:block/hygrometer_damp",
+      "y": 180
+    },
+    "facing=south,humidity=soaked": {
+      "model": "hempdustry:block/hygrometer_soaked",
+      "y": 180
+    },
+    "facing=west,humidity=dry": {
+      "model": "hempdustry:block/hygrometer_dry",
+      "y": 270
+    },
+    "facing=west,humidity=normal": {
+      "model": "hempdustry:block/hygrometer_normal",
+      "y": 270
+    },
+    "facing=west,humidity=damp": {
+      "model": "hempdustry:block/hygrometer_damp",
+      "y": 270
+    },
+    "facing=west,humidity=soaked": {
+      "model": "hempdustry:block/hygrometer_soaked",
+      "y": 270
+    }
+  }
+}

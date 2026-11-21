@@ -782,6 +782,19 @@ public class ModRecipeProvider extends FabricRecipeProvider {
                 .unlockedBy(getHasName(Items.SPONGE), has(Items.SPONGE))
                 .save(output, id("dehumidifier"));
 
+        // A hair hygrometer, with a hemp fibre for the hair: it swells in damp air and moves the needle. A copper
+        // case, a glass face, and redstone for the comparator.
+        shaped(RecipeCategory.REDSTONE, ModBlocks.HYGROMETER)
+                .pattern(" G ")
+                .pattern("CFC")
+                .pattern(" R ")
+                .define('G', Items.GLASS_PANE)
+                .define('C', Items.COPPER_INGOT)
+                .define('F', ModItems.HEMP_FIBER)
+                .define('R', Items.REDSTONE)
+                .unlockedBy(getHasName(ModItems.HEMP_FIBER), has(ModItems.HEMP_FIBER))
+                .save(output, id("hygrometer"));
+
         // A Grow Pot plumbed into a copper reservoir with a pump in it. Copper is the mod's
         // electrical metal (the lamp's housing, and vanilla's own copper bulb); the redstone is the
         // pump, which is also what the block needs a signal for once it is placed.

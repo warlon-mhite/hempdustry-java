@@ -377,6 +377,7 @@ public final class ViewerRecipes {
         out.put(ModBlocks.GROW_LAMP.asItem(), Component.translatable("hempdustry.info.grow_lamp"));
         out.put(ModBlocks.GROW_FAN.asItem(), Component.translatable("hempdustry.info.grow_fan"));
         out.put(ModBlocks.DEHUMIDIFIER.asItem(), Component.translatable("hempdustry.info.dehumidifier"));
+        out.put(ModBlocks.HYGROMETER.asItem(), Component.translatable("hempdustry.info.hygrometer"));
         out.put(ModItems.DUD_WEED_SEEDS, Component.translatable("hempdustry.info.dud_weed_seeds"));
         out.put(ModItems.ECHO_OG_SEEDS, Component.translatable("hempdustry.info.echo_og_seeds"));
         out.put(ModItems.MAUI_WOWIE_SEEDS, Component.translatable("hempdustry.info.maui_wowie_seeds"));

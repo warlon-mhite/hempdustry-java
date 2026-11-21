@@ -29,6 +29,7 @@ import com.warlonmhite.hempdustry.block.custom.FilteredHashishBarBlock;
 import com.warlonmhite.hempdustry.block.custom.HashishBarBlock;
 import com.warlonmhite.hempdustry.block.custom.DehumidifierBlock;
 import com.warlonmhite.hempdustry.block.custom.GrowFanBlock;
+import com.warlonmhite.hempdustry.block.custom.HygrometerBlock;
 import com.warlonmhite.hempdustry.block.custom.GrowLampBlock;
 import com.warlonmhite.hempdustry.block.custom.GrowPotBlock;
 import com.warlonmhite.hempdustry.block.custom.HempBedBlock;
@@ -580,6 +581,18 @@ public class ModBlocks {
                     .mapColor(MapColor.COLOR_GRAY)
                     .strength(3.0F, 6.0F)
                     .requiresCorrectToolForDrops()
+                    .sound(SoundType.COPPER));
+
+    /**
+     * The Hygrometer — a dial on a wall; see {@link HygrometerBlock}. A lantern's lightness: a dial comes off a
+     * wall with a tap, and no tool is needed for it. {@code noOcclusion()}: a thin plate.
+     */
+    public static final Block HYGROMETER = registerBlock("hygrometer", HygrometerBlock::new,
+            BlockBehaviour.Properties.of()
+                    .noOcclusion()
+                    .noCollision()
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .strength(0.5F)
                     .sound(SoundType.COPPER));
 
     /**

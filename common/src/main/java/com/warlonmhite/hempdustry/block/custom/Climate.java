@@ -213,15 +213,29 @@ public final class Climate {
      * under a roof, the steps a running Dehumidifier in reach takes off.
      */
     public static Humidity humidity(Level world, BlockPos pos, boolean roofed, boolean onTray) {
+        return humidity(world, pos, roofed, onTray, true);
+    }
+
+    /** As {@link #humidity(Level, BlockPos, boolean, boolean)}, a running Dehumidifier counted only if {@code driers}. */
+    public static Humidity humidity(Level world, BlockPos pos, boolean roofed, boolean onTray, boolean driers) {
         GrowClimate climate = GrowClimate.of(world.registryAccess());
+        int steps = ownSteps(world, pos, roofed, onTray, climate);
+        if (driers && roofed && drier(world, pos, climate) != null) {
+            steps -= climate.dehumidifier().dries();
+        }
+        return Humidity.fromNormal(steps);
+    }
+
+    /**
+     * The steps from normal at {@code pos} before any Dehumidifier dries it, not yet held between dry and soaked:
+     * the biome's, and one more for a wet room.
+     */
+    public static int ownSteps(Level world, BlockPos pos, boolean roofed, boolean onTray, GrowClimate climate) {
         int steps = biomeSteps(world, pos, climate);
         if (onTray || roofed && waterNear(world, pos, climate.wetReach())) {
             steps++;
         }
-        if (roofed && drier(world, pos, climate) != null) {
-            steps -= climate.dehumidifier().dries();
-        }
-        return Humidity.fromNormal(steps);
+        return steps;
     }
 
     /** The running Dehumidifier whose reach takes in {@code pos}, if there is one; the first found. */
