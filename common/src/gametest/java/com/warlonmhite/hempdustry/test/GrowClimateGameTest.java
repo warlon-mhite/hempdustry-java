@@ -2,6 +2,7 @@ package com.warlonmhite.hempdustry.test;
 
 import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.block.ModBlocks;
+import com.warlonmhite.hempdustry.block.ModDispenserBehaviors;
 import com.warlonmhite.hempdustry.block.custom.Climate;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
 import com.warlonmhite.hempdustry.block.custom.DehumidifierBlock;
@@ -28,8 +29,12 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.BonemealSource;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.ComparatorBlock;
+import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.LayeredCauldronBlock;
 import net.minecraft.world.level.block.entity.ComparatorBlockEntity;
+import net.minecraft.world.level.block.entity.DispenserBlockEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.block.FarmlandBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.AttachFace;
@@ -366,7 +371,62 @@ public final class GrowClimateGameTest {
                 .thenSucceed();
     }
 
+    /**
+     * A dispenser holding shears trims the hemp plant in front of it in a trim window it has not used, as a
+     * player's shears do: the window closes, a leaf drops, the shears wear a point. It never rubs a ripening
+     * plant (that is a hand's work), and anything else it shears as vanilla does. Another mod's shears trim too, as
+     * by hand: anything in {@code #c:tools/shear} a dispenser already uses (here flint and steel, which the test
+     * pack puts in the tag, standing in for them).
+     */
+    public static void aDispenserWithShearsTrimsHemp(GameTestHelper context) {
+        BlockPos dispenserAt = CROP.west();
+        BlockPos pulse = dispenserAt.below();
+        context.setBlock(dispenserAt, Blocks.DISPENSER.defaultBlockState().setValue(DispenserBlock.FACING, Direction.EAST));
+        DispenserBlockEntity dispenser = context.getBlockEntity(dispenserAt, DispenserBlockEntity.class);
+        dispenser.setItem(0, new ItemStack(Items.SHEARS));
+        sow(context, ModBlocks.INDICA_CROP, 3);
+        context.pulseRedstone(pulse, 1);
+
+        context.runAtTickTime(10, () -> {
+            context.assertTrue(context.getBlockState(CROP).getValue(Defoliation.TRIMMED_EARLY),
+                    "a dispenser's shears left a plant in its early window untrimmed");
+            context.assertTrue(dispenser.getItem(0).getDamageValue() == 1,
+                    "the dispenser's shears wore " + dispenser.getItem(0).getDamageValue() + " points for a trim");
+            context.assertTrue(leaves(context) == 1, "a dispenser's trim dropped " + leaves(context) + " leaves");
+            sow(context, ModBlocks.INDICA_CROP, 6);
+            context.pulseRedstone(pulse, 1);
+        });
+        context.runAtTickTime(20, () -> {
+            context.assertTrue(!context.getBlockState(CROP).getValue(Defoliation.RUBBED),
+                    "a dispenser's shears rubbed a ripening plant");
+            context.assertTrue(dispenser.getItem(0).getDamageValue() == 1,
+                    "a dispenser's shears wore a point on a plant they did nothing to");
+            sow(context, ModBlocks.INDICA_CROP, 4);
+            context.pulseRedstone(pulse, 1);
+        });
+        context.runAtTickTime(30, () -> {
+            context.assertTrue(context.getBlockState(CROP).getValue(Defoliation.TRIMMED_LATE),
+                    "a dispenser's shears left a plant in its late window untrimmed");
+            context.assertTrue(ModDispenserBehaviors.trimsWith(Items.FLINT_AND_STEEL),
+                    "a dispenser does not trim with flint and steel, though the test pack puts it in #c:tools/shear");
+            dispenser.setItem(0, new ItemStack(Items.FLINT_AND_STEEL));
+            sow(context, ModBlocks.INDICA_CROP, 3);
+            context.pulseRedstone(pulse, 1);
+        });
+        context.runAtTickTime(40, () -> {
+            context.assertTrue(context.getBlockState(CROP).getValue(Defoliation.TRIMMED_EARLY),
+                    "a dispenser holding another pair of #c:tools/shear left a plant in its early window untrimmed");
+            context.succeed();
+        });
+    }
+
     // ----- helpers -----
+
+    private static int leaves(GameTestHelper context) {
+        AABB box = new AABB(context.absolutePos(BlockPos.ZERO)).inflate(8);
+        return context.getLevel().getEntitiesOfClass(ItemEntity.class, box, item -> item.getItem().is(ModItems.HEMP_LEAF))
+                .stream().mapToInt(item -> item.getItem().getCount()).sum();
+    }
 
     /** A comparator at {@code comparator} puts out {@code expected}. */
     private static void compared(GameTestHelper context, BlockPos comparator, int expected, String when) {

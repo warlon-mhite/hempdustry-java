@@ -10,6 +10,8 @@ import com.warlonmhite.hempdustry.strain.PotencyBand;
 import com.warlonmhite.hempdustry.strain.ResinStep;
 import com.warlonmhite.hempdustry.util.ModTags;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -288,7 +290,8 @@ public final class Defoliation {
      */
     @Nullable
     public static InteractionResult tryCut(Level world, BlockPos lowerPos, BlockState lowerState,
-                                          int age, ItemStack stack, Player player, InteractionHand hand) {
+                                          int age, ItemStack stack, @Nullable Player player,
+                                          @Nullable InteractionHand hand) {
         // The convention tag rather than Items.SHEARS, so a modded pair of shears works too.
         // SHEAR_TOOLS is #c:tools/shear, which is the widest of the three: Fabric puts vanilla
         // shears in it AND pulls in the older #c:tools/shears and #c:shears as optional sub-tags,
@@ -376,8 +379,12 @@ public final class Defoliation {
                         SoundSource.BLOCKS, gotCharas ? 0.8F : 1.0F,
                         (gotCharas ? 0.7F : 0.6F) + world.getRandom().nextFloat() * 0.2F);
             }
-            stack.hurtAndBreak(1, player,
-                    hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
+            if (player != null) {
+                stack.hurtAndBreak(1, player,
+                        hand == InteractionHand.MAIN_HAND ? EquipmentSlot.MAINHAND : EquipmentSlot.OFFHAND);
+            } else if (world instanceof ServerLevel server) {
+                stack.hurtAndBreak(1, server, null, item -> { });
+            }
         }
 
         // A TRIM's sound is unconditional, so it keeps the two-sided immediate pattern: passing the
@@ -398,9 +405,50 @@ public final class Defoliation {
      * find by looking, and the refused click is the one moment they are testing it. Server side
      * only, or the line would arrive twice.
      */
-    private static void refuse(Level world, Player player, String key) {
-        if (!world.isClientSide()) {
+    private static void refuse(Level world, @Nullable Player player, String key) {
+        if (!world.isClientSide() && player != null) {
             player.sendOverlayMessage(Component.translatable(key));
         }
+    }
+
+    /** A crop shears work on: where its record lives, for a block of it at {@code pos}. */
+    public interface Trimmable {
+        /** The root of the plant one of whose blocks is {@code state} at {@code pos}, if shears work on this plant at all. */
+        @Nullable
+        BlockPos trimRoot(Level world, BlockPos pos, BlockState state);
+    }
+
+    /**
+     * Whether a dispenser holding shears would trim the plant at {@code pos}: one of ours that shears work on, in a
+     * trim window it has not used. Never the rub at 6–7: rubbing the resin off is a hand's work.
+     */
+    public static boolean dispenserCanTrim(Level world, BlockPos pos) {
+        BlockState state = world.getBlockState(pos);
+        if (!(state.getBlock() instanceof Trimmable plant)) {
+            return false;
+        }
+        BlockPos root = plant.trimRoot(world, pos, state);
+        if (root == null) {
+            return false;
+        }
+        BlockState lower = world.getBlockState(root);
+        int age = lower.getValue(BlockStateProperties.AGE_7);
+        return age >= EARLY_MIN_AGE && age <= EARLY_MAX_AGE && !lower.getValue(TRIMMED_EARLY)
+                || age >= LATE_MIN_AGE && age <= LATE_MAX_AGE && !lower.getValue(TRIMMED_LATE);
+    }
+
+    /**
+     * A dispenser's shears on the plant at {@code pos}: the trim a player's would give, its leaf dropped in front of
+     * the dispenser, the shears worn a point. So observers on a plant's age and a dispenser beside it are a care farm
+     * with nothing but vanilla parts. Whether it trimmed.
+     */
+    public static boolean trimByDispenser(ServerLevel world, BlockPos pos, ItemStack shears) {
+        if (!dispenserCanTrim(world, pos)) {
+            return false;
+        }
+        BlockState state = world.getBlockState(pos);
+        BlockPos root = ((Trimmable) state.getBlock()).trimRoot(world, pos, state);
+        BlockState lower = world.getBlockState(root);
+        return tryCut(world, root, lower, lower.getValue(BlockStateProperties.AGE_7), shears, null, null) != null;
     }
 }

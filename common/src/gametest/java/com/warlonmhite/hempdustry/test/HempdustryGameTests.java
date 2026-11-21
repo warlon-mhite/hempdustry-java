@@ -299,6 +299,7 @@ public final class HempdustryGameTests {
         register("a_dehumidifier_fills_from_the_plants_it_dries", GrowClimateGameTest::aDehumidifierFillsFromThePlantsItDries);
         register("a_dehumidifier_empties_as_a_cauldron_does", GrowClimateGameTest::aDehumidifierEmptiesAsACauldronDoes);
         register("a_pipe_takes_a_dehumidifiers_water", GrowClimateGameTest::aPipeTakesADehumidifiersWater);
+        register("a_dispenser_with_shears_trims_hemp", GrowClimateGameTest::aDispenserWithShearsTrimsHemp);
         register("every_outfit_comes_in_a_baby_size", BabyLayerGameTest::everyOutfitComesInABabySize);
         register("every_route_keeps_the_chemotype", ChemotypeGameTest::everyRouteKeepsTheChemotype);
         register("nine_leaves_make_a_block_of_their_kind", ChemotypeGameTest::nineLeavesMakeABlockOfTheirKind);

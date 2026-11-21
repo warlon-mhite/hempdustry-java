@@ -1,10 +1,15 @@
 package com.warlonmhite.hempdustry.block;
 
+import net.minecraft.world.level.gameevent.GameEvent;
+import com.warlonmhite.hempdustry.block.custom.Defoliation;
 import com.warlonmhite.hempdustry.block.custom.GrowPotBlock;
 import com.warlonmhite.hempdustry.block.custom.HydroTrayBlock;
 import com.warlonmhite.hempdustry.block.entity.custom.InfuserBlockEntity;
 import com.warlonmhite.hempdustry.item.ModItems;
+import com.warlonmhite.hempdustry.platform.Services;
+import com.warlonmhite.hempdustry.util.ModTags;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.core.dispenser.DispenseItemBehavior;
@@ -16,6 +21,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
 
 /**
  * A dispenser pours milk into an Infuser in front of it, and keeps the empty bucket — and, below, fills
@@ -90,7 +99,58 @@ public final class ModDispenserBehaviors {
         pourIntoInfusers(ModItems.HEMP_MILK_BUCKET);
         fillHydroTrays();
         waterGrowPots();
+        trimHemp();
     }
+
+    private static void trimHemp() {
+        trimWith(Items.SHEARS);
+        // A hand trims with anything in #c:tools/shear, so another mod's shears work too. A dispenser's behaviours
+        // are keyed by item, and the tag is known only once a world's data is loaded, after every mod has
+        // registered its own: so each pair in the tag that a dispenser already uses is wrapped then. A pair a
+        // dispenser only throws out shears no sheep in vanilla either, and is left as it is.
+        Services.EVENTS.onServerStarted(server -> BuiltInRegistries.ITEM.getTagOrEmpty(ModTags.Conventional.SHEAR_TOOLS)
+                .forEach(shears -> {
+                    if (DispenserBlock.DISPENSER_REGISTRY.containsKey(shears.value())) {
+                        trimWith(shears.value());
+                    }
+                }));
+    }
+
+    /**
+     * Wraps the dispenser behaviour of {@code shears} (vanilla's shears sheep, harvests beehives and cuts leashes),
+     * once, so only a hemp plant in a trim window it has not used is ours, and everything else is sheared as before.
+     */
+    private static void trimWith(Item shears) {
+        if (!TRIMMING.add(shears)) {
+            return;
+        }
+        DispenseItemBehavior previous = DispenserBlock.DISPENSER_REGISTRY.getOrDefault(shears, new DefaultDispenseItemBehavior());
+        DispenserBlock.registerBehavior(shears, (pointer, stack) -> stack.is(ModTags.Conventional.SHEAR_TOOLS)
+                && Defoliation.dispenserCanTrim(pointer.level(), pointer.pos().relative(pointer.state().getValue(DispenserBlock.FACING)))
+                ? TRIM_HEMP.dispense(pointer, stack)
+                : previous.dispense(pointer, stack));
+    }
+
+    /** Whether a dispenser holding {@code shears} trims hemp: a pair whose behaviour is wrapped. */
+    public static boolean trimsWith(Item shears) {
+        return TRIMMING.contains(shears);
+    }
+
+    private static final Set<Item> TRIMMING = Collections.newSetFromMap(new IdentityHashMap<>());
+
+    /** A trim, as a player's shears give it: the dispenser's click, and a shearing for the sculk to hear. */
+    private static final OptionalDispenseItemBehavior TRIM_HEMP = new OptionalDispenseItemBehavior() {
+        @Override
+        protected ItemStack execute(BlockSource pointer, ItemStack stack) {
+            BlockPos front = pointer.pos().relative(pointer.state().getValue(DispenserBlock.FACING));
+            boolean trimmed = Defoliation.trimByDispenser(pointer.level(), front, stack);
+            this.setSuccess(trimmed);
+            if (trimmed) {
+                pointer.level().gameEvent(null, GameEvent.SHEAR, front);
+            }
+            return stack;
+        }
+    };
 
     private static void pourIntoInfusers(Item milk) {
         // Nobody registers anything for milk in vanilla, so this is normally the plain "drop it"

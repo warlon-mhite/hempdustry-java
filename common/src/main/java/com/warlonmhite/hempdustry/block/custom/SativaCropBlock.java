@@ -56,7 +56,7 @@ import java.util.function.BiConsumer;
  * growth step rather than being edge-triggered at one exact age, which is what made the pre-rewrite
  * indica crop unrecoverable.
  */
-public class SativaCropBlock extends CropBlock implements Mildew.Host, RecordOnTheRoot {
+public class SativaCropBlock extends CropBlock implements Mildew.Host, RecordOnTheRoot, Defoliation.Trimmable {
     public static final EnumProperty<TriplePlantSegment> SEGMENT =
             EnumProperty.create("segment", TriplePlantSegment.class);
     public static final IntegerProperty AGE = BlockStateProperties.AGE_7;
@@ -593,6 +593,14 @@ public class SativaCropBlock extends CropBlock implements Mildew.Host, RecordOnT
             }
         }
         return super.useItemOn(stack, state, world, pos, player, hand, hit);
+    }
+
+    /** A dispenser's shears work on a plant of this class that shears work on at all, from its LOWER. */
+    @Override
+    public @Nullable BlockPos trimRoot(Level world, BlockPos pos, BlockState state) {
+        BlockPos lowerPos = this.findLowerPos(world, pos, state);
+        BlockState lower = world.getBlockState(lowerPos);
+        return this.canBeWorked() && lower.is(this) && isLower(lower) ? lowerPos : null;
     }
 
     // ----- the smell of a ripe plant -----

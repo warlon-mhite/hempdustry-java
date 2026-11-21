@@ -52,7 +52,7 @@ import java.util.function.BiConsumer;
  * anchored half, never the tip: with the tip canonical, losing the tip would leave an anchored stump
  * with no age at all. Every reference below to "the lower half" means the root.
  */
-public class IndicaCropBlock extends CropBlock implements Mildew.Host, RecordOnTheRoot {
+public class IndicaCropBlock extends CropBlock implements Mildew.Host, RecordOnTheRoot, Defoliation.Trimmable {
     public static final EnumProperty<DoubleBlockHalf> HALF = BlockStateProperties.DOUBLE_BLOCK_HALF;
     public static final IntegerProperty AGE = BlockStateProperties.AGE_7;
     /** Highest age value; a lower half at this age is mature. Matches {@code BlockStateProperties.AGE_7}. */
@@ -584,6 +584,14 @@ public class IndicaCropBlock extends CropBlock implements Mildew.Host, RecordOnT
             }
         }
         return super.useItemOn(stack, state, world, pos, player, hand, hit);
+    }
+
+    /** A dispenser's shears work on every plant of this class, from its root. */
+    @Override
+    public @Nullable BlockPos trimRoot(Level world, BlockPos pos, BlockState state) {
+        BlockPos lowerPos = this.rootOf(pos, state);
+        BlockState lower = world.getBlockState(lowerPos);
+        return lower.is(this) && this.isRoot(lower) ? lowerPos : null;
     }
 
     // ----- the smell of a ripe plant -----
