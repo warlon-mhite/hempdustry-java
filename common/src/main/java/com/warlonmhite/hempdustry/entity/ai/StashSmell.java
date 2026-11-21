@@ -1,18 +1,42 @@
 package com.warlonmhite.hempdustry.entity.ai;
 
+import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
 import com.warlonmhite.hempdustry.component.StashContents;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.item.custom.StashJarItem;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.component.BundleContents;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * Creepers smell a stash: buds carried loose let a creeper notice their carrier from further away.
+ * Creepers smell a stash: a Stash Jar a hand has just opened draws them ({@link SeekStashJarGoal}), and buds
+ * carried loose let a creeper notice their carrier from further away.
+ *
+ * <h2>An opened jar</h2>
+ *
+ * A placed jar smells for {@link #OPEN_TICKS} after a hand took buds out of it, the puff it lets off being
+ * the cue: each take-out starts the two minutes again, and putting buds in, a hopper or a pipe never open it.
+ * While open it is noticed within {@link #reach} of a creeper, 8 blocks plus 4 per full slot of 64 up to 24
+ * (a full Stash Jar 16, a full Gilded jar or anything larger 24), and each check goes for it at
+ * {@link #draws} buds in 256, a sure thing from four stacks. Schwag counts as buds: it reeks.
+ *
+ * <h2>Loose buds</h2>
  *
  * <h2>What counts</h2>
  *
@@ -37,8 +61,8 @@ import net.minecraft.world.item.component.BundleContents;
  * <p>All of it sits under {@code world.creepersSeekHemp}, the switch that already decides whether hemp
  * draws creepers, and is read at each check, so {@code /hempdustry reload} takes effect at once.
  *
- * <p>Nothing is saved: a carried jar's two minutes are kept on the player, in memory, and a rejoin closes
- * the jar again.
+ * <p>Nothing is saved: a carried jar's two minutes are kept on the player and a placed jar's on its block
+ * entity, in memory; a rejoin or a chunk reloaded shuts the jar again.
  */
 public final class StashSmell {
 
@@ -50,6 +74,20 @@ public final class StashSmell {
     public static final double A_STACK = 1.5;
     /** How many loose buds count as a stack. */
     public static final int STACK = 64;
+    /** How far an opened jar is noticed with nothing in it, and at most, in blocks. */
+    public static final int NEAREST_REACH = 8;
+    public static final int FURTHEST_REACH = 24;
+    /** The blocks of reach each full slot of 64 adds. */
+    public static final int REACH_PER_SLOT = 4;
+    /** Buds in an opened jar for a creeper's check to go for it every time. */
+    public static final int SURE_DRAW = 256;
+
+    /**
+     * The placed jars each level holds that a hand opened in the last two minutes, so a creeper looks at those
+     * and never scans the blocks around it. Weakly keyed: a level gone with its server takes its list along.
+     * Each position is asked again at every look, and dropped once its jar is shut, gone or unloaded.
+     */
+    private static final Map<Level, Set<BlockPos>> OPENED = new WeakHashMap<>();
 
     private StashSmell() {
     }
@@ -142,6 +180,62 @@ public final class StashSmell {
         carrier.hempdustry$setCarriedJarOpenUntil(player.level().getGameTime() + OPEN_TICKS);
         // The jar's contents count from now, not from the next tick.
         carrier.hempdustry$setBudsCounted(Long.MIN_VALUE, 0);
+    }
+
+    /**
+     * A hand took buds out of the placed jar at {@code pos}: it smells for the next two minutes. Only a player
+     * the server's list holds opens it; a machine's hand never keeps a jar smelling with nobody there.
+     */
+    public static void openPlacedJar(ServerLevel level, BlockPos pos, StashJarBlockEntity jar, Player player) {
+        if (!isAPlayer(player)) {
+            return;
+        }
+        jar.letSmellOut(level.getGameTime() + OPEN_TICKS);
+        OPENED.computeIfAbsent(level, key -> new HashSet<>()).add(pos.immutable());
+    }
+
+    /** Whether the placed jar at {@code pos} is open and smells. Never loads a chunk to answer. */
+    public static boolean smellsOpen(Level level, BlockPos pos) {
+        return level.isLoaded(pos) && level.getBlockEntity(pos) instanceof StashJarBlockEntity jar
+                && jar.smells(level.getGameTime()) && jar.contents().count() > 0;
+    }
+
+    /** How far an opened jar holding {@code buds} is noticed: 8 blocks, 4 more per full slot of 64, 24 at most. */
+    public static int reach(int buds) {
+        return Math.min(FURTHEST_REACH, NEAREST_REACH + REACH_PER_SLOT * (buds / StashContents.SLOT));
+    }
+
+    /** One creeper's check on an opened jar holding {@code buds}: it goes for it at buds in 256. */
+    public static boolean draws(RandomSource random, int buds) {
+        return random.nextInt(SURE_DRAW) < buds;
+    }
+
+    /**
+     * One check of {@code mob}'s: an opened jar in reach it goes for, or null. Every jar in reach rolls, at any
+     * height, and of those that draw it one is taken at random, so no jar shadows another by the order they
+     * were opened in; the walk there finds its own way, or as far as there is one.
+     */
+    public static @Nullable BlockPos noticeOpenedJar(PathfinderMob mob) {
+        Set<BlockPos> opened = OPENED.get(mob.level());
+        if (opened == null || opened.isEmpty()) {
+            return null;
+        }
+        BlockPos noticed = null;
+        int drawing = 0;
+        for (Iterator<BlockPos> it = opened.iterator(); it.hasNext(); ) {
+            BlockPos pos = it.next();
+            if (!smellsOpen(mob.level(), pos)) {
+                it.remove();
+                continue;
+            }
+            int buds = ((StashJarBlockEntity) mob.level().getBlockEntity(pos)).contents().count();
+            int reach = reach(buds);
+            if (mob.position().distanceToSqr(Vec3.atCenterOf(pos)) <= (double) reach * reach
+                    && draws(mob.getRandom(), buds) && mob.getRandom().nextInt(++drawing) == 0) {
+                noticed = pos;
+            }
+        }
+        return noticed;
     }
 
     /**

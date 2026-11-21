@@ -196,8 +196,9 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
                     + "machineSpeed drives the Decarboxylator and the Hemp Press; the Infuser has its own section. "
                     + "Whether bees pollinate hemp is the #minecraft:bee_growables tag, not a setting here. "
                     + "creepersSeekHemp=false stops creepers now and then wandering into grown, open-sky hemp fields, and endermen into "
-                    + "Ender Haze, stops a harvested Ender Haze plant provoking the endermen nearby, and stops loose buds in a "
-                    + "player's inventory letting creepers notice them from further away; the goals are still "
+                    + "Ender Haze, stops a harvested Ender Haze plant provoking the endermen nearby, stops an opened Stash Jar "
+                    + "drawing creepers, and stops loose buds in a player's inventory letting creepers notice them from "
+                    + "further away; the goals are still "
                     + "added to the mobs, they simply never start, so it takes effect on the next /hempdustry reload. "
                     + "mildew=false keeps powdery mildew out of roofed grows: no plant catches it, and a plant "
                     + "that has it is clean again on its next random tick.");
@@ -386,8 +387,9 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
      * @param cropGrowthMultiplier     growth speed for both crops; 2.0 grows twice as fast
      * @param machineSpeedMultiplier   the Decarboxylator's and the Hemp Press's speed (the Infuser has its own section)
      * @param creepersSeekHemp         whether creepers now and then wander into open hemp fields, endermen into
-     *                                 Ender Haze, whether harvesting Ender Haze provokes them, and whether
-     *                                 creepers notice a player carrying loose buds from further away
+     *                                 Ender Haze, whether harvesting Ender Haze provokes them, whether an
+     *                                 opened Stash Jar draws creepers, and whether creepers notice a player
+     *                                 carrying loose buds from further away
      * @param mildew                   whether hemp under a roof can catch powdery mildew. A switch for
      *                                 the same reason as the creepers: it is behaviour in code, with no
      *                                 tag or table a datapack could empty instead

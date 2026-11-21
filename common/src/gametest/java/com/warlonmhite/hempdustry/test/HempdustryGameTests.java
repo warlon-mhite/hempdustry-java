@@ -399,6 +399,9 @@ public final class HempdustryGameTests {
         register("a_fake_players_smoke_stays_with_it", FakePlayerUseGameTest::aFakePlayersSmokeStaysWithIt);
         register("loose_buds_lengthen_a_creepers_reach", StashSmellGameTest::looseBudsLengthenACreepersReach);
         register("a_creeper_smells_buds_but_still_needs_to_see_them", StashSmellGameTest::aCreeperSmellsBudsButStillNeedsToSeeThem);
+        register("an_opened_jars_pull_is_its_buds", StashSmellGameTest::anOpenedJarsPullIsItsBuds);
+        register("only_an_opened_jar_draws_creepers", StashSmellGameTest::onlyAnOpenedJarDrawsCreepers);
+        register("a_creeper_walks_to_an_opened_jar", StashSmellGameTest::aCreeperWalksToAnOpenedJar);
     }
 
     /** Registers {@code test} as {@code name}, which must have a {@code test_instance} JSON of its own. */

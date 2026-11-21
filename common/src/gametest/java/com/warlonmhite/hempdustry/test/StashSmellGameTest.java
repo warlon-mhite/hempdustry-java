@@ -2,6 +2,8 @@ package com.warlonmhite.hempdustry.test;
 
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.component.StashContents;
+import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
+import com.warlonmhite.hempdustry.entity.ai.SeekStashJarGoal;
 import com.warlonmhite.hempdustry.entity.ai.StashSmell;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.item.custom.StashJarItem;
@@ -27,8 +29,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Loose buds give a player away: a creeper notices their carrier from further, and a shut Stash Jar hides
- * them until a hand opens it.
+ * Creepers smell a stash: an opened Stash Jar draws them, and loose buds give a player away, a creeper
+ * noticing their carrier from further, while a shut jar hides them until a hand opens it.
  */
 public final class StashSmellGameTest {
 
@@ -158,6 +160,174 @@ public final class StashSmellGameTest {
         context.assertFalse(reach4.test(context.getLevel(), walled, player),
                 "a creeper noticed a player carrying buds through a wall");
         context.succeed();
+    }
+
+    /** The agreed numbers: 8 blocks plus 4 per full slot of 64, 24 at most; buds in 256, sure from four stacks. */
+    public static void anOpenedJarsPullIsItsBuds(GameTestHelper context) {
+        int[][] reaches = {{0, 8}, {1, 8}, {63, 8}, {64, 12}, {127, 12}, {128, 16}, {192, 20}, {256, 24}, {1024, 24}};
+        for (int[] row : reaches) {
+            context.assertTrue(StashSmell.reach(row[0]) == row[1],
+                    "an opened jar of " + row[0] + " was noticed within " + StashSmell.reach(row[0]) + ", not " + row[1]);
+        }
+        java.util.Random seeds = new java.util.Random(55L);
+        net.minecraft.util.RandomSource random = net.minecraft.util.RandomSource.create(seeds.nextLong());
+        int stack = 0;
+        for (int roll = 0; roll < 4000; roll++) {
+            context.assertTrue(StashSmell.draws(random, 256), "four stacks missed a check");
+            context.assertFalse(StashSmell.draws(random, 0), "an empty jar drew a creeper");
+            if (StashSmell.draws(random, 64)) {
+                stack++;
+            }
+        }
+        // A stack is one check in four: 1000 of 4000, give or take.
+        context.assertTrue(stack > 880 && stack < 1120, "a stack drew " + stack + " checks of 4000, not about 1000");
+        context.succeed();
+    }
+
+    /**
+     * Only an opened jar draws: a shut one, buds put in and a machine's hand never do; a real hand taking buds
+     * out does, a creeper in reach goes for it, one out of reach never, and it lets go when the smell fades,
+     * with the switch off, or for a target.
+     */
+    public static void onlyAnOpenedJarDrawsCreepers(GameTestHelper context) {
+        BlockPos floor = new BlockPos(1, 1, 1);
+        BlockPos jarPos = floor.above();
+        for (int x = 0; x < 8; x++) {
+            for (int z = 0; z < 8; z++) {
+                context.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
+            }
+        }
+        context.setBlock(floor, Blocks.STONE);
+        context.setBlock(jarPos, ModBlocks.STASH_JAR.defaultBlockState());
+        BlockPos at = context.absolutePos(jarPos);
+        StashJarBlockEntity jar = (StashJarBlockEntity) context.getLevel().getBlockEntity(at);
+        StashContents.Mutable inside = StashContents.EMPTY.mutable();
+        inside.insert(new ItemStack(ModItems.INDICA_BUDS, 64), 128);
+        inside.insert(new ItemStack(ModItems.SATIVA_BUDS, 63), 128);
+        jar.setContents(inside.toImmutable());
+
+        Creeper near = creeper(context, new BlockPos(4, 1, 2));
+        Creeper far = creeper(context, new BlockPos(7, 1, 7));
+        SeekStashJarGoal nearGoal = jarGoalOf(near);
+        SeekStashJarGoal farGoal = jarGoalOf(far);
+        context.assertTrue(nearGoal != null, "CreeperEntityMixin did not add SeekStashJarGoal to a creeper");
+
+        // Other tests' jars share this level, so each check asks whether this jar is the one noticed.
+        context.assertFalse(notices(nearGoal, at, 500), "a creeper noticed a shut jar");
+        ServerPlayer player = Players.survival(context);
+        player.setPos(Vec3.atCenterOf(at).add(0.0, 0.0, -1.5));
+        Players.click(context, player, jarPos, new ItemStack(ModItems.INDICA_BUDS, 1));
+        context.assertFalse(StashSmell.smellsOpen(context.getLevel(), at), "putting a bud in opened the jar");
+        ServerPlayer machine = TestPlatform.INSTANCE.fakePlayer(context.getLevel(), player.getGameProfile());
+        StashSmell.openPlacedJar(context.getLevel(), at, jar, machine);
+        context.assertFalse(StashSmell.smellsOpen(context.getLevel(), at), "a fake player's take-out opened the jar");
+
+        // A hand takes a stack out: about 64 buds left, 12 blocks of reach, about one check in four.
+        Players.click(context, player, jarPos, ItemStack.EMPTY);
+        context.assertFalse(player.getMainHandItem().isEmpty(), "an empty hand took nothing out of the jar");
+        context.assertTrue(StashSmell.smellsOpen(context.getLevel(), at), "a hand taking buds out did not open the jar");
+        // Nobody to chase while the creepers think: the player steps out of their sight.
+        player.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+
+        context.assertTrue(notices(nearGoal, at, 500), "a creeper 3 blocks from an opened jar of 64 never noticed it in 500 checks");
+        nearGoal.start();
+        context.assertTrue(nearGoal.canContinueToUse(), "a creeper let go of a jar that still smells");
+        // The box is 8 wide, so the far creeper, 8.5 blocks off, is put out of reach by the jar's count: under a
+        // stack, the jar is noticed within 8.
+        StashContents.Mutable fewer = StashContents.EMPTY.mutable();
+        fewer.insert(new ItemStack(ModItems.INDICA_BUDS, 63), 128);
+        jar.setContents(fewer.toImmutable());
+        context.assertTrue(far.position().distanceTo(Vec3.atCenterOf(at)) > StashSmell.reach(63),
+                "test setup: the far creeper is in reach");
+        context.assertFalse(notices(farGoal, at, 500), "a creeper out of an opened jar's reach noticed it");
+
+        // A target comes first (a player in survival: a creeper takes no creative one), and the switch turns it off.
+        ServerPlayer prey = Players.survival(context);
+        near.setTarget(prey);
+        context.assertTrue(near.getTarget() == prey, "test setup: the creeper took no target");
+        nearGoal.checkNow();
+        context.assertFalse(nearGoal.canUse(), "a creeper with a target went for a jar instead");
+        near.setTarget(null);
+        ConfigGameTest.withConfig("{ \"world\": { \"creepersSeekHemp\": false } }", () -> {
+            context.assertFalse(noticesWithin(nearGoal, 200), "a creeper noticed an opened jar with creepersSeekHemp off");
+            context.assertFalse(nearGoal.canContinueToUse(), "a creeper stayed by a jar with creepersSeekHemp off");
+        });
+
+        // Two minutes on, the jar is shut and the creeper is an ordinary creeper again.
+        jar.letSmellOut(context.getLevel().getGameTime());
+        context.assertFalse(nearGoal.canContinueToUse(), "a creeper stayed by a jar whose smell had faded");
+        context.assertFalse(notices(nearGoal, at, 200), "a creeper noticed a jar whose smell had faded");
+        nearGoal.stop();
+        context.succeed();
+    }
+
+    /**
+     * A creeper thinking for itself walks to an opened jar and waits by it. A stack only, so the jar draws
+     * nothing past 12 blocks while the tests around run, and shut again once the creeper is there.
+     */
+    public static void aCreeperWalksToAnOpenedJar(GameTestHelper context) {
+        for (int x = 0; x < 8; x++) {
+            for (int z = 0; z < 8; z++) {
+                context.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
+            }
+        }
+        BlockPos jarPos = new BlockPos(1, 1, 1);
+        context.setBlock(jarPos, ModBlocks.DIAMOND_STASH_JAR.defaultBlockState());
+        BlockPos at = context.absolutePos(jarPos);
+        StashJarBlockEntity jar = (StashJarBlockEntity) context.getLevel().getBlockEntity(at);
+        StashContents.Mutable inside = StashContents.EMPTY.mutable();
+        inside.insert(new ItemStack(ModItems.INDICA_BUDS, 64), 512);
+        inside.insert(new ItemStack(ModItems.SATIVA_BUDS, 64), 512);
+        jar.setContents(inside.toImmutable());
+        ServerPlayer player = Players.survival(context);
+        player.setPos(Vec3.atCenterOf(at).add(0.0, 0.0, 1.5));
+        Players.click(context, player, jarPos, ItemStack.EMPTY);
+        player.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+        context.assertTrue(StashSmell.smellsOpen(context.getLevel(), at), "the take-out did not open the jar");
+
+        Creeper creeper = context.spawn(EntityTypes.CREEPER, new BlockPos(6, 1, 6));
+        context.succeedWhen(() -> {
+            double away = creeper.position().distanceTo(Vec3.atBottomCenterOf(at));
+            context.assertTrue(away <= 3.0, "the creeper is " + String.format("%.1f", away)
+                    + " blocks from an opened jar of 64 buds");
+            jar.letSmellOut(context.getLevel().getGameTime());
+        });
+    }
+
+    /** Whether {@code goal} goes for the jar at {@code jar} within {@code checks} checks. */
+    private static boolean notices(SeekStashJarGoal goal, BlockPos jar, int checks) {
+        for (int check = 0; check < checks; check++) {
+            goal.checkNow();
+            if (goal.canUse() && jar.equals(goal.jar())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Whether {@code goal} goes for any jar within {@code checks} checks. */
+    private static boolean noticesWithin(SeekStashJarGoal goal, int checks) {
+        for (int check = 0; check < checks; check++) {
+            goal.checkNow();
+            if (goal.canUse()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static SeekStashJarGoal jarGoalOf(Mob mob) {
+        try {
+            var field = Mob.class.getDeclaredField("goalSelector");
+            field.setAccessible(true);
+            return ((GoalSelector) field.get(mob)).getAvailableGoals().stream()
+                    .map(wrapped -> wrapped.getGoal())
+                    .filter(SeekStashJarGoal.class::isInstance)
+                    .map(SeekStashJarGoal.class::cast)
+                    .findFirst().orElse(null);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private static Creeper creeper(GameTestHelper context, BlockPos at) {

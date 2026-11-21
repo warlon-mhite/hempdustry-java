@@ -1,6 +1,7 @@
 package com.warlonmhite.hempdustry.mixin;
 
 import com.warlonmhite.hempdustry.entity.ai.SeekHempCropGoal;
+import com.warlonmhite.hempdustry.entity.ai.SeekStashJarGoal;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Monster;
@@ -11,7 +12,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Gives creepers a reason to walk into a hemp field.
+ * Gives creepers a reason to walk into a hemp field, and to come to a Stash Jar a hand has just opened
+ * ({@link SeekStashJarGoal}, the same priority and the same reasons).
  *
  * <p>Why this has to be a mixin: <b>there is no event for adding a goal to a vanilla mob.</b>
  * Fabric API exposes entity spawn and load events, but {@code Mob#goalSelector} is protected,
@@ -46,5 +48,6 @@ public abstract class CreeperEntityMixin extends Monster {
     @Inject(method = "registerGoals", at = @At("TAIL"))
     private void hempdustry$seekHempCrops(CallbackInfo ci) {
         this.goalSelector.addGoal(5, new SeekHempCropGoal((Creeper) (Object) this));
+        this.goalSelector.addGoal(5, new SeekStashJarGoal((Creeper) (Object) this));
     }
 }

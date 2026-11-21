@@ -60,6 +60,9 @@ public class StashJarBlockEntity extends BlockEntity {
     // On the client only: when a hand last opened this jar (game time) and how, for the lid's renderer.
     private long lidOpenedAt = Long.MIN_VALUE;
     private int lidMotion;
+    // On the server only, in memory: the game time until which the jar smells, after a hand opened it. Never
+    // saved, so a chunk reloaded is a jar shut again.
+    private long smellUntil = Long.MIN_VALUE;
 
     /**
      * The block event a hand opening the jar sends, so every player near enough sees the lid lift
@@ -86,6 +89,16 @@ public class StashJarBlockEntity extends BlockEntity {
     /** How many items this jar holds, on either side: the server's count, or the one it last sent. */
     public int shownCount() {
         return level != null && level.isClientSide() ? shownCount : contents.count();
+    }
+
+    /** Lets the jar's smell out until {@code gameTime}: a hand opened it. */
+    public void letSmellOut(long gameTime) {
+        smellUntil = gameTime;
+    }
+
+    /** Whether the jar is open and smells at {@code gameTime}, for creepers ({@code StashSmell}). */
+    public boolean smells(long gameTime) {
+        return gameTime < smellUntil;
     }
 
     /**

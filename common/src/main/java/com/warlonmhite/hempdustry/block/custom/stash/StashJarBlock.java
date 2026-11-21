@@ -4,6 +4,7 @@ import com.warlonmhite.hempdustry.network.PlayerGesture;
 import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
 import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.component.StashContents;
+import com.warlonmhite.hempdustry.entity.ai.StashSmell;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -47,6 +48,7 @@ import org.jetbrains.annotations.Nullable;
  * the item). No menu: a storable item clicked on it goes in, as many as fit; an empty hand takes out
  * the last stack put in, letting the jar's smell out ({@link TerpenePuff}); anything else in hand is that item's
  * own use. A hand opening the jar, either way, lifts its lid for everyone near (a block event, as a chest's).
+ * Taking buds out leaves the jar smelling for two minutes, and creepers come for the smell ({@link StashSmell}).
  *
  * <p>One block per tier, the capacity its own, so the item a jar drops is the jar it was.
  *
@@ -160,6 +162,8 @@ public class StashJarBlock extends BaseEntityBlock implements SimpleWaterloggedB
         StashNose nose = StashNose.of(jar.contents());
         ItemStack out = jar.removeLast();
         TerpenePuff.release((ServerLevel) level, pos, nose, out);
+        // The smell is out for two minutes, and creepers come for it.
+        StashSmell.openPlacedJar((ServerLevel) level, pos, jar, player);
         // The one who opened it leans in to the smell, for everyone who sees them.
         PlayerGesture.send(player, PlayerGesture.Kind.SNIFF, true);
         level.blockEvent(pos, this, StashJarBlockEntity.LID_EVENT,
