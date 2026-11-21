@@ -3,6 +3,7 @@ package com.warlonmhite.hempdustry.item.custom;
 import com.warlonmhite.hempdustry.block.custom.stash.StashJarBlock;
 import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.component.StashContents;
+import com.warlonmhite.hempdustry.entity.ai.StashSmell;
 import com.warlonmhite.hempdustry.strain.BudTier;
 import com.warlonmhite.hempdustry.strain.PotencyBand;
 import com.warlonmhite.hempdustry.strain.ResinStep;
@@ -38,6 +39,10 @@ import java.util.Optional;
  * against {@code hempdustry:stash_contents}, click for click. One difference by decision: holding
  * right-click in the air does nothing, where a bundle throws its contents out; a jar's right-click
  * is a place.
+ *
+ * <p>Taking buds out opens the jar for two minutes, as a hand at a placed jar does: its contents then count
+ * with its carrier's loose buds when a creeper sniffs them out ({@link StashSmell}). Putting buds in opens
+ * nothing; a shut jar keeps its carrier's smell in.
  */
 public class StashJarItem extends BlockItem {
     // BundleItem's own two colours, so a jar's bar reads as a bundle's.
@@ -96,6 +101,7 @@ public class StashJarItem extends BlockItem {
                     contents.putBack(rest);
                 } else {
                     playRemoveOneSound(player);
+                    StashSmell.openCarriedJar(player);
                 }
             }
             setContents(self, contents.toImmutable());
@@ -130,6 +136,7 @@ public class StashJarItem extends BlockItem {
                 if (!out.isEmpty()) {
                     playRemoveOneSound(player);
                     carried.set(out);
+                    StashSmell.openCarriedJar(player);
                 }
             }
             setContents(self, contents.toImmutable());

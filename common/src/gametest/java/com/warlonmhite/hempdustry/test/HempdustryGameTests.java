@@ -397,6 +397,8 @@ public final class HempdustryGameTests {
         register("a_player_breaking_any_block_harvests_the_plant_once",
                 TallPlantBreakGameTest::aPlayerBreakingAnyBlockHarvestsThePlantOnce);
         register("a_fake_players_smoke_stays_with_it", FakePlayerUseGameTest::aFakePlayersSmokeStaysWithIt);
+        register("loose_buds_lengthen_a_creepers_reach", StashSmellGameTest::looseBudsLengthenACreepersReach);
+        register("a_creeper_smells_buds_but_still_needs_to_see_them", StashSmellGameTest::aCreeperSmellsBudsButStillNeedsToSeeThem);
     }
 
     /** Registers {@code test} as {@code name}, which must have a {@code test_instance} JSON of its own. */

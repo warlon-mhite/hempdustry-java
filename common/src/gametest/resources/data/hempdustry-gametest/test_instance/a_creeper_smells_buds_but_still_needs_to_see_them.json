@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "hempdustry-gametest:a_creeper_smells_buds_but_still_needs_to_see_them",
+  "structure": "hempdustry-gametest:empty",
+  "max_ticks": 100,
+  "setup_ticks": 0,
+  "required": true
+}
