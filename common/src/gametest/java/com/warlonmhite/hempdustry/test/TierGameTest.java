@@ -244,8 +244,8 @@ public final class TierGameTest {
     }
 
     /**
-     * Grow luck adds up as the spec has it: base, gene, each trim, the best light only (open sky one, never
-     * on top of a lamp), a Hydro Tray, and the harvesting player's luck — Luck II two more, Bad Luck one less,
+     * Grow luck adds up as the spec has it: base, gene, each trim, the light (the sun one for a plant that grew
+     * in it, whatever lamp hung over it; out of the sun a lamp one, a Grow Lamp two), a Hydro Tray, and the harvesting player's luck — Luck II two more, Bad Luck one less,
      * nobody nothing.
      */
     public static void growLuckAddsUp(GameTestHelper context) {
@@ -269,11 +269,13 @@ public final class TierGameTest {
                 "under open sky with a glowstone record: the sun counts, glowstone is nothing");
         context.assertValueEqual(GrowLuck.of(record, trimmed.setValue(GrowLight.PROPERTY, GrowLight.LAMP), world, null), 4.0F,
                 "a lamp record under open sky: one light only");
-        context.assertValueEqual(GrowLuck.of(record, trimmed.setValue(GrowLight.PROPERTY, GrowLight.GROW_LAMP), world, null), 5.0F,
-                "a Grow Lamp record under open sky: the Grow Lamp's two, never three");
+        context.assertValueEqual(GrowLuck.of(record, trimmed.setValue(GrowLight.PROPERTY, GrowLight.GROW_LAMP), world, null), 4.0F,
+                "a Grow Lamp record under open sky: the sun's one, whatever lamp hung over it");
         record.setOpenSky(false);
         context.assertValueEqual(GrowLuck.of(record, trimmed.setValue(GrowLight.PROPERTY, GrowLight.LAMP), world, null), 4.0F,
                 "a lamp record in the shade");
+        context.assertValueEqual(GrowLuck.of(record, trimmed.setValue(GrowLight.PROPERTY, GrowLight.GROW_LAMP), world, null), 5.0F,
+                "a Grow Lamp record out of the sun: the Grow Lamp's two");
         // A tray pays only for the steps it worked through, as the record keeps them, never for standing there.
         world.setBlock(pos.below(), ModBlocks.HYDRO_TRAY.defaultBlockState(), Block.UPDATE_CLIENTS);
         context.assertValueEqual(GrowLuck.of(record, trimmed, world, null), 3.0F, "both trims on a dry tray it never grew on");

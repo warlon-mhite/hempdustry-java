@@ -21,8 +21,10 @@ import org.jetbrains.annotations.Nullable;
  *       cannot take;</li>
  *   <li>the plant's <b>quality gene</b>, −1 to +2;</li>
  *   <li><b>one per trim window used</b>, two at most;</li>
- *   <li>the <b>light</b> it kept: a lamp +1, a Grow Lamp +2, <b>open sky +1</b>, shade and glowstone 0 —
- *       the best one only, never two, so a Grow Lamp under the sky is a Grow Lamp;</li>
+ *   <li>the <b>light</b> it kept: <b>the sun +1</b> for a plant that grew in it (open sky or under glass),
+ *       whatever lamp hangs over it; out of the sun a lamp +1, a Grow Lamp +2, shade and glowstone 0. So a
+ *       greenhouse is the easy way to good buds, light for free, and a sealed room under Grow Lamps the way to
+ *       the best;</li>
  *   <li><b>a Hydro Tray +1</b>, at work under the root at every growth step (water, fed, the pump on);</li>
  *   <li>the <b>harvesting player's luck</b> ({@code minecraft:luck}: Luck +1 a level, Bad Luck −1), which
  *       vanilla hands fishing and chests but never a block's loot. No player, no luck.</li>
@@ -62,17 +64,24 @@ public final class GrowLuck {
         return luck + light(root, openSky) + (tray ? 1 : 0);
     }
 
-    /** The best light the plant kept: Grow Lamp 2, lamp 1, open sky 1, anything else 0. */
+    /**
+     * The light the plant kept: the sun 1 for a plant that grew in it ({@code openSky}: sky light at its top at
+     * every step, glass passing it), whatever lamp hung over it as well; out of the sun a Grow Lamp 2, a lamp 1,
+     * anything else 0. A lamp still gives a sunlit plant its buds, its leaves and its seedling's speed; the sun
+     * caps only the luck.
+     */
     public static int light(BlockState root, boolean openSky) {
-        int record = 0;
-        if (root.hasProperty(GrowLight.PROPERTY)) {
-            record = switch (root.getValue(GrowLight.PROPERTY)) {
-                case GROW_LAMP -> 2;
-                case LAMP -> 1;
-                default -> 0;
-            };
+        if (openSky) {
+            return 1;
         }
-        return Math.max(record, openSky ? 1 : 0);
+        if (!root.hasProperty(GrowLight.PROPERTY)) {
+            return 0;
+        }
+        return switch (root.getValue(GrowLight.PROPERTY)) {
+            case GROW_LAMP -> 2;
+            case LAMP -> 1;
+            default -> 0;
+        };
     }
 
     /** {@code harvester}'s luck, if it is a player; nothing else has any. */
