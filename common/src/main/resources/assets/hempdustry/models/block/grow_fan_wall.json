@@ -1,0 +1,80 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "hempdustry:block/grow_fan_casing",
+    "casing": "hempdustry:block/grow_fan_casing",
+    "front": "hempdustry:block/grow_fan_front",
+    "back": "hempdustry:block/grow_fan_back"
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        2,
+        11
+      ],
+      "to": [
+        14,
+        14,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            2,
+            14,
+            14
+          ],
+          "texture": "#front"
+        },
+        "south": {
+          "uv": [
+            2,
+            2,
+            14,
+            14
+          ],
+          "texture": "#back",
+          "cullface": "south"
+        },
+        "east": {
+          "uv": [
+            11,
+            2,
+            16,
+            14
+          ],
+          "texture": "#casing"
+        },
+        "west": {
+          "uv": [
+            0,
+            2,
+            5,
+            14
+          ],
+          "texture": "#casing"
+        },
+        "up": {
+          "uv": [
+            2,
+            11,
+            14,
+            16
+          ],
+          "texture": "#casing"
+        },
+        "down": {
+          "uv": [
+            2,
+            0,
+            14,
+            5
+          ],
+          "texture": "#casing"
+        }
+      }
+    }
+  ]
+}

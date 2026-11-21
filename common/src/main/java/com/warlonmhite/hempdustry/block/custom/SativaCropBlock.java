@@ -505,9 +505,10 @@ public class SativaCropBlock extends CropBlock implements Mildew.Host, RecordOnT
         BlockState lower = Defoliation.carryOver(current, this.stateFor(newAge, TriplePlantSegment.LOWER));
         if (newAge > currentAge && current.is(this)) {
             lower = lower.setValue(GrowLight.PROPERTY, PlantStress.afterStep(world, pos,
-                    current.getValue(GrowLight.PROPERTY), currentAge, newAge, 3, extraStress, random, this.canBeStressed()))
-                    .setValue(Mildew.PROPERTY, Mildew.afterStep(world, pos, current,
-                            current.getValue(Mildew.PROPERTY), random));
+                    current.getValue(GrowLight.PROPERTY), currentAge, newAge, 3, extraStress, random, this.canBeStressed()));
+            Climate.afterStep(world, pos, currentAge);
+            lower = lower.setValue(Mildew.PROPERTY, Mildew.afterStep(world, pos, current,
+                    current.getValue(Mildew.PROPERTY), random));
             if (newAge == this.getMaxAge()) {
                 BlockPos floorPos = pos.below();
                 BlockState floor = world.getBlockState(floorPos);

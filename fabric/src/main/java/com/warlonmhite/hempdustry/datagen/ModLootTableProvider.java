@@ -4,6 +4,7 @@ import com.warlonmhite.hempdustry.loot.SetChemotypeFunction;
 import com.warlonmhite.hempdustry.loot.SetPotencyFunction;
 import com.warlonmhite.hempdustry.loot.SetResinFunction;
 import com.warlonmhite.hempdustry.loot.SetTierFunction;
+import com.warlonmhite.hempdustry.loot.VentilatedCondition;
 import com.warlonmhite.hempdustry.strain.Chemotype;
 import com.warlonmhite.hempdustry.strain.ModStrains;
 import com.warlonmhite.hempdustry.block.ModBlocks;
@@ -17,6 +18,7 @@ import com.warlonmhite.hempdustry.block.custom.Mildew;
 import com.warlonmhite.hempdustry.block.custom.EnderHazeCropBlock;
 import com.warlonmhite.hempdustry.block.custom.SativaCropBlock;
 import com.warlonmhite.hempdustry.block.custom.SiftingBoxBlock;
+import com.warlonmhite.hempdustry.block.custom.CrimsonWeedCropBlock;
 import com.warlonmhite.hempdustry.block.custom.TriplePlantSegment;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.loot.ModLootEntryTypes;
@@ -47,6 +49,7 @@ import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.entries.LootPoolEntryContainer;
 import net.minecraft.world.level.storage.loot.entries.UniformContainerBase;
 import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount;
+import net.minecraft.world.level.storage.loot.functions.ApplyExplosionDecay;
 import net.minecraft.world.level.storage.loot.functions.CopyBlockState;
 import net.minecraft.world.level.storage.loot.functions.CopyComponentsFunction;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
@@ -234,6 +237,7 @@ public class ModLootTableProvider extends FabricBlockLootSubProvider {
         add(ModBlocks.SIFTING_BOX, siftingBoxDrops().apply(SetChemotypeFunction.fromBlock()));
         add(ModBlocks.HEMP_PRESS, createNameableBlockEntityTable(ModBlocks.HEMP_PRESS));
         dropSelf(ModBlocks.GROW_LAMP);
+        dropSelf(ModBlocks.GROW_FAN);
         add(ModBlocks.GROW_POT, growPotDrops());
         // The tray drops empty — you drain a reservoir before you move it — so it needs no
         // copy_state, unlike the pot, which keeps its soil.
@@ -268,41 +272,41 @@ public class ModLootTableProvider extends FabricBlockLootSubProvider {
         dropSelf(ModBlocks.HEMP_PLANKS_SIGN);
         dropSelf(ModBlocks.HEMP_PLANKS_HANGING_SIGN);
 
-        add(ModBlocks.INDICA_CROP, indicaCropDrops().apply(SetChemotypeFunction.ofStrain(ModStrains.INDICA))
+        add(ModBlocks.INDICA_CROP, indicaCropDrops().withPool(ventilatedStem(ModBlocks.INDICA_CROP)).apply(SetChemotypeFunction.ofStrain(ModStrains.INDICA))
                 .apply(SetPotencyFunction.setPotency())
                 .apply(SetTierFunction.setTier())
                 .apply(SetResinFunction.setResin()));
-        add(ModBlocks.BELDIA_CROP, beldiaCropDrops().apply(SetChemotypeFunction.ofStrain(ModStrains.BELDIA))
+        add(ModBlocks.BELDIA_CROP, beldiaCropDrops().withPool(ventilatedStem(ModBlocks.BELDIA_CROP)).apply(SetChemotypeFunction.ofStrain(ModStrains.BELDIA))
                 .apply(SetPotencyFunction.setPotency())
                 .apply(SetTierFunction.setTier())
                 .apply(SetResinFunction.setResin()));
         add(ModBlocks.INDICA_FLOWER, indicaFlowerDrops());
         add(ModBlocks.CHERRY_WINE_FLOWER, wildFlowerDrops(ModBlocks.CHERRY_WINE_FLOWER, ModItems.CHERRY_WINE_SEEDS));
-        add(ModBlocks.CHERRY_WINE_CROP, cherryWineCropDrops().apply(SetChemotypeFunction.ofStrain(ModStrains.CHERRY_WINE))
+        add(ModBlocks.CHERRY_WINE_CROP, cherryWineCropDrops().withPool(ventilatedStem(ModBlocks.CHERRY_WINE_CROP)).apply(SetChemotypeFunction.ofStrain(ModStrains.CHERRY_WINE))
                 .apply(SetPotencyFunction.setPotency())
                 .apply(SetTierFunction.setTier())
                 .apply(SetResinFunction.setResin()));
         // Open or closed, the same drop: the flower's hours are its look, never its loot.
         add(ModBlocks.WHITE_WIDOW_FLOWER, wildFlowerDrops(ModBlocks.WHITE_WIDOW_FLOWER, ModItems.WHITE_WIDOW_SEEDS));
-        add(ModBlocks.WHITE_WIDOW_CROP, whiteWidowCropDrops().apply(SetChemotypeFunction.ofStrain(ModStrains.WHITE_WIDOW))
+        add(ModBlocks.WHITE_WIDOW_CROP, whiteWidowCropDrops().withPool(ventilatedStem(ModBlocks.WHITE_WIDOW_CROP)).apply(SetChemotypeFunction.ofStrain(ModStrains.WHITE_WIDOW))
                 .apply(SetPotencyFunction.setPotency())
                 .apply(SetTierFunction.setTier())
                 .apply(SetResinFunction.setResin()));
-        add(ModBlocks.DUD_WEED_CROP, dudWeedCropDrops().apply(SetChemotypeFunction.ofStrain(ModStrains.DUD_WEED))
+        add(ModBlocks.DUD_WEED_CROP, dudWeedCropDrops().withPool(ventilatedStem(ModBlocks.DUD_WEED_CROP)).apply(SetChemotypeFunction.ofStrain(ModStrains.DUD_WEED))
                 .apply(SetPotencyFunction.setPotency())
                 .apply(SetTierFunction.setTier())
                 .apply(SetResinFunction.setResin()));
-        add(ModBlocks.ECHO_OG_CROP, echoOgCropDrops().apply(SetChemotypeFunction.ofStrain(ModStrains.ECHO_OG))
+        add(ModBlocks.ECHO_OG_CROP, echoOgCropDrops().withPool(ventilatedStem(ModBlocks.ECHO_OG_CROP)).apply(SetChemotypeFunction.ofStrain(ModStrains.ECHO_OG))
                 .apply(SetPotencyFunction.setPotency())
                 .apply(SetTierFunction.setTier())
                 .apply(SetResinFunction.setResin()));
         add(ModBlocks.MAUI_WOWIE_FLOWER, wildFlowerDrops(ModBlocks.MAUI_WOWIE_FLOWER, ModItems.MAUI_WOWIE_SEEDS));
-        add(ModBlocks.MAUI_WOWIE_CROP, mauiWowieCropDrops().apply(SetChemotypeFunction.ofStrain(ModStrains.MAUI_WOWIE))
+        add(ModBlocks.MAUI_WOWIE_CROP, mauiWowieCropDrops().withPool(ventilatedStem(ModBlocks.MAUI_WOWIE_CROP)).apply(SetChemotypeFunction.ofStrain(ModStrains.MAUI_WOWIE))
                 .apply(SetPotencyFunction.setPotency())
                 .apply(SetTierFunction.setTier())
                 .apply(SetResinFunction.setResin()));
 
-        add(ModBlocks.SATIVA_CROP, sativaCropDrops().apply(SetChemotypeFunction.ofStrain(ModStrains.SATIVA))
+        add(ModBlocks.SATIVA_CROP, sativaCropDrops().withPool(ventilatedStem(ModBlocks.SATIVA_CROP)).apply(SetChemotypeFunction.ofStrain(ModStrains.SATIVA))
                 .apply(SetPotencyFunction.setPotency())
                 .apply(SetTierFunction.setTier())
                 .apply(SetResinFunction.setResin()));
@@ -316,11 +320,11 @@ public class ModLootTableProvider extends FabricBlockLootSubProvider {
         dropPottedContents(ModBlocks.POTTED_SATIVA_FLOWER);
 
         // Fibre hemp is CBD-dominant with low totals; the feral plant drifts back to a little of each.
-        add(ModBlocks.INDUSTRIAL_HEMP_CROP, industrialHempCropDrops().apply(SetChemotypeFunction.of(Chemotype.CBD_DOMINANT)));
+        add(ModBlocks.INDUSTRIAL_HEMP_CROP, industrialHempCropDrops().withPool(ventilatedStem(ModBlocks.INDUSTRIAL_HEMP_CROP)).apply(SetChemotypeFunction.of(Chemotype.CBD_DOMINANT)));
         add(ModBlocks.DITCHWEED, ditchweedDrops().apply(SetChemotypeFunction.of(Chemotype.BALANCED)));
         dropPottedContents(ModBlocks.POTTED_DITCHWEED);
 
-        add(ModBlocks.WARPED_KUSH_CROP, warpedKushCropDrops().apply(SetChemotypeFunction.ofStrain(ModStrains.WARPED_KUSH))
+        add(ModBlocks.WARPED_KUSH_CROP, warpedKushCropDrops().withPool(ventilatedStem(ModBlocks.WARPED_KUSH_CROP)).apply(SetChemotypeFunction.ofStrain(ModStrains.WARPED_KUSH))
                 .apply(SetPotencyFunction.setPotency())
                 .apply(SetTierFunction.setTier())
                 .apply(SetResinFunction.setResin()));
@@ -330,7 +334,7 @@ public class ModLootTableProvider extends FabricBlockLootSubProvider {
                 .apply(SetTierFunction.setTier())
                 .apply(SetResinFunction.setResin()));
 
-        add(ModBlocks.CRIMSON_CROP, crimsonCropDrops().apply(SetChemotypeFunction.ofStrain(ModStrains.CRIMSON))
+        add(ModBlocks.CRIMSON_CROP, crimsonCropDrops().withPool(ventilatedStem(ModBlocks.CRIMSON_CROP)).apply(SetChemotypeFunction.ofStrain(ModStrains.CRIMSON))
                 .apply(SetPotencyFunction.setPotency())
                 .apply(SetTierFunction.setTier())
                 .apply(SetResinFunction.setResin()));
@@ -339,6 +343,23 @@ public class ModLootTableProvider extends FabricBlockLootSubProvider {
                 .apply(SetPotencyFunction.setPotency())
                 .apply(SetTierFunction.setTier())
                 .apply(SetResinFunction.setResin()));
+    }
+
+    /**
+     * One stem more for a ripe plant that grew in a Grow Fan's wind at every step ({@code hempdustry:ventilated}):
+     * wind thickens a stalk. On every table of a plant whose air a fan moves, as the table's last pool, so it
+     * shifts no draw of the pools before it; pinned to the plant's root segment as every other pool is (only the
+     * root keeps the record, but a table should say where it pays, not lean on what is in the world).
+     */
+    private LootPool.Builder ventilatedStem(Block crop) {
+        StatePropertiesPredicate.Builder root = crop.defaultBlockState().hasProperty(SativaCropBlock.SEGMENT)
+                ? StatePropertiesPredicate.Builder.properties().hasProperty(SativaCropBlock.SEGMENT, TriplePlantSegment.LOWER)
+                : StatePropertiesPredicate.Builder.properties().hasProperty(IndicaCropBlock.HALF,
+                        crop instanceof CrimsonWeedCropBlock ? DoubleBlockHalf.UPPER : DoubleBlockHalf.LOWER);
+        return LootPool.lootPool()
+                .when(MatchBlock.blockMatches(this.blocks, crop, root))
+                .when(VentilatedCondition.ventilated())
+                .add(LootItem.lootTableItem(ModItems.HEMP_STEM).apply(ApplyExplosionDecay.explosionDecay()));
     }
 
     /**

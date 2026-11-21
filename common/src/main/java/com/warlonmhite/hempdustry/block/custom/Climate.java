@@ -1,8 +1,10 @@
 package com.warlonmhite.hempdustry.block.custom;
 
 import com.warlonmhite.hempdustry.balance.GrowClimate;
+import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
 import com.warlonmhite.hempdustry.platform.Services;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.QuartPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
@@ -20,7 +22,8 @@ import net.minecraft.world.level.block.state.BlockState;
  *   <li><b>Air</b>: {@link Air#OPEN} under the sky; {@link Air#STIRRED} under a roof the sun still reaches
  *       (sky light at the plant's full-grown top: glass), the sun warming and moving the air by day;
  *       {@link Air#STILL} under a roof that blocks the sun, a sealed room. What a roof is stays
- *       {@link Mildew#roofed}: a Grow Lamp is none.</li>
+ *       {@link Mildew#roofed}: a Grow Lamp is none. A running {@link GrowFanBlock Grow Fan} blowing on it moves
+ *       a plant one step towards the open; two fans do no more than one.</li>
  *   <li><b>Humidity</b>: {@link Humidity#NORMAL}, one drier in a biome with almost no rain (a desert, the
  *       badlands, a savanna, the Nether), one wetter in a warm, rainy one (a jungle, a swamp, the mushroom
  *       fields), and one wetter again in a wet room: the plant's own bed a Hydro Tray, or, under a roof,
@@ -51,6 +54,11 @@ public final class Climate {
         @Override
         public String getSerializedName() {
             return this.name;
+        }
+
+        /** One step towards the open: a fan's work. */
+        public Air better() {
+            return this == STILL ? STIRRED : OPEN;
         }
 
         /** This air's factor in {@code climate}. */
@@ -118,7 +126,46 @@ public final class Climate {
         if (!roofed) {
             return Air.OPEN;
         }
-        return world.canSeeSky(root.above(Math.max(0, height - 1))) ? Air.STIRRED : Air.STILL;
+        Air air = world.canSeeSky(root.above(Math.max(0, height - 1))) ? Air.STIRRED : Air.STILL;
+        return ventilated(world, root) ? air.better() : air;
+    }
+
+    /**
+     * Whether a running Grow Fan blows on the plant whose root is at {@code root}: one facing the plant, from 1 to
+     * the climate's {@code ahead} blocks behind it along the way it blows, at most {@code side} blocks off its line,
+     * standing from {@code above} blocks under the root to {@code below} blocks over it. A fan beside a plant or
+     * behind it blows past it. Walls do not stop the wind, as they stop no other reach of a grow room's gear.
+     */
+    public static boolean ventilated(Level world, BlockPos root) {
+        GrowClimate.Fan fan = GrowClimate.of(world.registryAccess()).fan();
+        BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
+        for (Direction blows : Direction.Plane.HORIZONTAL) {
+            Direction across = blows.getClockWise();
+            for (int ahead = 1; ahead <= fan.ahead(); ahead++) {
+                for (int side = -fan.side(); side <= fan.side(); side++) {
+                    // A fan blowing this way that reaches the root stands this far back against its wind.
+                    int x = root.getX() - blows.getStepX() * ahead + across.getStepX() * side;
+                    int z = root.getZ() - blows.getStepZ() * ahead + across.getStepZ() * side;
+                    for (int dy = -fan.above(); dy <= fan.below(); dy++) {
+                        BlockState state = world.getBlockState(at.set(x, root.getY() + dy, z));
+                        if (GrowFanBlock.running(state) && GrowFanBlock.blows(state) == blows) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * What a plant's growth step from {@code fromAge} tells its record of its climate: whether it grew in a fan's
+     * wind. Called from the crops' own step, before the mildew roll.
+     */
+    public static void afterStep(Level world, BlockPos root, int fromAge) {
+        if (!world.isClientSide()) {
+            PlantRecordBlockEntity.recordVentilation(world, root, fromAge, ventilated(world, root));
+        }
     }
 
     /**

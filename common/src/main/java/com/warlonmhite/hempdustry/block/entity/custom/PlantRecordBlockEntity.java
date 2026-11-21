@@ -104,6 +104,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
     private static final String OPEN_SKY_KEY = "open_sky";
     private static final String WORKING_TRAY_KEY = "working_tray";
     private static final String SAW_NIGHT_KEY = "saw_night";
+    private static final String VENTILATED_KEY = "ventilated";
     private static final String RESISTANCES_KEY = "resistances";
     private static final String RESIN_KEY = "resin";
     private static final String EXPERIENCE_KEY = "experience";
@@ -113,6 +114,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
     private @Nullable Boolean openSky;
     private @Nullable Boolean workingTray;
     private boolean sawNight;
+    private @Nullable Boolean ventilated;
     private @Nullable ResistanceGenes resistances;
     private @Nullable ResinStep resin;
     private int experience;
@@ -187,6 +189,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
         openSky = null;
         workingTray = null;
         sawNight = false;
+        ventilated = null;
         experience = 0;
         harvestTier = null;
         harvest = new WeakReference<>(null);
@@ -339,6 +342,34 @@ public class PlantRecordBlockEntity extends BlockEntity {
         boolean next = fromAge == 0 || record.openSky == null ? now : record.openSky && now;
         if (record.openSky == null || record.openSky != next) {
             record.openSky = next;
+            record.setChanged();
+        }
+    }
+
+    /** Whether this plant has grown in a running Grow Fan's wind at every step so far; false before its first step. */
+    public boolean ventilated() {
+        return Boolean.TRUE.equals(ventilated);
+    }
+
+    /** Sets the ventilation record outright: what a test does. */
+    public void setVentilated(@Nullable Boolean ventilated) {
+        this.ventilated = ventilated;
+        setChanged();
+    }
+
+    /**
+     * One growth step of the plant whose root is at {@code root}, taken from {@code fromAge}, {@code now} in a running
+     * fan's wind or not: its ventilation record becomes {@code now} on its first step, and the weaker of before and now
+     * after, as the open sky is kept. So the stalk a fan thickens is one it blew on all its life; a fan switched on for
+     * the last step gives nothing. A root with no record is left alone.
+     */
+    public static void recordVentilation(Level level, BlockPos root, int fromAge, boolean now) {
+        if (level.isClientSide() || !(level.getBlockEntity(root) instanceof PlantRecordBlockEntity record)) {
+            return;
+        }
+        boolean next = fromAge == 0 || record.ventilated == null ? now : record.ventilated && now;
+        if (record.ventilated == null || record.ventilated != next) {
+            record.ventilated = next;
             record.setChanged();
         }
     }
@@ -523,6 +554,7 @@ public class PlantRecordBlockEntity extends BlockEntity {
         openSky = view.read(OPEN_SKY_KEY, Codec.BOOL).orElse(null);
         workingTray = view.read(WORKING_TRAY_KEY, Codec.BOOL).orElse(null);
         sawNight = view.read(SAW_NIGHT_KEY, Codec.BOOL).orElse(false);
+        ventilated = view.read(VENTILATED_KEY, Codec.BOOL).orElse(null);
         resistances = view.read(RESISTANCES_KEY, ResistanceGenes.CODEC).orElse(null);
         resin = view.read(RESIN_KEY, ResinStep.CODEC).orElse(null);
         experience = view.getIntOr(EXPERIENCE_KEY, 0);
@@ -545,6 +577,9 @@ public class PlantRecordBlockEntity extends BlockEntity {
         }
         if (sawNight) {
             view.store(SAW_NIGHT_KEY, Codec.BOOL, true);
+        }
+        if (ventilated != null) {
+            view.store(VENTILATED_KEY, Codec.BOOL, ventilated);
         }
         if (resistances != null) {
             view.store(RESISTANCES_KEY, ResistanceGenes.CODEC, resistances);

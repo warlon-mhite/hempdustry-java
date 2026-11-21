@@ -1136,6 +1136,33 @@
         }
       ],
       "rolls": 1
+    },
+    {
+      "condition": {
+        "type": "minecraft:all_of",
+        "terms": [
+          {
+            "type": "minecraft:match_block",
+            "blocks": "hempdustry:dud_weed_crop",
+            "state": {
+              "half": "lower"
+            }
+          },
+          {
+            "type": "hempdustry:ventilated"
+          }
+        ]
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "modifier": {
+            "type": "minecraft:explosion_decay"
+          },
+          "name": "hempdustry:hemp_stem"
+        }
+      ],
+      "rolls": 1
     }
   ]
 }

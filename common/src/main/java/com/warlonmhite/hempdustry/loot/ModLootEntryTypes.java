@@ -53,6 +53,10 @@ public class ModLootEntryTypes {
     public static final MapCodec<RollGeneticsFunction> ROLL_GENETICS = Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE,
             Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "roll_genetics"), RollGeneticsFunction.CODEC);
 
+    /** {@code hempdustry:ventilated}: a ripe plant that grew in a Grow Fan's wind; its table pays it a stem more. */
+    public static final MapCodec<VentilatedCondition> VENTILATED = Registry.register(BuiltInRegistries.LOOT_CONDITION_TYPE,
+            Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "ventilated"), VentilatedCondition.CODEC);
+
     public static void registerLootEntryTypes() {
         Hempdustry.LOGGER.info("Registering Loot Entry Types for " + Hempdustry.MOD_ID);
     }

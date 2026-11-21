@@ -31,9 +31,10 @@ import net.minecraft.util.ExtraCodecs;
  * @param biome        where a biome's rainfall and warmth move the humidity
  * @param wetReach     how far, in blocks, standing water around a roofed plant makes its room wet
  * @param trimmed      the factor for a plant trimmed in either window: a thinner canopy
+ * @param fan          how far ahead of it, and how wide, a running Grow Fan blows
  */
 public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity humidity, BiomeRule biome, int wetReach,
-                          float trimmed) {
+                          float trimmed, Fan fan) {
 
     public static final ResourceKey<Registry<GrowClimate>> REGISTRY_KEY =
             ResourceKey.createRegistryKey(Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "grow_climate"));
@@ -75,6 +76,22 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
         ).apply(instance, BiomeRule::new));
     }
 
+    /**
+     * A Grow Fan's wind, from where it stands: a lane {@code ahead} blocks long the way its grille faces, from the
+     * block in front of it, and {@code side} blocks to each side of the fan's line; the plants it blows on stand at
+     * most {@code below} blocks under it and {@code above} blocks over it (each plant by its root). A box, as every
+     * reach in the game is, laid out ahead of the fan instead of around it.
+     */
+    public record Fan(int ahead, int side, int below, int above) {
+        private static final Codec<Integer> BLOCKS = Codec.intRange(0, 8);
+        public static final Codec<Fan> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Codec.intRange(1, 16).fieldOf("ahead").forGetter(Fan::ahead),
+                BLOCKS.fieldOf("side").forGetter(Fan::side),
+                BLOCKS.fieldOf("below").forGetter(Fan::below),
+                BLOCKS.fieldOf("above").forGetter(Fan::above)
+        ).apply(instance, Fan::new));
+    }
+
     public static final Codec<GrowClimate> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             ExtraCodecs.POSITIVE_INT.fieldOf("onset_one_in").forGetter(GrowClimate::onsetOneIn),
             ExtraCodecs.POSITIVE_INT.fieldOf("spread_one_in").forGetter(GrowClimate::spreadOneIn),
@@ -82,13 +99,17 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
             Humidity.CODEC.fieldOf("humidity").forGetter(GrowClimate::humidity),
             BiomeRule.CODEC.fieldOf("biome").forGetter(GrowClimate::biome),
             Codec.intRange(0, 4).fieldOf("wet_reach").forGetter(GrowClimate::wetReach),
-            FACTOR.fieldOf("trimmed").forGetter(GrowClimate::trimmed)
+            FACTOR.fieldOf("trimmed").forGetter(GrowClimate::trimmed),
+            Fan.CODEC.fieldOf("fan").forGetter(GrowClimate::fan)
     ).apply(instance, GrowClimate::new));
 
     /**
      * The 2.2 climate. A field catches mildew at 1 in 1,500 a step and passes it to a neighbour at 1 in 100, as
      * 2.1's open sky did; glass triples both, a sealed room six times them, and a swamp's hydro room 24 times.
-     * A trim takes a quarter off: real but modest, as leaf removal is in a vineyard.
+     * A trim takes a quarter off: real but modest, as leaf removal is in a vineyard. A fan blows a lane 9 blocks long
+     * and 5 wide ahead of its grille, so two side by side cover a 9 x 9 plot from one edge (the plot one water source
+     * keeps farmland wet across), 45 plants a fan, about the 49 of a square around it; it reaches from a plant one
+     * block above it (one on the floor beside a pot) to three below it (one hung from the ceiling over a field).
      */
     public static final GrowClimate BUILT_IN = new GrowClimate(
             1500, 100,
@@ -96,7 +117,8 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
             new Humidity(0.5F, 1.0F, 2.0F, 4.0F),
             new BiomeRule(0.3F, 0.85F, 0.5F),
             2,
-            0.75F);
+            0.75F,
+            new Fan(9, 2, 3, 1));
 
     public static void bootstrap(BootstrapContext<GrowClimate> registerable) {
         registerable.register(DEFAULT, BUILT_IN);

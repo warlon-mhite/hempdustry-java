@@ -522,6 +522,7 @@ public class IndicaCropBlock extends CropBlock implements Mildew.Host, RecordOnT
                         current.getValue(GrowLight.PROPERTY), currentAge, newAge, 2, extraStress, random, true,
                         this.leaksAtNight(), this.shunsLight()));
             }
+            Climate.afterStep(world, pos, currentAge);
             lower = lower.setValue(Mildew.PROPERTY, Mildew.afterStep(world, pos, current,
                     current.getValue(Mildew.PROPERTY), random));
             if (newAge == this.getMaxAge()) {

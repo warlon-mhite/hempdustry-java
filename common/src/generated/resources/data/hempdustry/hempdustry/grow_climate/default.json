@@ -9,6 +9,12 @@
     "wet_from_downfall": 0.85,
     "wet_from_temperature": 0.5
   },
+  "fan": {
+    "above": 1,
+    "ahead": 9,
+    "below": 3,
+    "side": 2
+  },
   "humidity": {
     "damp": 2.0,
     "dry": 0.5,

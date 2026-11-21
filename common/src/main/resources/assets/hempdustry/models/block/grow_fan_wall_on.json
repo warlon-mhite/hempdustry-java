@@ -1,0 +1,6 @@
+{
+  "parent": "hempdustry:block/grow_fan_wall",
+  "textures": {
+    "front": "hempdustry:block/grow_fan_front_on"
+  }
+}

@@ -27,6 +27,7 @@ import com.warlonmhite.hempdustry.block.custom.DecarboxylatorBlock;
 import com.warlonmhite.hempdustry.block.custom.SiftingBoxBlock;
 import com.warlonmhite.hempdustry.block.custom.FilteredHashishBarBlock;
 import com.warlonmhite.hempdustry.block.custom.HashishBarBlock;
+import com.warlonmhite.hempdustry.block.custom.GrowFanBlock;
 import com.warlonmhite.hempdustry.block.custom.GrowLampBlock;
 import com.warlonmhite.hempdustry.block.custom.GrowPotBlock;
 import com.warlonmhite.hempdustry.block.custom.HempBedBlock;
@@ -554,6 +555,19 @@ public class ModBlocks {
                     .strength(3.0F, 6.0F)
                     .requiresCorrectToolForDrops()
                     .noOcclusion()
+                    .sound(SoundType.COPPER));
+
+    /**
+     * The Grow Fan — a box fan in a copper housing; see {@link GrowFanBlock}. The Grow Lamp's copper
+     * hardness, a lantern's sounds for the sheet metal, and {@code noOcclusion()}: a housing with a grille,
+     * not a cube.
+     */
+    public static final Block GROW_FAN = registerBlock("grow_fan", GrowFanBlock::new,
+            BlockBehaviour.Properties.of()
+                    .noOcclusion()
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .strength(3.0F, 6.0F)
+                    .requiresCorrectToolForDrops()
                     .sound(SoundType.COPPER));
 
     /**

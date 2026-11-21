@@ -292,6 +292,9 @@ public final class HempdustryGameTests {
         register("shears_clear_mildew_in_a_trim_window", MildewGameTest::shearsClearMildewInATrimWindow);
         register("mildew_resistance_scales_onset_and_spread", MildewGameTest::mildewResistanceScalesOnsetAndSpread);
         register("mildewed_buds_spoil_one_by_one", SchwagGameTest::mildewedBudsSpoilOneByOne);
+        register("a_grow_fan_runs_on_redstone", GrowClimateGameTest::aGrowFanRunsOnRedstone);
+        register("a_grow_fan_stirs_the_air_in_its_reach", GrowClimateGameTest::aGrowFanStirsTheAirInItsReach);
+        register("a_fan_thickens_the_stalk", GrowClimateGameTest::aFanThickensTheStalk);
         register("every_outfit_comes_in_a_baby_size", BabyLayerGameTest::everyOutfitComesInABabySize);
         register("every_route_keeps_the_chemotype", ChemotypeGameTest::everyRouteKeepsTheChemotype);
         register("nine_leaves_make_a_block_of_their_kind", ChemotypeGameTest::nineLeavesMakeABlockOfTheirKind);

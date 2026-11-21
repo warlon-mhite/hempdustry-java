@@ -757,6 +757,18 @@ public class ModRecipeProvider extends FabricRecipeProvider {
                 .unlockedBy(getHasName(Items.REDSTONE_LAMP), has(Items.REDSTONE_LAMP))
                 .save(output, id("grow_lamp"));
 
+        // A box fan: a copper housing round an iron motor, wired with redstone. No Nether part, on purpose:
+        // the fan is the first answer to a grow room's still air, and comes before the Grow Lamp's glowstone.
+        shaped(RecipeCategory.REDSTONE, ModBlocks.GROW_FAN)
+                .pattern("CRC")
+                .pattern("CIC")
+                .pattern(" R ")
+                .define('C', Items.COPPER_INGOT)
+                .define('I', Items.IRON_INGOT)
+                .define('R', Items.REDSTONE)
+                .unlockedBy(getHasName(Items.COPPER_INGOT), has(Items.COPPER_INGOT))
+                .save(output, id("grow_fan"));
+
         // A Grow Pot plumbed into a copper reservoir with a pump in it. Copper is the mod's
         // electrical metal (the lamp's housing, and vanilla's own copper bulb); the redstone is the
         // pump, which is also what the block needs a signal for once it is placed.

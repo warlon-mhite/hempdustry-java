@@ -1,0 +1,147 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "hempdustry:block/grow_fan_casing",
+    "casing": "hempdustry:block/grow_fan_casing",
+    "front": "hempdustry:block/grow_fan_front",
+    "back": "hempdustry:block/grow_fan_back"
+  },
+  "elements": [
+    {
+      "from": [
+        2,
+        2,
+        6
+      ],
+      "to": [
+        14,
+        14,
+        10
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            2,
+            14,
+            14
+          ],
+          "texture": "#front"
+        },
+        "south": {
+          "uv": [
+            2,
+            2,
+            14,
+            14
+          ],
+          "texture": "#back"
+        },
+        "east": {
+          "uv": [
+            6,
+            2,
+            10,
+            14
+          ],
+          "texture": "#casing"
+        },
+        "west": {
+          "uv": [
+            6,
+            2,
+            10,
+            14
+          ],
+          "texture": "#casing"
+        },
+        "up": {
+          "uv": [
+            2,
+            6,
+            14,
+            10
+          ],
+          "texture": "#casing"
+        },
+        "down": {
+          "uv": [
+            2,
+            6,
+            14,
+            10
+          ],
+          "texture": "#casing"
+        }
+      }
+    },
+    {
+      "from": [
+        4,
+        0,
+        5
+      ],
+      "to": [
+        12,
+        2,
+        11
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            4,
+            14,
+            12,
+            16
+          ],
+          "texture": "#casing"
+        },
+        "south": {
+          "uv": [
+            4,
+            14,
+            12,
+            16
+          ],
+          "texture": "#casing"
+        },
+        "east": {
+          "uv": [
+            5,
+            14,
+            11,
+            16
+          ],
+          "texture": "#casing"
+        },
+        "west": {
+          "uv": [
+            5,
+            14,
+            11,
+            16
+          ],
+          "texture": "#casing"
+        },
+        "up": {
+          "uv": [
+            4,
+            5,
+            12,
+            11
+          ],
+          "texture": "#casing"
+        },
+        "down": {
+          "uv": [
+            4,
+            5,
+            12,
+            11
+          ],
+          "texture": "#casing"
+        }
+      }
+    }
+  ]
+}
