@@ -1,0 +1,22 @@
+{
+  "air": {
+    "open": 1.0,
+    "still": 6.0,
+    "stirred": 3.0
+  },
+  "biome": {
+    "dry_below_downfall": 0.3,
+    "wet_from_downfall": 0.85,
+    "wet_from_temperature": 0.5
+  },
+  "humidity": {
+    "damp": 2.0,
+    "dry": 0.5,
+    "normal": 1.0,
+    "soaked": 4.0
+  },
+  "onset_one_in": 1500,
+  "spread_one_in": 100,
+  "trimmed": 0.75,
+  "wet_reach": 2
+}

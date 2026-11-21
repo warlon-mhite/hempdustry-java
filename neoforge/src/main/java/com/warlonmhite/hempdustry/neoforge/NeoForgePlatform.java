@@ -8,6 +8,7 @@ import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.fml.ModList;
@@ -59,6 +60,11 @@ public final class NeoForgePlatform implements Platform {
     @Override
     public void cropGrew(Level level, BlockPos pos, BlockState before) {
         CommonHooks.fireCropGrowPost(level, pos, before);
+    }
+
+    @Override
+    public Biome.ClimateSettings climateOf(Biome biome) {
+        return biome.getModifiedClimateSettings();
     }
 
     /** Never made: a crop only for the right to call the protected growth odds, NeoForge's form of them. */

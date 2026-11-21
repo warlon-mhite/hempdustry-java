@@ -282,7 +282,10 @@ public final class HempdustryGameTests {
         register("the_munchies_want_hunger_and_an_empty_stomach",
                 FourTwentyGameTest::theMunchiesWantHungerAndAnEmptyStomach);
         register("a_green_out_softens_the_legs_while_it_slows", JellyLegsGameTest::aGreenOutSoftensTheLegsWhileItSlows);
-        register("mildew_starts_ten_times_likelier_under_a_roof", MildewGameTest::mildewStartsTenTimesLikelierUnderARoof);
+        register("the_grow_climate_is_the_agreed_one", MildewGameTest::theGrowClimateIsTheAgreedOne);
+        register("mildew_follows_the_air", MildewGameTest::mildewFollowsTheAir);
+        register("mildew_follows_the_damp", MildewGameTest::mildewFollowsTheDamp);
+        register("water_and_trims_keep_mildew_off", MildewGameTest::waterAndTrimsKeepMildewOff);
         register("mildew_spreads_one_plant_at_a_time", MildewGameTest::mildewSpreadsOnePlantAtATime);
         register("strains_without_mildew_never_catch_it", MildewGameTest::strainsWithoutMildewNeverCatchIt);
         register("sulfur_gas_clears_and_prevents_mildew", MildewGameTest::sulfurGasClearsAndPreventsMildew);

@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.strain.StressPhenomenon;
 import com.warlonmhite.hempdustry.strain.internal.Hardiness;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
@@ -34,21 +35,20 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Powdery mildew: the price of the stale air under a roof, and now and then of a field. A <b>record the
- * plant keeps</b>, like {@link GrowLight}: canonical on the LOWER and copied up every segment, so the
+ * Powdery mildew: the price of still, damp air, and now and then of a field. A <b>record the plant
+ * keeps</b>, like {@link GrowLight}: canonical on the LOWER and copied up every segment, so the
  * blockstate can draw the powder on each of them.
  *
  * <ul>
- *   <li><b>It starts</b> on a growth step at {@link #ONSET} under a roof — anything above the plant
- *       that stops movement, glass included, leaves not — and at a tenth of that,
- *       {@link #ONSET_OUTDOORS}, under open sky. Still air is what it thrives in.</li>
+ *   <li><b>It starts</b> on a growth step at the climate's onset (1 in 1,500 in a field) times the
+ *       plant's {@link Climate}: its air (open, under glass, sealed) and its humidity (the biome, a wet
+ *       room). A plant in water never catches it.</li>
  *   <li><b>A plant's mildew resistance</b>, rolled at planting, scales its onset and the spread to it:
  *       very weak ×2 to very resistant ×¼ ({@link Hardiness#factor}). A plant with no record is neutral.</li>
  *   <li><b>It spreads</b> one plant at a time: each random tick, a mildewed plant tries one of its
- *       eight neighbours, at {@link #SPREAD} if that neighbour is under a roof and
- *       {@link #SPREAD_OUTDOORS} if it stands in the open, where the wind thins the spores out. A
- *       one-block gap stops it, which is what spacing does in a real grow room. It never kills a
- *       plant.</li>
+ *       eight neighbours, at the climate's spread (1 in 100 in a field) times that neighbour's own
+ *       climate. A one-block gap stops it, which is what spacing does in a real grow room. It never
+ *       kills a plant.</li>
  *   <li><b>Shears clear it</b> in a trim window: the cut is that window's trim, and the diseased
  *       leaf is thrown away ({@link Defoliation#tryCut}).</li>
  *   <li><b>Vanilla's sulfur gas clears and prevents it</b> — the noxious gas over a potent sulfur
@@ -73,14 +73,10 @@ public enum Mildew implements StringRepresentable {
 
     public static final EnumProperty<Mildew> PROPERTY = EnumProperty.create("mildew", Mildew.class);
 
-    /** The odds a growth step under a roof brings mildew. About 30% of nine-plant grows see a case, and 86% of 49-plant ones. */
-    public static final float ONSET = 1.0F / 150;
-    /** The odds a growth step under open sky brings mildew: a tenth of a roof's. About one 64-plant field in four sees a case. */
-    public static final float ONSET_OUTDOORS = 1.0F / 1500;
-    /** The odds a mildewed plant's random tick infects the neighbour it picked, when that neighbour is under a roof. */
-    public static final float SPREAD = 1.0F / 2;
-    /** The same for a neighbour under open sky: about one case in five reaches a neighbour before the field is ripe. */
-    public static final float SPREAD_OUTDOORS = 1.0F / 100;
+    /** How rarely a damp plant under a roof drips its condensation: one animate tick in this many. */
+    private static final int DRIP_ONE_IN = 24;
+    /** How far up a client looks for a roof over a plant, keeping no heightmap of roofs. */
+    private static final int ROOF_WALK = 24;
 
     /** How far vanilla's noxious gas reaches from its source, which is where it reaches a plant from too. */
     private static final double GAS_REACH = PotentSulfurBlockEntity.EFFECT_RANGE;
@@ -138,23 +134,23 @@ public enum Mildew implements StringRepresentable {
     }
 
     /**
-     * The record after a growth step of the plant at {@code lower}: {@code current} kept, or mildew
-     * caught at {@link #ONSET} under a roof or {@link #ONSET_OUTDOORS} in the open. Draws from
-     * {@code random} only for a plant that can catch it at all.
+     * The record after a growth step of the plant at {@code lower}, standing as {@code plant} before the step:
+     * {@code current} kept, or mildew caught at {@link #onsetFor its odds}. Draws from {@code random} only for a
+     * plant that can catch it at all.
      */
     public static Mildew afterStep(Level world, BlockPos lower, BlockState plant, Mildew current,
                                    RandomSource random) {
         if (current == MILDEWED || !canCatch(world, lower, plant)) {
             return current;
         }
-        return random.nextFloat() < onsetFor(world, lower) && !gassed(world, lower) ? MILDEWED : current;
+        return random.nextFloat() < onsetFor(world, lower, plant) && !gassed(world, lower) ? MILDEWED : current;
     }
 
     /**
-     * A mildewed plant's reach: one of its eight neighbours, at the odds of the air that neighbour stands in
-     * ({@link #SPREAD} under a roof, {@link #SPREAD_OUTDOORS} in the open), scaled by its own mildew
-     * resistance. The plant that catches it decides, as a block catching fire does: a greenhouse's mildew
-     * reaches a plant outside it rarely, and a field's reaches into the greenhouse easily.
+     * A mildewed plant's reach: one of its eight neighbours, at the climate's spread times that neighbour's own
+     * climate and resistance, never above certain. The plant that catches it decides, as a block catching fire
+     * does: a greenhouse's mildew reaches a plant outside it rarely, and a field's reaches into a sealed room
+     * easily. A neighbour in water is never reached.
      */
     private static void spread(Level world, BlockPos lower, RandomSource random) {
         int pick = random.nextInt(8);
@@ -162,7 +158,7 @@ public enum Mildew implements StringRepresentable {
         BlockState plant = world.getBlockState(target);
         if (!plant.hasProperty(PROPERTY) || plant.getValue(PROPERTY) == MILDEWED
                 || world.getBlockState(target.below()).is(plant.getBlock())
-                || random.nextFloat() >= Hardiness.apply(mildewStep(world, target), roofed(world, target) ? SPREAD : SPREAD_OUTDOORS)
+                || random.nextFloat() >= spreadTo(world, target, plant)
                 || !canCatch(world, target, plant) || gassed(world, target)) {
             return;
         }
@@ -170,11 +166,18 @@ public enum Mildew implements StringRepresentable {
     }
 
     /**
-     * The odds one growth step of the plant at {@code lower} brings mildew: {@link #ONSET} under a roof,
-     * {@link #ONSET_OUTDOORS} in the open, scaled by its resistance.
+     * The odds one growth step of the plant at {@code lower}, standing as {@code plant}, brings mildew: the
+     * climate's onset times the plant's {@link Climate#factor climate}, scaled by its resistance.
      */
-    private static float onsetFor(Level world, BlockPos lower) {
-        return Hardiness.apply(mildewStep(world, lower), roofed(world, lower) ? ONSET : ONSET_OUTDOORS);
+    public static float onsetFor(Level world, BlockPos lower, BlockState plant) {
+        float odds = GrowClimate.of(world.registryAccess()).onset() * Climate.factor(world, lower, plant);
+        return Hardiness.apply(mildewStep(world, lower), Math.min(1.0F, odds));
+    }
+
+    /** The odds a mildewed neighbour's random tick reaches the plant at {@code lower}, standing as {@code plant}. */
+    public static float spreadTo(Level world, BlockPos lower, BlockState plant) {
+        float odds = GrowClimate.of(world.registryAccess()).spread() * Climate.factor(world, lower, plant);
+        return Hardiness.apply(mildewStep(world, lower), Math.min(1.0F, odds));
     }
 
     /**
@@ -335,12 +338,44 @@ public enum Mildew implements StringRepresentable {
         }
     }
 
-    /** Now and then a drift of white ash off a mildewed segment: the spores, so the powder is seen moving. */
+    /**
+     * Now and then a drift of white ash off a mildewed segment: the spores, so the powder is seen moving. And,
+     * rarely, a drop of condensation off the leaves of a plant growing in damp air under a roof, so a room that
+     * breeds mildew shows it before any plant has caught it.
+     */
     public static void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {
-        if (state.hasProperty(PROPERTY) && state.getValue(PROPERTY) == MILDEWED && random.nextInt(4) == 0) {
+        if (!state.hasProperty(PROPERTY)) {
+            return;
+        }
+        if (state.getValue(PROPERTY) == MILDEWED && random.nextInt(4) == 0) {
             world.addParticle(ParticleTypes.WHITE_ASH, pos.getX() + random.nextDouble(),
                     pos.getY() + 0.3 + random.nextDouble() * 0.6, pos.getZ() + random.nextDouble(), 0.0, 0.0, 0.0);
         }
+        if (random.nextInt(DRIP_ONE_IN) == 0 && takesMildew(state) && dripsCondensation(world, pos, state)) {
+            world.addParticle(ParticleTypes.DRIPPING_WATER, pos.getX() + 0.2 + random.nextDouble() * 0.6,
+                    pos.getY() + 0.2 + random.nextDouble() * 0.5, pos.getZ() + 0.2 + random.nextDouble() * 0.6,
+                    0.0, 0.0, 0.0);
+        }
+    }
+
+    /**
+     * Whether the plant one of whose segments is at {@code pos} grows in damp or soaked air under a roof: read
+     * from its root, as the server reads it, but with the roof walked, since a client keeps no heightmap of roofs.
+     */
+    private static boolean dripsCondensation(Level world, BlockPos pos, BlockState state) {
+        BlockPos root = pos;
+        while (world.getBlockState(root.below()).is(state.getBlock())) {
+            root = root.below();
+        }
+        if (Climate.inWater(world, root)) {
+            return false;
+        }
+        BlockPos top = root;
+        while (world.getBlockState(top.above()).is(state.getBlock())) {
+            top = top.above();
+        }
+        boolean roofed = Climate.roofedByWalk(world, top, ROOF_WALK);
+        return roofed && Climate.humidity(world, root, true, Climate.onTray(world, root)).compareTo(Climate.Humidity.DAMP) >= 0;
     }
 
     private static boolean flowering(BlockState plant) {

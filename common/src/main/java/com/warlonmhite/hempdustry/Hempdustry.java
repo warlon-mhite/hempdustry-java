@@ -5,6 +5,7 @@ import com.warlonmhite.hempdustry.advancement.ModCriteria;
 import com.warlonmhite.hempdustry.balance.DeviceStats;
 import com.warlonmhite.hempdustry.balance.EdibleBundle;
 import com.warlonmhite.hempdustry.balance.GreenOut;
+import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.balance.ModBalance;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.ModCauldronBehaviors;
@@ -53,7 +54,7 @@ public class Hempdustry {
 	 * them before anything else is registered -- NeoForge asks for them before its registry events --
 	 * so each loader's entry point calls this first, then {@link #init}.
 	 *
-	 * <p>All four are <b>synced</b>, so a datapack's entries reach every client without a packet of
+	 * <p>All of them are <b>synced</b>, so a datapack's entries reach every client without a packet of
 	 * our own: the tinting and the naming read the loaded strain, and the creative tab and the recipe
 	 * viewers show the bowls the server actually packs. No {@code SKIP_WHEN_EMPTY}: the mod's own
 	 * entries are always present, and a client without the registry is a client without the mod.
@@ -65,6 +66,7 @@ public class Hempdustry {
 		registration.registerSyncedDynamicRegistry(DeviceStats.REGISTRY_KEY, DeviceStats.CODEC);
 		registration.registerSyncedDynamicRegistry(EdibleBundle.REGISTRY_KEY, EdibleBundle.CODEC);
 		registration.registerSyncedDynamicRegistry(GreenOut.REGISTRY_KEY, GreenOut.CODEC);
+		registration.registerSyncedDynamicRegistry(GrowClimate.REGISTRY_KEY, GrowClimate.CODEC);
 	}
 
 	/** Registers everything else, in order; each loader's entry point calls it once. */

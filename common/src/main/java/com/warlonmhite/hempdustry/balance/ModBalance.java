@@ -10,8 +10,9 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * The numbers a datapack can rebalance without touching the code: how each smokeable smokes
  * ({@link DeviceStats}), what an edible does ({@link EdibleBundle}) and what a green-out costs
- * ({@link GreenOut}). Three dynamic registries in the image of the strain one, loaded per world from
- * {@code data/<namespace>/hempdustry/<device|edible|green_out>/<id>.json}.
+ * ({@link GreenOut}), and how powdery mildew reads a plant's climate ({@link GrowClimate}). Four dynamic
+ * registries in the image of the strain one, loaded per world from
+ * {@code data/<namespace>/hempdustry/<device|edible|green_out|grow_climate>/<id>.json}.
  *
  * <p>The mod ships its own numbers as those files, written by datagen from the built-in values, so a
  * world that never touches them plays exactly as before. The server's config keeps the last word:
@@ -28,7 +29,7 @@ public final class ModBalance {
 
     private static final Set<ResourceKey<?>> WARNED = ConcurrentHashMap.newKeySet();
 
-    /** Its three registries are registered with the strains' ({@link Hempdustry#registerDynamicRegistries}). */
+    /** Its four registries are registered with the strains' ({@link Hempdustry#registerDynamicRegistries}). */
     public static void registerBalance() {
         Hempdustry.LOGGER.info("Registering Balance for " + Hempdustry.MOD_ID);
     }

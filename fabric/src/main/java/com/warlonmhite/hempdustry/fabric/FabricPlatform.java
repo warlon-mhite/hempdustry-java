@@ -9,6 +9,7 @@ import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -55,6 +56,11 @@ public final class FabricPlatform implements Platform {
 
     @Override
     public void cropGrew(Level level, BlockPos pos, BlockState before) {
+    }
+
+    @Override
+    public Biome.ClimateSettings climateOf(Biome biome) {
+        return biome.climateSettings;
     }
 
     /** Never made: a crop only for the right to call vanilla's protected growth odds. */

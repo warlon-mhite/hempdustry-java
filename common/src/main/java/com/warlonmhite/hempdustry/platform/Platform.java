@@ -5,6 +5,7 @@ import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.nio.file.Path;
@@ -55,4 +56,11 @@ public interface Platform {
      * from it). Nothing on Fabric.
      */
     void cropGrew(Level level, BlockPos pos, BlockState before);
+
+    /**
+     * {@code biome}'s rainfall and warmth as the running game has them: vanilla's own on Fabric, where Fabric
+     * API's biome modifications write into them, and NeoForge's modified copy there, which is where a biome
+     * modifier puts its change. Read by the grow climate, which makes a swamp damp and a desert dry.
+     */
+    Biome.ClimateSettings climateOf(Biome biome);
 }

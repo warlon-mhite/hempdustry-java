@@ -1,7 +1,7 @@
 {
   "type": "minecraft:function",
   "environment": "minecraft:default",
-  "function": "hempdustry-gametest:mildew_starts_ten_times_likelier_under_a_roof",
+  "function": "hempdustry-gametest:the_grow_climate_is_the_agreed_one",
   "structure": "hempdustry-gametest:empty",
   "max_ticks": 200,
   "setup_ticks": 0,
