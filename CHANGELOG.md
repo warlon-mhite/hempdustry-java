@@ -9,7 +9,27 @@ beta be told when the release lands.
 
 ## [Unreleased]
 
-Nothing yet — everything below shipped in 2.1.1+26.3.
+A patch of fixes: the mod's solid blocks make a roof under Minecraft 26.3's new sky rule, JEI on Fabric
+shows the kitchen's recipes, a click-harvested plant starts clean, and machines that act as a player, such
+as Create's deployer, keep their smoke to themselves.
+
+### Fixed
+
+- **Every solid block of the mod is a roof.** Since Minecraft 26.3 the sky above a block is read from a
+  tag of solid blocks, and the hempcrete block, hemp bricks, parquet, the bale, hemp wool, the machines,
+  the Grow Pot, the Hydro Tray and the Space Cake were not in it: rain and snow fell through a ceiling of
+  them, and a plant under one counted as open sky, so mildew never started in a hempcrete greenhouse. The
+  hempcrete powder takes the concrete powders' tag under its new name too.
+- **JEI on Fabric shows the kitchen.** The edibles, bhang and hemp milk crafted as they should, but JEI on
+  Fabric listed none of them since 2.1.0: no space cookie, brownie or cake, no cannabutter toast or
+  dawamesk, nothing under the uses of cannabutter. NeoForge and REI showed them all along.
+- **A plant replanted by a right-click harvest starts free of powdery mildew.** 2.1.1 took off the trims
+  and rub such a seedling could not have earned, but left its mildew and sulfur, so a grow room under a
+  click-harvest mod, once mildewed, stayed mildewed for ever and lost buds to schwag at every harvest.
+- **A deployer that smokes keeps the smoke to itself.** A machine that smokes in its owner's name, as
+  Create's deployer does with a packed spliff, pipe, bong or vaporizer in its hand, sent the exhale's puff,
+  the smoking sound and what a strain holds back to the exhale (Beldía's Blindness) to the player who set
+  it up, wherever they were. They now happen at once, on the machine's own player.
 
 ## [2.1.1+26.3] — 2026-11-13
 
