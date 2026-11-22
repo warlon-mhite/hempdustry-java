@@ -9,7 +9,18 @@ beta be told when the release lands.
 
 ## [Unreleased]
 
-Nothing yet — everything below shipped in 2.1.1+26.1.2.
+A last patch for Minecraft 26.1.2, which is no longer supported: JEI on Fabric shows the kitchen's recipes,
+and machines that act as a player, such as Create's deployer, keep their smoke to themselves.
+
+### Fixed
+
+- **JEI on Fabric shows the kitchen.** The edibles, bhang and hemp milk crafted as they should, but JEI on
+  Fabric listed none of them since 2.1.0: no space cookie, brownie or cake, no cannabutter toast or
+  dawamesk, nothing under the uses of cannabutter. NeoForge and REI showed them all along.
+- **A deployer that smokes keeps the smoke to itself.** A machine that smokes in its owner's name, as
+  Create's deployer does with a packed spliff, pipe, bong or vaporizer in its hand, sent the exhale's puff,
+  the smoking sound and what a strain holds back to the exhale (Beldía's Blindness) to the player who set
+  it up, wherever they were. They now happen at once, on the machine's own player.
 
 ## [2.1.1+26.1.2] — 2026-11-13
 
