@@ -17,31 +17,31 @@ its own jars for its own loaders.
 ## Which version to use
 
 Pick the row for your Minecraft version. Each release jar is named for its mod version and Minecraft
-version, `2.1.1+26.3` for example, and the loader is the one the jar is built for.
+version, `2.1.2+26.3` for example, and the loader is the one the jar is built for.
 
 | Minecraft | Loaders | Branch | Support | Latest release |
 |---|---|---|---|---|
-| 26.3 | Fabric, NeoForge | `26.3-2.1` | **Active** | `v2.1.1+26.3` |
-| 1.21.11 | Fabric, NeoForge | `2.1` | **Active** | `v2.1.1` |
-| 1.21.1 | Fabric, NeoForge | `1.21.1-2.1` | **Active** | `v2.1.1+1.21.1` |
-| 1.20.1 | Forge | `1.20.1-2.1` | **Maintained** | `v2.1.1+1.20.1` |
-| 26.2 | Fabric, NeoForge | `26.2-2.1` | End of life | `v2.1.1+26.2` |
-| 26.1.2 | Fabric, NeoForge | `26.1.2-2.1` | End of life | `v2.1.1+26.1.2` |
-| 1.20.1 | Fabric | `1.20.1-2.1` | End of life | `v2.1.1+1.20.1` |
+| 26.3 | Fabric, NeoForge | `26.3-2.1` | **Active** | `v2.1.2+26.3` |
+| 1.21.11 | Fabric, NeoForge | `2.1` | **Active** | `v2.1.2` |
+| 1.21.1 | Fabric, NeoForge | `1.21.1-2.1` | **Active** | `v2.1.2+1.21.1` |
+| 1.20.1 | Forge | `1.20.1-2.1` | **Maintained** | `v2.1.2+1.20.1` |
+| 26.2 | Fabric, NeoForge | `26.2-2.1` | End of life | `v2.1.2+26.2` |
+| 26.1.2 | Fabric, NeoForge | `26.1.2-2.1` | End of life | `v2.1.2+26.1.2` |
+| 1.20.1 | Fabric | `1.20.1-2.1` | End of life | `v2.1.2+1.20.1` |
 | 1.18.2 | Forge | `1.18.2-2.1` | End of life | `v2.1.0+1.18.2` |
 | 1.16.5 | Forge | `1.16.5-2.1` | End of life | `v2.1.0+1.16.5` |
 | 1.21.11 (2.0.3) | Fabric | `master` | End of life | `v2.0.3` |
 | 1.21.1 (2.0.3) | Fabric | `1.21.1` | End of life | `v2.0.3+1.21.1` |
 
-The 1.21.11 release of 2.1.1 is tagged `v2.1.1` and every line's 2.1.1 jars are on that GitHub
+The 1.21.11 release of 2.1.2 is tagged `v2.1.2` and every line's 2.1.2 jars are on that GitHub
 release; the other lines also have their own `v<version>+<minecraft>` tag.
 
 1.20.1 on Forge is maintained: it gets fixes for crashes, world loss and world imports.
 
-26.2, 26.1.2, 1.20.1 on Fabric, 1.18.2 and 1.16.5 left support with 2.1.1. Their last jars stay on
-the releases and keep working, and the 1.16.5 and 1.18.2 jars are still the way to bring a GanjaCraft
-or Hemp-Craft world into Hempdustry 2. They get no more fixes: move a world up to a supported version
-to keep getting them.
+26.2, 26.1.2, 1.20.1 on Fabric, 1.18.2 and 1.16.5 left support with 2.1.1 (the first three took one
+last fix release, 2.1.2). Their last jars stay on the releases and keep working, and the 1.16.5 and
+1.18.2 jars are still the way to bring a GanjaCraft or Hemp-Craft world into Hempdustry 2. They get no
+more fixes: move a world up to a supported version to keep getting them.
 
 Minecraft 26.4 is not ported yet. It gets its own branch once Fabric and NeoForge both build for it.
 
