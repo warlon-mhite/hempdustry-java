@@ -9,7 +9,23 @@ beta be told when the release lands.
 
 ## [Unreleased]
 
-Nothing yet — everything below shipped in 2.1.1.
+A hotfix for machines that act as a player, such as Create's deployer: on NeoForge one no longer crashes the
+server on a Hemp Press, and on either loader one that smokes no longer hands the smoke to the player who set
+it up. JEI on Fabric shows the kitchen's recipes.
+
+### Fixed
+
+- **A Create deployer, or another mod's machine that clicks as a player, no longer crashes a NeoForge
+  server** when it clicks a Hemp Press, an Infuser or a Decarboxylator. The deployer clicks again whenever
+  its chunk loads, so the world crashed for anyone who came back to it. Such a machine now opens no menu,
+  as NeoForge's own fake player never does.
+- **A deployer that smokes keeps the smoke to itself.** A machine that smokes in its owner's name, as
+  Create's deployer does with a packed spliff, pipe, bong or vaporizer in its hand, sent the exhale's puff,
+  the smoking sound and what a strain holds back to the exhale (Beldía's Blindness) to the player who set
+  it up, wherever they were. They now happen at once, on the machine's own player.
+- **JEI on Fabric shows the kitchen.** The edibles, bhang and hemp milk crafted as they should, but JEI on
+  Fabric listed none of them since 2.1.0: no space cookie, brownie or cake, no cannabutter toast or
+  dawamesk, nothing under the uses of cannabutter. NeoForge and REI showed them all along.
 
 ## [2.1.1] — 2026-11-13
 
