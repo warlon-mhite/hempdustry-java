@@ -9,7 +9,15 @@ beta be told when the release lands.
 
 ## [Unreleased]
 
-Nothing yet — everything below shipped in 2.1.1+1.20.1.
+A patch for machines that act as a player, such as Create's deployer: one that smokes no longer hands the
+smoke to the player who set it up.
+
+### Fixed
+
+- **A deployer that smokes keeps the smoke to itself.** A machine that smokes in its owner's name, as
+  Create's deployer does with a packed spliff, pipe, bong or vaporizer in its hand, sent the exhale's puff,
+  the smoking sound and what a strain holds back to the exhale (Beldía's Blindness) to the player who set
+  it up, wherever they were. They now happen at once, on the machine's own player.
 
 ## [2.1.1+1.20.1] — 2026-11-13
 
