@@ -9,6 +9,10 @@ beta be told when the release lands.
 
 ## [Unreleased]
 
+Nothing yet — everything below shipped in 2.1.2+1.21.1.
+
+## [2.1.2+1.21.1] — 2026-11-22
+
 A hotfix for machines that act as a player, such as Create's deployer: on NeoForge one no longer crashes the
 server on a Hemp Press, and on either loader one that smokes no longer hands the smoke to the player who set
 it up.
@@ -831,7 +835,8 @@ major version and it will say so here.
   dependencies { modImplementation "maven.modrinth:hempdustry:2.0.0-beta+1.21.1" }
   ```
 
-[Unreleased]: https://github.com/warlon-mhite/hempdustry-java/compare/v2.1.1%2B1.21.1...HEAD
+[Unreleased]: https://github.com/warlon-mhite/hempdustry-java/compare/v2.1.2%2B1.21.1...HEAD
+[2.1.2+1.21.1]: https://github.com/warlon-mhite/hempdustry-java/releases/tag/v2.1.2
 [2.1.1+1.21.1]: https://github.com/warlon-mhite/hempdustry-java/releases/tag/v2.1.1
 [2.1.0]: https://github.com/warlon-mhite/hempdustry-java/releases/tag/v2.1.0
 [2.0.3]: https://github.com/warlon-mhite/hempdustry-java/releases/tag/v2.0.3
