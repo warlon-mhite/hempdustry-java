@@ -9,6 +9,10 @@ beta be told when the release lands.
 
 ## [Unreleased]
 
+Nothing yet — everything below shipped in 2.1.2+26.3.
+
+## [2.1.2+26.3] — 2026-11-22
+
 A patch of fixes: the mod's solid blocks make a roof under Minecraft 26.3's new sky rule, JEI on Fabric
 shows the kitchen's recipes, a click-harvested plant starts clean, and machines that act as a player, such
 as Create's deployer, keep their smoke to themselves.
@@ -916,7 +920,8 @@ major version and it will say so here.
   dependencies { modImplementation "maven.modrinth:hempdustry:2.0.0-beta+1.21.1" }
   ```
 
-[Unreleased]: https://github.com/warlon-mhite/hempdustry-java/compare/v2.1.1%2B26.3...HEAD
+[Unreleased]: https://github.com/warlon-mhite/hempdustry-java/compare/v2.1.2%2B26.3...HEAD
+[2.1.2+26.3]: https://github.com/warlon-mhite/hempdustry-java/releases/tag/v2.1.2
 [2.1.1+26.3]: https://github.com/warlon-mhite/hempdustry-java/releases/tag/v2.1.1
 [2.1.0+26.3]: https://github.com/warlon-mhite/hempdustry-java/releases/tag/v2.1.0
 [2.1.0+26.2]: https://github.com/warlon-mhite/hempdustry-java/releases/tag/v2.1.0
