@@ -498,10 +498,15 @@ public final class MauiWowieGameTest {
 
     // ----- helpers -----
 
-    /** Sand at {@code floor} under the whole structure, still water from above it up to {@code top}. */
+    /**
+     * Sand at {@code floor} under the whole structure, on stone, still water from above it up to {@code top}. The
+     * structure is air, and sand left over air falls two ticks later with every plant on it: a test that waits, as
+     * one waiting for the light engine does, then finds no plant.
+     */
     private static void sea(GameTestHelper context, int floor, int top) {
         for (int x = 0; x < 8; x++) {
             for (int z = 0; z < 8; z++) {
+                onStone(context, new BlockPos(x, floor, z));
                 context.setBlock(new BlockPos(x, floor, z), Blocks.SAND);
                 for (int y = floor + 1; y <= top; y++) {
                     context.setBlock(new BlockPos(x, y, z), Blocks.WATER);
@@ -517,12 +522,20 @@ public final class MauiWowieGameTest {
                 context.setBlock(new BlockPos(soilRel.getX(), y, soilRel.getZ()).relative(side), Blocks.GLASS);
             }
         }
+        onStone(context, soilRel);
         context.setBlock(soilRel, soil);
         for (int up = 1; up <= depth; up++) {
             context.setBlock(soilRel.above(up), Blocks.WATER);
         }
         if (soilRel.getY() + depth + 1 < 8) {
             context.setBlock(soilRel.above(depth + 1), Blocks.AIR);
+        }
+    }
+
+    /** Stone under {@code soilRel} when it stands inside the structure, so sand set there stays where it is. */
+    private static void onStone(GameTestHelper context, BlockPos soilRel) {
+        if (soilRel.getY() > 0) {
+            context.setBlock(soilRel.below(), Blocks.STONE);
         }
     }
 
