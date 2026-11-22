@@ -295,6 +295,7 @@ public final class HempdustryGameTests {
         register("mildewed_buds_spoil_one_by_one", SchwagGameTest::mildewedBudsSpoilOneByOne);
         register("a_grow_fan_runs_on_redstone", GrowClimateGameTest::aGrowFanRunsOnRedstone);
         register("a_grow_fan_stirs_the_air_in_its_reach", GrowClimateGameTest::aGrowFanStirsTheAirInItsReach);
+        register("a_fans_puffs_draw_its_lane", GrowClimateGameTest::aFansPuffsDrawItsLane);
         register("a_fan_thickens_the_stalk", GrowClimateGameTest::aFanThickensTheStalk);
         register("a_dehumidifier_dries_a_roofed_room", GrowClimateGameTest::aDehumidifierDriesARoofedRoom);
         register("a_dehumidifier_fills_from_the_plants_it_dries", GrowClimateGameTest::aDehumidifierFillsFromThePlantsItDries);

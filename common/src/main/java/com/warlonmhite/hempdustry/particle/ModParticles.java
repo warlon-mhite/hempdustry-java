@@ -43,6 +43,23 @@ public class ModParticles {
                 }
             });
 
+    /**
+     * A running Grow Fan's air: a faint puff that leaves the grille and drifts down the lane the fan blows on,
+     * to its far edge ({@link FanPuffOption}). Spawned on the client by the fan, as a damp plant's drips are.
+     */
+    public static final ParticleType<FanPuffOption> FAN_PUFF = Registry.register(BuiltInRegistries.PARTICLE_TYPE,
+            Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "fan_puff"), new ParticleType<FanPuffOption>(false) {
+                @Override
+                public MapCodec<FanPuffOption> codec() {
+                    return FanPuffOption.CODEC;
+                }
+
+                @Override
+                public StreamCodec<? super RegistryFriendlyByteBuf, FanPuffOption> streamCodec() {
+                    return FanPuffOption.STREAM_CODEC;
+                }
+            });
+
     private static SimpleParticleType registerParticle(String name, SimpleParticleType type) {
         return Registry.register(BuiltInRegistries.PARTICLE_TYPE, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name), type);
     }

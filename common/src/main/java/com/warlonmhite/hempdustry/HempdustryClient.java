@@ -25,6 +25,7 @@ import com.warlonmhite.hempdustry.config.HempdustryConfig;
 
 import com.warlonmhite.hempdustry.client.UpdateChecker;
 import com.warlonmhite.hempdustry.client.particle.AromaParticle;
+import com.warlonmhite.hempdustry.client.particle.FanPuffParticle;
 import com.warlonmhite.hempdustry.client.particle.TerpeneParticles;
 import com.warlonmhite.hempdustry.client.particle.TerpenePuffParticle;
 import com.warlonmhite.hempdustry.client.sound.DrawSoundInstance;
@@ -93,6 +94,7 @@ public class HempdustryClient {
         client.particleProvider(ModParticles.TERPENE_SMOKE, TerpeneParticles.Smoke::new);
         client.particleProvider(ModParticles.TERPENE_VAPOUR, TerpeneParticles.Vapour::new);
         client.particleProvider(ModParticles.TERPENE_PUFF, TerpenePuffParticle.Provider::new);
+        client.particleProvider(ModParticles.FAN_PUFF, FanPuffParticle.Provider::new);
 
         // The press's platen and capstan move, so a renderer draws them rather than the block model.
         client.blockEntityRenderer(ModBlockEntities.HEMP_PRESS, HempPressBlockEntityRenderer::new);

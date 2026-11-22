@@ -14,7 +14,11 @@ import com.warlonmhite.hempdustry.block.custom.IndicaCropBlock;
 import com.warlonmhite.hempdustry.block.custom.Mildew;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
 import com.warlonmhite.hempdustry.item.ModItems;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
@@ -26,6 +30,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.BonemealSource;
@@ -141,6 +146,89 @@ public final class GrowClimateGameTest {
         fan(context, at, facing, face, true);
         context.assertTrue(Climate.ventilated(context.getLevel(), root) == expected, "a running fan " + face + " at "
                 + at.subtract(PLANT) + " from the root, blowing " + facing + (expected ? ", misses it" : ", reaches it"));
+        clearFan(context, at);
+    }
+
+    /**
+     * A running fan's puffs draw the lane its wind reaches, and nothing past it. In every placement, facing every
+     * way, a puff leaves the front of the housing and is gone at the lane's far edge, inside its width. And in a
+     * room, standing, on a wall and hung, blowing west and east: every block a puff passes through past the fan's
+     * own is one a plant rooted there is ventilated in ({@link Climate#ventilated}), and every block of the lane at
+     * the fan's height has a puff pass through it. Every puff the game can pick is walked: the three numbers that
+     * place it at their ends and across their range.
+     */
+    public static void aFansPuffsDrawItsLane(GameTestHelper context) {
+        GrowClimate.Fan lane = GrowClimate.of(context.getLevel().registryAccess()).fan();
+        for (AttachFace face : AttachFace.values()) {
+            for (Direction facing : Direction.Plane.HORIZONTAL) {
+                BlockState state = ModBlocks.GROW_FAN.defaultBlockState().setValue(GrowFanBlock.FACING, facing)
+                        .setValue(GrowFanBlock.FACE, face).setValue(GrowFanBlock.POWERED, true);
+                AABB housing = state.getShape(EmptyBlockGetter.INSTANCE, BlockPos.ZERO).bounds();
+                Vec3 ahead = facing.getUnitVec3();
+                Vec3 across = facing.getClockWise().getUnitVec3();
+                for (double to : new double[] {-1.0, 0.0, 1.0}) {
+                    GrowFanBlock.Puff puff = GrowFanBlock.puff(state, EmptyBlockGetter.INSTANCE, BlockPos.ZERO, lane,
+                            0.0, 0.0, to);
+                    String where = "a fan " + face + " blowing " + facing + "'s puff to " + to;
+                    context.assertTrue(housing.contains(puff.from().subtract(ahead.scale(0.01)))
+                                    && !housing.contains(puff.from().add(ahead.scale(0.01))),
+                            where + " leaves from " + puff.from() + ", not the front of its housing " + housing);
+                    Vec3 end = puff.from().add(puff.path().offset(puff.path().reach()))
+                            .subtract(Vec3.atCenterOf(BlockPos.ZERO));
+                    double far = end.dot(ahead);
+                    double side = end.dot(across);
+                    context.assertTrue(far > lane.ahead() + 0.4 && far < lane.ahead() + 0.5,
+                            where + " is gone " + far + " blocks ahead of the fan's middle, not at the lane's far edge, "
+                                    + (lane.ahead() + 0.5));
+                    context.assertTrue(Math.abs(side) < lane.side() + 0.5,
+                            where + " ends " + side + " blocks to the side, outside the lane's " + (2 * lane.side() + 1));
+                }
+            }
+        }
+
+        BlockPos west = new BlockPos(12, 3, 3);
+        BlockPos east = new BlockPos(2, 3, 3);
+        for (AttachFace face : AttachFace.values()) {
+            puffsDrawTheLane(context, lane, west, Direction.WEST, face);
+            puffsDrawTheLane(context, lane, east, Direction.EAST, face);
+        }
+        context.succeed();
+    }
+
+    /** The puffs of a running fan at {@code at}, fixed as {@code face} and blowing {@code facing}, draw its lane. */
+    private static void puffsDrawTheLane(GameTestHelper context, GrowClimate.Fan lane, BlockPos at, Direction facing,
+                                         AttachFace face) {
+        ServerLevel world = context.getLevel();
+        fan(context, at, facing, face, true);
+        BlockPos fan = context.absolutePos(at);
+        BlockState state = world.getBlockState(fan);
+        Map<BlockPos, Boolean> ventilated = new HashMap<>();
+        Set<BlockPos> passed = new HashSet<>();
+        double[] ends = {-1.0, 0.0, 1.0};
+        for (double side : ends) {
+            for (double up : ends) {
+                for (int step = -24; step <= 24; step++) {
+                    GrowFanBlock.Puff puff = GrowFanBlock.puff(state, world, fan, lane, side, up, step / 24.0);
+                    for (double travelled = 0.0; travelled <= puff.path().reach(); travelled += 0.05) {
+                        BlockPos in = BlockPos.containing(puff.from().add(puff.path().offset(travelled)));
+                        if (in.equals(fan) || !passed.add(in)) {
+                            continue;
+                        }
+                        boolean reached = ventilated.computeIfAbsent(in, pos -> Climate.ventilated(world, pos));
+                        context.assertTrue(reached, "a fan " + face + " blowing " + facing + " puffs through "
+                                + in.subtract(fan) + " from it, where its wind does not reach");
+                    }
+                }
+            }
+        }
+        Direction across = facing.getClockWise();
+        for (int ahead = 1; ahead <= lane.ahead(); ahead++) {
+            for (int side = -lane.side(); side <= lane.side(); side++) {
+                BlockPos block = fan.relative(facing, ahead).relative(across, side);
+                context.assertTrue(passed.contains(block), "no puff of a fan " + face + " blowing " + facing
+                        + " passes through " + block.subtract(fan) + " from it, in the lane its wind reaches");
+            }
+        }
         clearFan(context, at);
     }
 

@@ -1,7 +1,10 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.balance.GrowClimate;
+import com.warlonmhite.hempdustry.particle.FanPuffOption;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -13,6 +16,8 @@ import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.redstone.Orientation;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
@@ -30,10 +35,19 @@ import org.jetbrains.annotations.Nullable;
  * that grew in a fan's wind at every step thickens its stalk: one stem more at harvest
  * ({@code hempdustry:ventilated}), which a Grow Pot's plant, short of a stem, is glad of.
  *
- * <p>Its blades spin while it runs, drawn by an animated texture: the block needs no renderer of its own.
+ * <p>Its blades spin while it runs, drawn by an animated texture: the block needs no renderer of its own. And now
+ * and then a faint puff of air leaves the grille and drifts down the lane it blows on, out to its sides and on to
+ * its far edge ({@link #animateTick}), so a player sees which plants it reaches without a recipe viewer's page.
  */
 public class GrowFanBlock extends FaceAttachedHorizontalDirectionalBlock {
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
+
+    /** How far from the grille's middle a puff may leave it, each way: within its 12 pixels, short of the rim. */
+    private static final double GRILLE = 0.3;
+    /** How far past the lane's outer rows a puff's middle may drift to the side: about its own size. */
+    private static final double EDGE = 0.4;
+    /** How far short of the lane's far edge a puff is gone, so it never shows a block past the end. */
+    private static final double SHORT = 0.05;
 
     /** The housing for a fan whose front faces north, standing, on a wall and hanging; turned for the rest. */
     private static final VoxelShape FLOOR_NS = Block.box(2.0D, 0.0D, 6.0D, 14.0D, 14.0D, 10.0D);
@@ -93,6 +107,67 @@ public class GrowFanBlock extends FaceAttachedHorizontalDirectionalBlock {
                 default -> WALL_NORTH;
             };
         };
+    }
+
+    /**
+     * A running fan's air, seen: on each of its animate ticks (a block near a player gets one or two a second, more
+     * the nearer it is), one faint puff from somewhere on the grille, bound for a spot picked across the whole width
+     * of the lane, and gone at its far edge. Drawn on the client only, as a damp plant's drips are; the lane is the
+     * world's own ({@code fan} in the grow climate), so a datapack that moves the wind moves the puffs with it.
+     */
+    @Override
+    public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {
+        if (!running(state)) {
+            return;
+        }
+        Puff puff = puff(state, world, pos, GrowClimate.of(world.registryAccess()).fan(),
+                random.nextDouble() * 2.0 - 1.0, random.nextDouble() * 2.0 - 1.0, random.nextDouble() * 2.0 - 1.0);
+        world.addParticle(puff.path(), puff.from().x, puff.from().y, puff.from().z, 0.0, 0.0, 0.0);
+    }
+
+    /**
+     * A puff of the fan's air, leaving the grille at {@code from} along {@code path}.
+     */
+    public record Puff(Vec3 from, FanPuffOption path) {
+    }
+
+    /**
+     * A puff off the fan standing as {@code state} at {@code pos}, blowing along {@code lane}. Where it leaves the
+     * grille and where it goes are picked by three numbers from -1 to 1: {@code side} and {@code up} across the
+     * grille from its middle, {@code to} across the whole width of the lane from the fan's line (positive clockwise
+     * of the way it blows, seen from above). It runs straight out of the fan's own block, drifts out to that side
+     * over the lane's first block, then goes straight on, and is gone at the lane's far edge: {@code ahead} blocks
+     * of lane in front of the fan's own block, half a block past the middle of the last.
+     */
+    public static Puff puff(BlockState state, BlockGetter world, BlockPos pos, GrowClimate.Fan lane,
+                            double side, double up, double to) {
+        Direction blows = blows(state);
+        Direction across = blows.getClockWise();
+        Vec3 from = grille(state, world, pos)
+                .add(across.getStepX() * side * GRILLE, up * GRILLE, across.getStepZ() * side * GRILLE);
+        Vec3 off = from.subtract(Vec3.atCenterOf(pos));
+        double alreadyAhead = off.x * blows.getStepX() + off.z * blows.getStepZ();
+        double alreadyAcross = off.x * across.getStepX() + off.z * across.getStepZ();
+        double reach = lane.ahead() + 0.5 - alreadyAhead - SHORT;
+        double sideways = to * (lane.side() + EDGE) - alreadyAcross;
+        double clear = 0.5 - alreadyAhead;
+        return new Puff(from, new FanPuffOption(blows, (float) clear, (float) sideways, (float) reach));
+    }
+
+    /**
+     * The middle of the grille of the fan standing as {@code state} at {@code pos}: on the front of its housing, at
+     * the middle of the block across and up, where the housing (2 to 14 pixels each way) has it in every placement;
+     * a standing fan's foot and a hanging fan's hanger are below and above the housing, never in front of it.
+     */
+    private static Vec3 grille(BlockState state, BlockGetter world, BlockPos pos) {
+        Direction blows = blows(state);
+        AABB housing = state.getShape(world, pos).bounds();
+        double front = blows.getAxisDirection() == Direction.AxisDirection.POSITIVE
+                ? housing.max(blows.getAxis()) : housing.min(blows.getAxis());
+        Vec3 middle = Vec3.atCenterOf(pos);
+        return blows.getAxis() == Direction.Axis.X
+                ? new Vec3(pos.getX() + front, middle.y, middle.z)
+                : new Vec3(middle.x, middle.y, pos.getZ() + front);
     }
 
     /** Whether {@code state} is a Grow Fan that is running. */
