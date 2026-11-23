@@ -41,6 +41,7 @@ import net.minecraft.world.level.storage.loot.predicates.MatchBlock;
 import net.minecraft.world.level.storage.loot.predicates.MatchTool;
 import net.minecraft.world.level.biome.Biomes;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders;
 import java.util.function.Predicate;
@@ -419,8 +420,22 @@ public class ModLootTableModifiers {
         return Mth.clamp((float) (base * HempdustryConfig.get().loot().chanceMultiplier()), 0.0F, 1.0F);
     }
 
+    /** The loot settings the tables last loaded with: at start and at every {@code /reload}, never by a test's call. */
+    private static volatile HempdustryConfig.Loot builtWith;
+
     public static void modifyLootTables() {
-        Services.EVENTS.onLootTableLoad(ModLootTableModifiers::modify);
+        Services.EVENTS.onLootTableLoad((key, builtIn, registries, table) -> {
+            builtWith = HempdustryConfig.get().loot();
+            modify(key, builtIn, registries, table);
+        });
+    }
+
+    /**
+     * The loot settings the running loot tables were built with, if any table has loaded yet: what
+     * {@code /hempdustry reload} compares a new file with, since only {@code /reload} builds the tables again.
+     */
+    public static Optional<HempdustryConfig.Loot> builtWith() {
+        return Optional.ofNullable(builtWith);
     }
 
     /**

@@ -3,6 +3,7 @@ package com.warlonmhite.hempdustry.config;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.warlonmhite.hempdustry.Hempdustry;
+import com.warlonmhite.hempdustry.loot.ModLootTableModifiers;
 import com.warlonmhite.hempdustry.block.custom.PlantInspection;
 import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
 import com.warlonmhite.hempdustry.component.StashContents;
@@ -33,7 +34,8 @@ import net.minecraft.world.phys.HitResult;
  * <ul>
  *   <li>{@code reload} re-reads {@code config/hempdustry.json} without a restart. The values a client shows (the machine
  *       timings) go to every player again; a recipe viewer's pages keep the old ones until the recipes are sent again
- *       ({@code /reload} or a rejoin), and the reply says so when one moved. In a game that hosts its own world it
+ *       ({@code /reload} or a rejoin), and the reply says so when one moved; so it does when the {@code loot}
+ *       section moved, since the loot tables are built only by {@code /reload}. In a game that hosts its own world it
  *       re-reads that game's {@code config/hempdustry-client.json} too ({@link ClientConfig}).</li>
  *   <li>{@code inspect [pos]} tells what the plant (or the Stash Jar) at {@code pos}, or at the block looked at,
  *       holds and why it stands as it does ({@link PlantInspection}). At level 2 because it shows the genes a
@@ -89,6 +91,15 @@ public class ModCommands {
                     if (!ServerSettings.of(HempdustryConfig.get()).equals(before)) {
                         context.getSource().sendSuccess(
                                 () -> Component.translatable("commands.hempdustry.reload.viewers"), false);
+                    }
+                    // The loot tables are built only by /reload, which reads no file: when the loot settings now
+                    // running are not the ones the tables were built with, say so, or a reload that "took" changes
+                    // no chest at all. Compared with the build, not the last file, so a second reload before the
+                    // /reload still says it, and a file put back as the tables are says nothing.
+                    HempdustryConfig.Loot running = HempdustryConfig.get().loot();
+                    if (!ModLootTableModifiers.builtWith().map(running::equals).orElse(true)) {
+                        context.getSource().sendSuccess(
+                                () -> Component.translatable("commands.hempdustry.reload.loot"), false);
                     }
                     // A game hosting its own world re-reads its own preferences too; a dedicated server has none.
                     if (!ClientConfig.reload()) {

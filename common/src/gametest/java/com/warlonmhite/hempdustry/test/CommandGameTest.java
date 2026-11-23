@@ -10,6 +10,7 @@ import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
 import com.warlonmhite.hempdustry.config.ClientConfig;
 import com.warlonmhite.hempdustry.config.ConfigReport;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.loot.ModLootTableModifiers;
 import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.platform.Services;
@@ -281,6 +282,25 @@ public final class CommandGameTest {
             context.assertTrue(partly.equals(List.of("commands.hempdustry.reload()",
                             "commands.hempdustry.reload.kept(effects.maxLevel)", viewers)) && !HempdustryConfig.get().effects().nausea(),
                     "a reload of a file with one bad value said " + partly + " and runs with " + HempdustryConfig.get().effects());
+
+            // A loot switch moved: the tables need /reload to be built again, and the reply says so, measured against
+            // the settings the tables were built with (this server started on the shipped ones).
+            context.assertTrue(ModLootTableModifiers.builtWith().equals(java.util.Optional.of(HempdustryConfig.DEFAULT.loot())),
+                    "the loot tables were built with " + ModLootTableModifiers.builtWith() + ", not the shipped settings");
+            ConfigGameTest.writeFile("{ \"loot\": { \"discs\": false } }");
+            List<String> loot = run(context, "hempdustry reload", LevelBasedPermissionSet.GAMEMASTER);
+            context.assertTrue(loot.contains("commands.hempdustry.reload.loot()") && !HempdustryConfig.get().loot().discs(),
+                    "a reload that moved a loot switch said " + loot);
+            // Reloaded again before any /reload, for something else: the tables are still the old ones, so it says it again.
+            ConfigGameTest.writeFile("{ \"loot\": { \"discs\": false }, \"effects\": { \"maxLevel\": 3 } }");
+            List<String> stillStale = run(context, "hempdustry reload", LevelBasedPermissionSet.GAMEMASTER);
+            context.assertTrue(stillStale.contains("commands.hempdustry.reload.loot()"),
+                    "a second reload before any /reload, the tables still built without the change, said " + stillStale);
+            // Put back as the tables were built: nothing to /reload for.
+            ConfigGameTest.writeFile("{ \"effects\": { \"maxLevel\": 3 } }");
+            List<String> putBack = run(context, "hempdustry reload", LevelBasedPermissionSet.GAMEMASTER);
+            context.assertFalse(putBack.contains("commands.hempdustry.reload.loot()"),
+                    "a reload putting the loot settings back as the tables were built said " + putBack);
 
             ConfigGameTest.writeFile("{ \"world\": ");
             List<String> broken = run(context, "hempdustry reload", LevelBasedPermissionSet.GAMEMASTER);

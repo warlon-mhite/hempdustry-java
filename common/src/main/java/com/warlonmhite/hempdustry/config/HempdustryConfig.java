@@ -380,9 +380,9 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
                     + "discs (default true): the mod's music discs in dungeon and mansion chests. "
                     + "enabled (default true): false removes all of them, whatever the switches say. "
                     + "chanceMultiplier (default 1.0, 0.0-10.0) scales every chance they are added with; each "
-                    + "chance stays between 0 and 1. Loot tables are built when the server starts and on /reload, so "
-                    + "a change to this section takes effect on the next /reload or restart; /hempdustry reload "
-                    + "alone does not rebuild them. Creepers dropping the two discs is the "
+                    + "chance stays between 0 and 1. Loot tables are built when the server starts and on /reload, "
+                    + "from the settings running then, and /reload does not read this file: after a change here run "
+                    + "/hempdustry reload and then /reload, or restart. Creepers dropping the two discs is the "
                     + "#minecraft:creeper_drop_music_discs tag, not a setting here.");
             writeJson(path, root);
         } catch (RuntimeException e) {
@@ -679,8 +679,9 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
     }
 
     /**
-     * The additions to vanilla's loot tables. All read as the tables load ({@code ModLootTableModifiers#modify}), so a
-     * change waits for the next {@code /reload} or a restart; {@code /hempdustry reload} rebuilds no table.
+     * The additions to vanilla's loot tables. All read as the tables load ({@code ModLootTableModifiers#modify}), from
+     * the config running then: {@code /hempdustry reload} reads a change but rebuilds no table, and {@code /reload}
+     * rebuilds the tables but reads no file, so a change takes both, in that order, or a restart.
      *
      * @param enabled          whether the mod adds anything to vanilla loot tables at all
      * @param chanceMultiplier scales every injected chance; the results are still clamped to 0–1

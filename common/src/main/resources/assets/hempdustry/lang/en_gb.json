@@ -3,6 +3,7 @@
   "commands.hempdustry.reload.failed": "Could not read config/hempdustry.json, so nothing changed — the server log says why.",
   "commands.hempdustry.reload.kept": "These values in config/hempdustry.json could not be read and keep what was running: %s. Everything else was applied; the file is left as it is, and the server log says why.",
   "commands.hempdustry.reload.viewers": "JEI and REI keep showing the old machine times until the recipes are sent again: run /reload, or rejoin.",
+  "commands.hempdustry.reload.loot": "The loot settings changed: run /reload to build the loot tables again with them.",
   "commands.hempdustry.reload.client_failed": "Could not read config/hempdustry-client.json, so this game's own preferences did not change — the log says why.",
   "commands.hempdustry.inspect.no_target": "Look at a plant or a Stash Jar, or give its position.",
   "commands.hempdustry.inspect.none": "Nothing at %s to inspect: only the mod's plants and Stash Jars can be.",
