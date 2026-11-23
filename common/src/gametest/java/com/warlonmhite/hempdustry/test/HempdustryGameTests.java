@@ -287,6 +287,7 @@ public final class HempdustryGameTests {
                 FourTwentyGameTest::theMunchiesWantHungerAndAnEmptyStomach);
         register("a_green_out_softens_the_legs_while_it_slows", JellyLegsGameTest::aGreenOutSoftensTheLegsWhileItSlows);
         register("the_grow_climate_is_the_agreed_one", MildewGameTest::theGrowClimateIsTheAgreedOne);
+        register("a_partial_grow_climate_loads", MildewGameTest::aPartialGrowClimateLoads);
         register("mildew_follows_the_air", MildewGameTest::mildewFollowsTheAir);
         register("mildew_follows_the_damp", MildewGameTest::mildewFollowsTheDamp);
         register("water_and_trims_keep_mildew_off", MildewGameTest::waterAndTrimsKeepMildewOff);

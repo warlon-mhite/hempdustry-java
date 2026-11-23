@@ -6,6 +6,7 @@
  * load carries (its {@code Chemotype}, {@code PotencyBand}, {@code BudTier}, {@code ResinStep}), from the types in
  * {@code com.warlonmhite.hempdustry.strain}, which keep their shape from release to release. Everything here may
  * change in any release: the breeding update replaces the rolls with inheritance, and balance moves the numbers.
- * Nothing in the frozen surface names a type of this package, which is what keeps it out of that promise.
+ * Nothing in the frozen surface names a type of this package, which is what keeps it out of that promise. The
+ * helper the mod's data files read their keys with ({@code FileFields}) lives here for the same reason.
  */
 package com.warlonmhite.hempdustry.strain.internal;

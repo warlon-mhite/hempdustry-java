@@ -3,6 +3,7 @@ package com.warlonmhite.hempdustry.balance;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.warlonmhite.hempdustry.Hempdustry;
+import com.warlonmhite.hempdustry.strain.internal.FileFields;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.Registry;
 import net.minecraft.data.worldgen.BootstrapContext;
@@ -22,6 +23,10 @@ import net.minecraft.util.ExtraCodecs;
  *
  * <p>The mod ships its own numbers as that file, so a world that never touches it plays as built; the
  * {@code world.mildew} switch in the config still turns the whole thing off.
+ *
+ * <p><b>Every key is optional</b>, inside the objects too, and reads as the built-in number when it is left out
+ * ({@link FileFields#written}): a datapack that changes one number writes that one number, and a key added in a
+ * later version leaves an older pack's file loading. The mod's own file is written in full.
  *
  * @param onsetOneIn   the odds a growth step brings mildew, before the climate, as one in this many
  * @param spreadOneIn  the odds a mildewed plant reaches the neighbour it picked, before that neighbour's climate,
@@ -43,24 +48,33 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
     public static final ResourceKey<GrowClimate> DEFAULT =
             ResourceKey.create(REGISTRY_KEY, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "default"));
 
-    private static final Codec<Float> FACTOR = Codec.floatRange(0.0F, 64.0F);
+    /**
+     * The ranges the parts share. A holder of their own, so that a part's class can load before this one's
+     * without reaching into it half-built: each part's {@code DEFAULT} is built before its codec, which reads it.
+     */
+    private static final class Ranges {
+        static final Codec<Float> FACTOR = Codec.floatRange(0.0F, 64.0F);
+        static final Codec<Integer> BLOCKS = Codec.intRange(0, 8);
+    }
 
     /** The factor for each air: {@code open} sky, {@code stirred} under glass, {@code still} in a sealed room. */
     public record Air(float open, float stirred, float still) {
+        public static final Air DEFAULT = new Air(1.0F, 3.0F, 6.0F);
         public static final Codec<Air> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                FACTOR.fieldOf("open").forGetter(Air::open),
-                FACTOR.fieldOf("stirred").forGetter(Air::stirred),
-                FACTOR.fieldOf("still").forGetter(Air::still)
+                FileFields.written(Ranges.FACTOR, "open", DEFAULT.open).forGetter(Air::open),
+                FileFields.written(Ranges.FACTOR, "stirred", DEFAULT.stirred).forGetter(Air::stirred),
+                FileFields.written(Ranges.FACTOR, "still", DEFAULT.still).forGetter(Air::still)
         ).apply(instance, Air::new));
     }
 
     /** The factor for each humidity step. */
     public record Humidity(float dry, float normal, float damp, float soaked) {
+        public static final Humidity DEFAULT = new Humidity(0.5F, 1.0F, 2.0F, 4.0F);
         public static final Codec<Humidity> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                FACTOR.fieldOf("dry").forGetter(Humidity::dry),
-                FACTOR.fieldOf("normal").forGetter(Humidity::normal),
-                FACTOR.fieldOf("damp").forGetter(Humidity::damp),
-                FACTOR.fieldOf("soaked").forGetter(Humidity::soaked)
+                FileFields.written(Ranges.FACTOR, "dry", DEFAULT.dry).forGetter(Humidity::dry),
+                FileFields.written(Ranges.FACTOR, "normal", DEFAULT.normal).forGetter(Humidity::normal),
+                FileFields.written(Ranges.FACTOR, "damp", DEFAULT.damp).forGetter(Humidity::damp),
+                FileFields.written(Ranges.FACTOR, "soaked", DEFAULT.soaked).forGetter(Humidity::soaked)
         ).apply(instance, Humidity::new));
     }
 
@@ -70,10 +84,11 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
      * slows the fungus as much as the wet feeds it.
      */
     public record BiomeRule(float dryBelow, float wetFrom, float warmFrom) {
+        public static final BiomeRule DEFAULT = new BiomeRule(0.3F, 0.85F, 0.5F);
         public static final Codec<BiomeRule> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Codec.FLOAT.fieldOf("dry_below_downfall").forGetter(BiomeRule::dryBelow),
-                Codec.FLOAT.fieldOf("wet_from_downfall").forGetter(BiomeRule::wetFrom),
-                Codec.FLOAT.fieldOf("wet_from_temperature").forGetter(BiomeRule::warmFrom)
+                FileFields.written(Codec.FLOAT, "dry_below_downfall", DEFAULT.dryBelow).forGetter(BiomeRule::dryBelow),
+                FileFields.written(Codec.FLOAT, "wet_from_downfall", DEFAULT.wetFrom).forGetter(BiomeRule::wetFrom),
+                FileFields.written(Codec.FLOAT, "wet_from_temperature", DEFAULT.warmFrom).forGetter(BiomeRule::warmFrom)
         ).apply(instance, BiomeRule::new));
     }
 
@@ -84,12 +99,12 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
      * reach in the game is, laid out ahead of the fan instead of around it.
      */
     public record Fan(int ahead, int side, int below, int above) {
-        private static final Codec<Integer> BLOCKS = Codec.intRange(0, 8);
+        public static final Fan DEFAULT = new Fan(9, 2, 3, 1);
         public static final Codec<Fan> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Codec.intRange(1, 16).fieldOf("ahead").forGetter(Fan::ahead),
-                BLOCKS.fieldOf("side").forGetter(Fan::side),
-                BLOCKS.fieldOf("below").forGetter(Fan::below),
-                BLOCKS.fieldOf("above").forGetter(Fan::above)
+                FileFields.written(Codec.intRange(1, 16), "ahead", DEFAULT.ahead).forGetter(Fan::ahead),
+                FileFields.written(Ranges.BLOCKS, "side", DEFAULT.side).forGetter(Fan::side),
+                FileFields.written(Ranges.BLOCKS, "below", DEFAULT.below).forGetter(Fan::below),
+                FileFields.written(Ranges.BLOCKS, "above", DEFAULT.above).forGetter(Fan::above)
         ).apply(instance, Fan::new));
     }
 
@@ -98,11 +113,10 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
      * at most {@code below} blocks under it and {@code above} blocks over it (each plant by its root).
      */
     public record Reach(int reach, int below, int above) {
-        private static final Codec<Integer> BLOCKS = Codec.intRange(0, 8);
         public static final Codec<Reach> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                BLOCKS.fieldOf("reach").forGetter(Reach::reach),
-                BLOCKS.fieldOf("below").forGetter(Reach::below),
-                BLOCKS.fieldOf("above").forGetter(Reach::above)
+                Ranges.BLOCKS.fieldOf("reach").forGetter(Reach::reach),
+                Ranges.BLOCKS.fieldOf("below").forGetter(Reach::below),
+                Ranges.BLOCKS.fieldOf("above").forGetter(Reach::above)
         ).apply(instance, Reach::new));
     }
 
@@ -111,13 +125,14 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
      * and the growth steps of the plants it dries that make one level of condensate ({@code steps_per_level}).
      */
     public record Drier(int reach, int below, int above, int dries, int stepsPerLevel) {
-        private static final Codec<Integer> BLOCKS = Codec.intRange(0, 8);
+        public static final Drier DEFAULT = new Drier(4, 2, 2, 2, 64);
         public static final Codec<Drier> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                BLOCKS.fieldOf("reach").forGetter(Drier::reach),
-                BLOCKS.fieldOf("below").forGetter(Drier::below),
-                BLOCKS.fieldOf("above").forGetter(Drier::above),
-                Codec.intRange(0, 3).fieldOf("dries").forGetter(Drier::dries),
-                ExtraCodecs.POSITIVE_INT.fieldOf("steps_per_level").forGetter(Drier::stepsPerLevel)
+                FileFields.written(Ranges.BLOCKS, "reach", DEFAULT.reach).forGetter(Drier::reach),
+                FileFields.written(Ranges.BLOCKS, "below", DEFAULT.below).forGetter(Drier::below),
+                FileFields.written(Ranges.BLOCKS, "above", DEFAULT.above).forGetter(Drier::above),
+                FileFields.written(Codec.intRange(0, 3), "dries", DEFAULT.dries).forGetter(Drier::dries),
+                FileFields.written(ExtraCodecs.POSITIVE_INT, "steps_per_level", DEFAULT.stepsPerLevel)
+                        .forGetter(Drier::stepsPerLevel)
         ).apply(instance, Drier::new));
 
         /** Its reach alone. */
@@ -125,18 +140,6 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
             return new Reach(reach, below, above);
         }
     }
-
-    public static final Codec<GrowClimate> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            ExtraCodecs.POSITIVE_INT.fieldOf("onset_one_in").forGetter(GrowClimate::onsetOneIn),
-            ExtraCodecs.POSITIVE_INT.fieldOf("spread_one_in").forGetter(GrowClimate::spreadOneIn),
-            Air.CODEC.fieldOf("air").forGetter(GrowClimate::air),
-            Humidity.CODEC.fieldOf("humidity").forGetter(GrowClimate::humidity),
-            BiomeRule.CODEC.fieldOf("biome").forGetter(GrowClimate::biome),
-            Codec.intRange(0, 4).fieldOf("wet_reach").forGetter(GrowClimate::wetReach),
-            FACTOR.fieldOf("trimmed").forGetter(GrowClimate::trimmed),
-            Fan.CODEC.fieldOf("fan").forGetter(GrowClimate::fan),
-            Drier.CODEC.fieldOf("dehumidifier").forGetter(GrowClimate::dehumidifier)
-    ).apply(instance, GrowClimate::new));
 
     /**
      * The 2.2 climate. A field catches mildew at 1 in 1,500 a step and passes it to a neighbour at 1 in 100, as
@@ -150,13 +153,25 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
      */
     public static final GrowClimate BUILT_IN = new GrowClimate(
             1500, 100,
-            new Air(1.0F, 3.0F, 6.0F),
-            new Humidity(0.5F, 1.0F, 2.0F, 4.0F),
-            new BiomeRule(0.3F, 0.85F, 0.5F),
+            Air.DEFAULT,
+            Humidity.DEFAULT,
+            BiomeRule.DEFAULT,
             2,
             0.75F,
-            new Fan(9, 2, 3, 1),
-            new Drier(4, 2, 2, 2, 64));
+            Fan.DEFAULT,
+            Drier.DEFAULT);
+
+    public static final Codec<GrowClimate> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            FileFields.written(ExtraCodecs.POSITIVE_INT, "onset_one_in", BUILT_IN.onsetOneIn).forGetter(GrowClimate::onsetOneIn),
+            FileFields.written(ExtraCodecs.POSITIVE_INT, "spread_one_in", BUILT_IN.spreadOneIn).forGetter(GrowClimate::spreadOneIn),
+            FileFields.written(Air.CODEC, "air", BUILT_IN.air).forGetter(GrowClimate::air),
+            FileFields.written(Humidity.CODEC, "humidity", BUILT_IN.humidity).forGetter(GrowClimate::humidity),
+            FileFields.written(BiomeRule.CODEC, "biome", BUILT_IN.biome).forGetter(GrowClimate::biome),
+            FileFields.written(Codec.intRange(0, 4), "wet_reach", BUILT_IN.wetReach).forGetter(GrowClimate::wetReach),
+            FileFields.written(Ranges.FACTOR, "trimmed", BUILT_IN.trimmed).forGetter(GrowClimate::trimmed),
+            FileFields.written(Fan.CODEC, "fan", BUILT_IN.fan).forGetter(GrowClimate::fan),
+            FileFields.written(Drier.CODEC, "dehumidifier", BUILT_IN.dehumidifier).forGetter(GrowClimate::dehumidifier)
+    ).apply(instance, GrowClimate::new));
 
     public static void bootstrap(BootstrapContext<GrowClimate> registerable) {
         registerable.register(DEFAULT, BUILT_IN);

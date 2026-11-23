@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.mojang.serialization.JsonOps;
 import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
@@ -11,6 +14,8 @@ import com.warlonmhite.hempdustry.strain.StressPhenomenon;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.util.ModTags;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -69,6 +74,67 @@ public final class MildewGameTest {
                 "the shipped grow_climate/default.json is not the built-in climate: "
                         + GrowClimate.of(context.getLevel().registryAccess()));
         context.succeed();
+    }
+
+    /**
+     * A climate file may hold any part of the climate: every key it leaves out, at the top or inside an object,
+     * reads as the built-in number, so a datapack that changes one number writes only that one. The mod's own file
+     * is still written in full, every key in every object, and a number out of its range still refuses the file
+     * rather than falling back without a word.
+     */
+    public static void aPartialGrowClimateLoads(GameTestHelper context) {
+        GrowClimate built = GrowClimate.BUILT_IN;
+        context.assertTrue(climate("{}").equals(built), "an empty climate file is not the built-in climate: " + climate("{}"));
+        GrowClimate onset = climate("{\"onset_one_in\": 500}");
+        context.assertTrue(onset.equals(new GrowClimate(500, built.spreadOneIn(), built.air(), built.humidity(),
+                        built.biome(), built.wetReach(), built.trimmed(), built.fan(), built.dehumidifier())),
+                "a file holding only onset_one_in did not keep every other number: " + onset);
+        GrowClimate fan = climate("{\"fan\": {\"ahead\": 12}}");
+        context.assertTrue(fan.fan().equals(new GrowClimate.Fan(12, 2, 3, 1))
+                        && fan.equals(new GrowClimate(built.onsetOneIn(), built.spreadOneIn(), built.air(), built.humidity(),
+                        built.biome(), built.wetReach(), built.trimmed(), fan.fan(), built.dehumidifier())),
+                "a file holding only the fan's reach ahead did not keep every other number: " + fan);
+        GrowClimate humidity = climate("{\"humidity\": {\"soaked\": 8.0}, \"dehumidifier\": {\"dries\": 1}}");
+        context.assertTrue(humidity.humidity().equals(new GrowClimate.Humidity(0.5F, 1.0F, 2.0F, 8.0F))
+                        && humidity.dehumidifier().equals(new GrowClimate.Drier(4, 2, 2, 1, 64))
+                        && humidity.air().equals(built.air()) && humidity.biome().equals(built.biome()),
+                "a file holding one number in two objects did not keep the rest of each: " + humidity);
+
+        JsonObject written = GrowClimate.CODEC.encodeStart(JsonOps.INSTANCE, built)
+                .getOrThrow().getAsJsonObject();
+        context.assertTrue(written.keySet().equals(Set.of("onset_one_in", "spread_one_in", "air", "humidity",
+                        "biome", "wet_reach", "trimmed", "fan", "dehumidifier")),
+                "the built-in climate is not written in full: " + written.keySet());
+        context.assertTrue(written.getAsJsonObject("fan").size() == 4 && written.getAsJsonObject("air").size() == 3
+                        && written.getAsJsonObject("humidity").size() == 4 && written.getAsJsonObject("biome").size() == 3
+                        && written.getAsJsonObject("dehumidifier").size() == 5,
+                "an object of the built-in climate is not written in full: " + written);
+        context.assertTrue(climate(written.toString()).equals(built), "the built-in climate does not read back as itself");
+        // Every key, one at a time, at the top and inside each object: the file without it is still the built-in climate.
+        int keys = 0;
+        for (String top : written.keySet()) {
+            List<String> paths = written.get(top).isJsonObject()
+                    ? written.getAsJsonObject(top).keySet().stream().map(inner -> top + "." + inner).toList() : List.of();
+            for (String path : Stream.concat(Stream.of(top), paths.stream()).toList()) {
+                JsonObject without = written.deepCopy();
+                String[] parts = path.split("\\.");
+                (parts.length == 1 ? without : without.getAsJsonObject(parts[0])).remove(parts[parts.length - 1]);
+                var read = GrowClimate.CODEC.parse(JsonOps.INSTANCE, without);
+                context.assertTrue(read.isSuccess() && read.getOrThrow().equals(built),
+                        "a climate file without " + path + " is not the built-in climate: " + read);
+                keys++;
+            }
+        }
+        context.assertTrue(keys >= 28, "only " + keys + " climate keys were left out one at a time");
+        context.assertTrue(GrowClimate.CODEC.parse(JsonOps.INSTANCE,
+                        JsonParser.parseString("{\"fan\": {\"ahead\": 0}}")).isError(),
+                "a fan reaching no block ahead loaded");
+        context.succeed();
+    }
+
+    private static GrowClimate climate(String json) {
+        return GrowClimate.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(json))
+                .getOrThrow();
     }
 
     /**

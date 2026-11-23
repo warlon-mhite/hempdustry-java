@@ -2,6 +2,7 @@ package com.warlonmhite.hempdustry.strain;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.warlonmhite.hempdustry.strain.internal.FileFields;
 import java.util.Map;
 
 /**
