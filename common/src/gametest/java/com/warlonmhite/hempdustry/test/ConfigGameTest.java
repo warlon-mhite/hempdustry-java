@@ -5,7 +5,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.warlonmhite.hempdustry.Hempdustry;
+import com.mojang.serialization.JsonOps;
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.config.ClientConfig;
+import com.warlonmhite.hempdustry.config.ConfigReport;
 import com.warlonmhite.hempdustry.config.EffectPolicy;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.config.ModGameRules;
@@ -126,6 +129,46 @@ public final class ConfigGameTest {
             context.assertTrue(bad.equals(new String(read(file), StandardCharsets.UTF_8)),
                     "a client file with a bad value in it was written over");
         });
+        context.succeed();
+    }
+
+    /**
+     * A key the mod does not know is named in a WARN, not read as its default without a word: a misspelled switch in
+     * the config file or the client's own, and a misspelled number in a {@code genetics} or {@code grow_climate} file.
+     * A section's {@code _comment} and a loader's condition key are never unknown, and the files the mod ships hold
+     * no unknown key.
+     */
+    public static void aMisspelledKeyIsNamed(GameTestHelper context) {
+        JsonObject defaults = HempdustryConfig.CODEC.encodeStart(JsonOps.INSTANCE, HempdustryConfig.DEFAULT).getOrThrow()
+                .getAsJsonObject();
+        String file = "{ \"world\": { \"_comment\": \"mine\", \"creepersSeekhemp\": false, \"mildew\": false },"
+                + " \"efects\": { \"enabled\": false }, \"loot\": { \"discs\": true } }";
+        context.assertValueEqual(HempdustryConfig.unknownKeys(JsonParser.parseString(file), defaults),
+                List.of("world.creepersSeekhemp", "efects"), "the unknown keys of " + file);
+        List<String> warned = LogLines.warnings(() -> withConfig(file, () -> context.assertTrue(
+                !HempdustryConfig.get().world().mildew() && HempdustryConfig.get().world().creepersSeekHemp(),
+                "the file's known keys were not read, or a misspelled one was: " + HempdustryConfig.get().world())));
+        for (String key : new String[] {"world.creepersSeekhemp", "efects"}) {
+            context.assertTrue(warned.stream().anyMatch(line -> line.contains(" " + key + " is not a setting")),
+                    "nothing warned about " + key + ": " + warned);
+        }
+        context.assertFalse(warned.stream().anyMatch(line -> line.contains("_comment") || line.contains("loot.")),
+                "a comment or a known key was warned about: " + warned);
+        inClientFolder(folder -> {
+            Path client = folder.resolve(ClientConfig.FILE);
+            write(client, "{ \"client\": { \"fanPuff\": false } }");
+            List<String> lines = LogLines.warnings(() -> ClientConfig.load(client, folder.resolve(Hempdustry.MOD_ID + ".json")));
+            context.assertTrue(lines.stream().anyMatch(line -> line.contains(" client.fanPuff is not a setting")),
+                    "nothing warned about the client file's client.fanPuff: " + lines);
+        });
+        JsonObject genetics = Genetics.CODEC.encodeStart(JsonOps.INSTANCE, Genetics.BUILT_IN).getOrThrow().getAsJsonObject();
+        JsonObject misspelled = genetics.deepCopy();
+        misspelled.getAsJsonObject("tiers").getAsJsonObject("epic").addProperty("wieght", 0);
+        misspelled.add("neoforge:conditions", new com.google.gson.JsonArray());
+        context.assertValueEqual(HempdustryConfig.unknownKeys(misspelled, genetics), List.of("tiers.epic.wieght"),
+                "the unknown keys of a genetics file");
+        context.assertValueEqual(ConfigReport.unknownRegistryKeys(context.getLevel().getServer()), List.of(),
+                "the unknown keys in the genetics and grow climate the server runs with");
         context.succeed();
     }
 

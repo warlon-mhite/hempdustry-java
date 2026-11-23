@@ -146,6 +146,7 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
         if (file.isEmpty()) {
             return new Outcome(false, List.of());
         }
+        warnUnknown(path, file.get(), defaultJson());
         JsonObject merged = merge(defaultJson(), file.get());
         HempdustryConfig running = instance;
         List<String> kept = new ArrayList<>();
@@ -189,6 +190,46 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
             Hempdustry.LOGGER.error("Could not read {} — nothing in it was applied, and it is left as it is",
                     path, e);
             return Optional.empty();
+        }
+    }
+
+    /**
+     * Logs a WARN for every key of {@code file} that {@code known} does not have: a misspelled setting is otherwise read
+     * as its default without a word, and gone from the file the next time it is written ({@code creepersSeekhemp}
+     * running as {@code true}).
+     */
+    static void warnUnknown(Path path, JsonObject file, JsonObject known) {
+        for (String key : unknownKeys(file, known)) {
+            Hempdustry.LOGGER.warn("{}: {} is not a setting this version knows, so it changes nothing (misspelled?)"
+                    + " and is left out when the file is written again", path, key);
+        }
+    }
+
+    /**
+     * Every key of {@code given}, at any depth, that {@code known} does not have, as a dotted path
+     * ({@code world.creepersSeekhemp}). A {@code _comment} is never unknown, nor a key holding a colon (a loader's
+     * {@code neoforge:conditions} or {@code fabric:load_conditions}); nothing under an unknown key is listed again.
+     */
+    public static List<String> unknownKeys(JsonElement given, JsonElement known) {
+        List<String> unknown = new ArrayList<>();
+        unknownKeys("", given, known, unknown);
+        return unknown;
+    }
+
+    private static void unknownKeys(String at, JsonElement given, JsonElement known, List<String> unknown) {
+        if (!(given instanceof JsonObject values) || !(known instanceof JsonObject keys)) {
+            return;
+        }
+        for (var entry : values.entrySet()) {
+            String key = entry.getKey();
+            if (key.equals("_comment") || key.contains(":")) {
+                continue;
+            }
+            if (!keys.has(key)) {
+                unknown.add(at + key);
+            } else {
+                unknownKeys(at + key + ".", entry.getValue(), keys.get(key), unknown);
+            }
         }
     }
 

@@ -2,6 +2,7 @@ package com.warlonmhite.hempdustry.config;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.warlonmhite.hempdustry.Hempdustry;
@@ -13,11 +14,15 @@ import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.strain.Strain;
 import com.warlonmhite.hempdustry.strain.Terpene;
+import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import net.minecraft.core.RegistrationInfo;
@@ -227,6 +232,44 @@ public final class ConfigReport {
         List<Setting> settings = new ArrayList<>(settings(server));
         client().ifPresent(client -> settings.addAll(client.settings()));
         differences(settings, registries(server)).ifPresent(Hempdustry.LOGGER::info);
+        for (String unknown : unknownRegistryKeys(server)) {
+            Hempdustry.LOGGER.warn("{}: not a key this version reads, so it changes nothing (misspelled?)", unknown);
+        }
+    }
+
+    /**
+     * Every key a file of the {@code genetics} or {@code grow_climate} registry holds that the mod does not read, one
+     * line each: the registry, the entry, the pack whose file it is and the key's dotted path. Both read a missing key
+     * as its built-in number, so a misspelled one ({@code tiers.epic.wieght}) would otherwise load as the default
+     * without a word. The key set is what the built-in values write.
+     */
+    public static List<String> unknownRegistryKeys(MinecraftServer server) {
+        List<String> lines = new ArrayList<>();
+        ResourceManager resources = server.getResourceManager();
+        known().forEach((key, known) -> server.registryAccess().lookup(key).ifPresent(registry -> {
+            registry.registryKeySet().stream().sorted(Comparator.comparing(ResourceKey::identifier)).forEach(entry -> {
+                Identifier id = entry.identifier();
+                resources.getResource(Identifier.fromNamespaceAndPath(id.getNamespace(),
+                        Registries.elementsDirPath(key) + "/" + id.getPath() + ".json")).ifPresent(file -> {
+                    try (Reader reader = file.openAsReader()) {
+                        for (String unknown : HempdustryConfig.unknownKeys(JsonParser.parseReader(reader), known)) {
+                            lines.add(key.identifier() + " " + id + " (" + file.sourcePackId() + ") " + unknown);
+                        }
+                    } catch (IOException | RuntimeException e) {
+                        // The registry read it, so the game has already said whatever there is to say about it.
+                    }
+                });
+            });
+        }));
+        return lines;
+    }
+
+    /** What every key of each checked registry is: its built-in entry, written out. */
+    private static Map<ResourceKey<? extends Registry<?>>, JsonElement> known() {
+        Map<ResourceKey<? extends Registry<?>>, JsonElement> known = new LinkedHashMap<>();
+        known.put(Genetics.REGISTRY_KEY, Genetics.CODEC.encodeStart(JsonOps.INSTANCE, Genetics.BUILT_IN).getOrThrow());
+        known.put(GrowClimate.REGISTRY_KEY, GrowClimate.CODEC.encodeStart(JsonOps.INSTANCE, GrowClimate.BUILT_IN).getOrThrow());
+        return known;
     }
 
     /**

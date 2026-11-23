@@ -129,6 +129,10 @@ public final class ClientConfig {
         boolean starting = !Files.exists(file);
         Path source = starting ? legacy : file;
         Optional<JsonObject> json = HempdustryConfig.readObject(source);
+        if (!starting) {
+            // The main file's own load warns about its unknown keys; this file's are this file's.
+            json.ifPresent(read -> HempdustryConfig.warnUnknown(file, read, defaultJson()));
+        }
         List<String> kept = new ArrayList<>();
         HempdustryConfig.Client read = json.isEmpty() ? null : HempdustryConfig.section(source,
                 HempdustryConfig.merge(defaultJson(), json.get()), "client", HempdustryConfig.Client.CODEC,
