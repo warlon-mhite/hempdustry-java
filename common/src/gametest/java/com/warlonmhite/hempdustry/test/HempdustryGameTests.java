@@ -209,6 +209,7 @@ public final class HempdustryGameTests {
         register("a_loaded_device_does_not_break_mid_bowl", RebalanceGameTest::aLoadedDeviceDoesNotBreakMidBowl);
         register("a_broken_config_is_left_alone", ConfigGameTest::aBrokenConfigIsLeftAlone);
         register("effects_off_means_no_green_out", ConfigGameTest::effectsOffMeansNoGreenOut);
+        register("every_config_key_is_described_in_its_comment", ConfigGameTest::everyConfigKeyIsDescribedInItsComment);
         register("a_hemp_boat_does_not_stop_the_data_fixer", DataFixerGameTest::aHempBoatDoesNotStopTheDataFixer);
         register("one_bud_per_slot_is_the_dose", PackingGameTest::oneBudPerSlotIsTheDose);
         register("a_strain_reusing_items_keeps_the_tab_whole",

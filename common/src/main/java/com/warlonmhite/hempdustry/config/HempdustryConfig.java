@@ -45,7 +45,8 @@ import java.util.Optional;
  * server-side, and <b>the Infuser's timings ride to the screen on its existing
  * {@code ContainerData}</b> rather than needing a config packet — the GUI reads the values the
  * block is actually using, so a client with a different file (or no file) still draws a truthful bar.
- * There is no sync code in this mod, and this file is why there does not need to be.
+ * No packet carries any of this file: the mod's one payload is a player's gesture (a cough, a sniff
+ * at a jar, a kick at a footbag), which says nothing about the config.
  *
  * <h2>Reading it</h2>
  *
@@ -176,38 +177,56 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
         try {
             JsonElement encoded = CODEC.encodeStart(JsonOps.INSTANCE, config).getOrThrow();
             JsonObject root = encoded.getAsJsonObject();
-            comment(root, "client", "Read by a client, sent to nobody. updateCheck=false stops this client "
-                    + "checking for a newer release on start-up; a dedicated server never asks. "
-                    + "Turn it off in a modpack, where the update it would announce cannot be taken anyway. "
-                    + "biomeTintStrength is 0-1: how far hemp growing in the world is pulled towards the "
+            // Each key is named with its default and, for a number, the range it is clamped to, so a
+            // pack maker reading the file needs nothing else. every_config_key_is_described_in_its_comment
+            // holds each one to the code.
+            comment(root, "client", "Read by a client, sent to nobody; a dedicated server writes this section out "
+                    + "and ignores it. updateCheck (default true): false stops this client checking for a newer "
+                    + "release on start-up; a dedicated server never asks. Turn it off in a modpack, where the update "
+                    + "it would announce cannot be taken anyway. "
+                    + "biomeTintStrength (default 0.35, 0-1): how far hemp growing in the world is pulled towards the "
                     + "local grass colour, so a plant does not clash with the biome around it. "
                     + "0 paints the crops exactly as drawn, 1 is the full tint vanilla gives grass. "
-                    + "ripeAroma=false stops the wisps that drift off ripe plants; vanilla's Particles "
-                    + "setting thins or hides them along with every other particle.");
-            comment(root, "effects", "enabled=false is 'industrial hemp only': no drug effects anywhere. "
-                    + "maxLevel caps every effect the mod applies; maxBuffLevel caps only the helpful ones "
-                    + "(Speed, Resistance, Absorption...), so a big dose still costs its full Hunger. "
-                    + "Raise maxBuffLevel for a stronger mod in a modded pack. The multipliers are 0.05-10, "
-                    + "except cooldownMultiplier, 0-10 (0 is no cooldown), and greenOutChanceMultiplier, 0-100. "
-                    + "greenOutChanceMultiplier 0 disables green-outs, as do greenOut=false and enabled=false. "
-                    + "debuffs=false takes away every harmful effect, and the ones in the "
-                    + "#hempdustry:counts_as_harmful effect tag (Glowing).");
-            comment(root, "world", "cropGrowthMultiplier and machineSpeedMultiplier are speeds: 2.0 is twice as fast. "
+                    + "ripeAroma (default true): false stops the wisps that drift off ripe plants; vanilla's Particles "
+                    + "setting thins or hides them along with every other particle. "
+                    + "animations (default auto; auto, vanilla or off): how this client animates a player smoking, "
+                    + "coughing, sniffing a jar or kicking a footbag. auto follows whatever animates the rest of the "
+                    + "body (Not Enough Animations, Fresh Animations' player pack, or vanilla), vanilla is always "
+                    + "vanilla's rigid style, off shows none of it.");
+            comment(root, "effects", "enabled (default true): false is 'industrial hemp only': no drug effects anywhere. "
+                    + "maxLevel (default 4, 1-10) caps every effect the mod applies; maxBuffLevel (default 2, 1-10) "
+                    + "caps only the helpful ones (Speed, Resistance, Absorption...), so a big dose still costs its "
+                    + "full Hunger. Raise maxBuffLevel for a stronger mod in a modded pack. "
+                    + "durationMultiplier (default 1.0, 0.05-10.0) scales how long the effects last. "
+                    + "cooldownMultiplier (default 1.0, 0.0-10.0) scales the use cooldowns; 0 is no cooldown. "
+                    + "greenOutChanceMultiplier (default 1.0, 0.0-100.0) scales the odds of a green-out; 0 disables "
+                    + "green-outs, as do greenOut=false and enabled=false. "
+                    + "onsetMultiplier (default 1.0, 0.05-10.0) scales how long an edible takes to come up. "
+                    + "greenOut (default true): false stops a bad hit replacing its effects. "
+                    + "nausea (default true): false never applies nausea. munchies (default true): false never "
+                    + "applies Hunger. debuffs (default true): false takes away every harmful effect, and the ones "
+                    + "in the #hempdustry:counts_as_harmful effect tag (Glowing).");
+            comment(root, "world", "cropGrowthMultiplier (default 1.0, 0.05-20.0) and machineSpeedMultiplier "
+                    + "(default 1.0, 0.05-20.0) are speeds: 2.0 is twice as fast. "
                     + "machineSpeed drives the Decarboxylator and the Hemp Press; the Infuser has its own section. "
                     + "Whether bees pollinate hemp is the #minecraft:bee_growables tag, not a setting here. "
-                    + "creepersSeekHemp=false stops creepers now and then wandering into grown, open-sky hemp fields, and endermen into "
-                    + "Ender Haze, stops a harvested Ender Haze plant provoking the endermen nearby, stops an opened Stash Jar "
-                    + "drawing creepers, and stops loose buds in a player's inventory letting creepers notice them from "
-                    + "further away; the goals are still "
-                    + "added to the mobs, they simply never start, so it takes effect on the next /hempdustry reload. "
-                    + "mildew=false keeps powdery mildew out of roofed grows: no plant catches it, and a plant "
-                    + "that has it is clean again on its next random tick.");
-            comment(root, "infuser", "Ticks. minTime is the earliest a batch can be pulled, fullTime a full simmer. "
-                    + "20 ticks = 1 second. Defaults are 5 and 15 minutes; the ceiling is 32000 "
-                    + "(about 26 minutes), which is as long a simmer as the screen can be told about.");
+                    + "creepersSeekHemp (default true): false stops creepers now and then wandering into grown, "
+                    + "open-sky hemp fields, and endermen into Ender Haze, stops a harvested Ender Haze plant "
+                    + "provoking the endermen nearby, stops an opened Stash Jar drawing creepers, and stops loose "
+                    + "buds in a player's inventory letting creepers notice them from further away; the goals are "
+                    + "still added to the mobs, they simply never start, so it takes effect on the next "
+                    + "/hempdustry reload. "
+                    + "mildew (default true): false keeps powdery mildew out of roofed grows: no plant catches it, "
+                    + "and a plant that has it is clean again on its next random tick.");
+            comment(root, "infuser", "Ticks; 20 ticks = 1 second. minTimeTicks (default 6000, 20-31980) is the "
+                    + "earliest a batch can be pulled, 5 minutes; fullTimeTicks (default 18000, 40-32000, and at "
+                    + "least minTimeTicks + 20) a full simmer, 15 minutes. The ceiling, 32000 (about 26 minutes), "
+                    + "is as long a simmer as the screen can be told about.");
             comment(root, "loot", "The mod's additions to vanilla loot tables: hemp seeds in grass and chests, "
-                    + "music discs in chests, shipwreck fibre. enabled=false removes all of them. Creepers "
-                    + "dropping the two discs is the #minecraft:creeper_drop_music_discs tag, not a setting here.");
+                    + "music discs in chests, shipwreck fibre. enabled (default true): false removes all of them. "
+                    + "chanceMultiplier (default 1.0, 0.0-10.0) scales every chance they are added with; each "
+                    + "chance stays between 0 and 1. Creepers dropping the two discs is the "
+                    + "#minecraft:creeper_drop_music_discs tag, not a setting here.");
             Files.createDirectories(path.getParent());
             // disableHtmlEscaping, or every "=" and "'" in the comments is written as \u003d and
             // \u0027 — valid JSON, unreadable prose.
