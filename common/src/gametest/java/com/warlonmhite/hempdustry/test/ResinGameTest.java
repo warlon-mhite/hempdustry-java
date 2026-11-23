@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.test;
 
+import java.util.Optional;
+import net.minecraft.world.item.crafting.Ingredient;
+import com.warlonmhite.hempdustry.recipe.SiftingRecipe;
 import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.strain.internal.Rolls;
 import com.warlonmhite.hempdustry.strain.internal.Resins;
@@ -321,17 +324,44 @@ public final class ResinGameTest {
                     + Resins.written(entry.getKey()) + " sieves at " + chance + ", not " + entry.getValue());
         }
 
-        // Written only where nothing written would sieve otherwise: a very rich bud in the resinous tag is left bare
-        // for a dry strain (the tag's double rate is its own), written for any other texture (which a datapack's
-        // tagged strain may have), and an average bud outside the tag is never written.
-        context.assertTrue(Resins.written(Resins.stamp(Genetics.BUILT_IN, new ItemStack(ModItems.BELDIA_BUDS), ResinStep.VERY_RICH,
-                ResinTexture.DRY)).isEmpty(), "a very rich bud of a dry resinous strain was written");
-        for (ResinTexture texture : List.of(ResinTexture.EVEN, ResinTexture.STICKY)) {
-            context.assertTrue(Resins.written(Resins.stamp(Genetics.BUILT_IN, new ItemStack(ModItems.BELDIA_BUDS), ResinStep.VERY_RICH,
-                    texture)).isPresent(), "a very rich bud of an " + texture.getSerializedName()
-                    + " resinous strain was left bare, so it would sieve at the tag's double rate");
-            context.assertTrue(Resins.written(Resins.stamp(Genetics.BUILT_IN, new ItemStack(ModItems.INDICA_BUDS), ResinStep.AVERAGE,
-                    texture)).isEmpty(), "an average bud outside the tag was written");
+        // The step a bud sieves by: a very rich bud of a resinous strain is left bare, whatever the world's genetics,
+        // so it stacks with one from before resin, and the box reads it as very rich through its own strain's texture
+        // as it reads a written one; a bare bud of any other strain is read as average, the step its stamp leaves
+        // bare; a leaf carries no step.
+        ItemStack bare = new ItemStack(ModItems.BELDIA_BUDS);
+        context.assertTrue(Resins.written(Resins.stamp(bare.copy(), ResinStep.VERY_RICH)).isEmpty(),
+                "a very rich Beldía bud was written its step");
+        context.assertValueEqual(SiftingRecipe.stepOf(bare, registries), Optional.of(ResinStep.VERY_RICH),
+                "the step a bare Beldía bud sieves by");
+        context.assertValueEqual(SiftingRecipe.stepOf(new ItemStack(ModItems.INDICA_BUDS), registries),
+                Optional.of(ResinStep.AVERAGE), "the step a bare Purple Kush bud sieves by");
+        context.assertValueEqual(SiftingRecipe.stepOf(new ItemStack(ModItems.HEMP_LEAF), registries), Optional.empty(),
+                "the step a leaf sieves by");
+        // A pack's resinous recipe at one level and one a step: every step of Beldía sieves at least as fast as the
+        // one below it, the bare very rich bud included (1 × 2), where reading it at the recipe's one level put it
+        // under a rich bud's 1.5.
+        SiftingRecipe resinous = new SiftingRecipe(Ingredient.of(ModItems.BELDIA_BUDS), SiftingBoxBlock.Content.PLANT,
+                1.0F, Optional.of(1.0F));
+        context.assertValueEqual(resinous.levelsFor(bare, registries), 2.0F, "a bare Beldía bud under a one-level resinous recipe");
+        float slower = 0.0F;
+        for (ResinStep step : ResinStep.values()) {
+            float levels = resinous.levelsFor(Resins.stamp(new ItemStack(ModItems.BELDIA_BUDS), step), registries);
+            context.assertTrue(levels >= slower, "a " + step.getSerializedName() + " Beldía bud sieves at " + levels
+                    + ", slower than the step below it at " + slower);
+            slower = levels;
+        }
+        // The same under a pack's flower recipe whose flat rate is above its stepped one: a bare average Purple Kush
+        // bud is read by the step as every other is, so none sieves faster than a richer one.
+        SiftingRecipe flower = new SiftingRecipe(Ingredient.of(ModItems.INDICA_BUDS), SiftingBoxBlock.Content.PLANT,
+                2.0F, Optional.of(1.0F));
+        context.assertValueEqual(flower.levelsFor(new ItemStack(ModItems.INDICA_BUDS), registries), 1.0F,
+                "a bare Purple Kush bud under a flower recipe at two levels and one a step");
+        slower = 0.0F;
+        for (ResinStep step : ResinStep.values()) {
+            float levels = flower.levelsFor(Resins.stamp(new ItemStack(ModItems.INDICA_BUDS), step), registries);
+            context.assertTrue(levels >= slower, "a " + step.getSerializedName() + " Purple Kush bud sieves at " + levels
+                    + ", slower than the step below it at " + slower);
+            slower = levels;
         }
 
         // In the box: one average Beldía bud is one level; one with no step is two.

@@ -326,8 +326,8 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
         Optional<SiftingRecipe> recipe = chemotype == Chemotype.CANNABINOID_FREE
                 ? Optional.empty() : SiftingRecipe.of(world, stack);
         Content content = recipe.map(SiftingRecipe::screen).orElse(null);
-        float chance = recipe.map(found -> found.levelsFor(stack, world.registryAccess())).orElse(0.0F)
-                * rate(world, pos, state);
+        float levels = recipe.map(found -> found.levelsFor(stack, world.registryAccess())).orElse(0.0F);
+        float chance = levels * rate(world, pos, state);
         // THC, balanced and CBD matter mix by dosage; CBG-dominant matter has no share to mix by, so it
         // sifts only with its own kind.
         Chemotype batchChemotype = chemotypeOf(world, pos, state);
@@ -345,7 +345,7 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
                 || (state.getValue(FILLED) && content != Content.PLANT)
                 || (level > 0 && content != state.getValue(CONTENT))
                 || otherChemotype) {
-            explainRefusal(world, player, state, content, level, otherChemotype);
+            explainRefusal(world, player, state, content, level, otherChemotype, levels <= 0.0F);
             return super.useItemOn(stack, state, world, pos, player, hand, hit);
         }
         if (world instanceof ServerLevel serverWorld) {
@@ -371,7 +371,7 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
      * arrive twice.
      */
     private static void explainRefusal(Level world, Player player, BlockState state,
-                                       Content content, int level, boolean otherChemotype) {
+                                       Content content, int level, boolean otherChemotype, boolean nothingToSift) {
         if (world.isClientSide() || content == null || level >= FULL_LEVEL) {
             return;
         }
@@ -387,6 +387,11 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
         }
         if (key == null && otherChemotype) {
             key = "hempdustry.sifting_box.one_chemotype";
+        }
+        // A recipe names it, but at no levels: a datapack's genetics or recipe that sets a step's sieve to 0. The
+        // player sees a bud the box takes from the next stack refused, and nothing else would say why.
+        if (key == null && nothingToSift) {
+            key = "hempdustry.sifting_box.too_little_resin";
         }
         if (key != null) {
             player.sendOverlayMessage(Component.translatable(key));
@@ -509,8 +514,9 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
      *
      * <p><b>A bud's resin moves its rate</b>: a bud that carries its plant's step ({@link ResinStep}) moves the
      * screen its recipe's {@code resin_levels} times the step's sieve factor for its strain's texture, ×0.5 for a
-     * very low plant up to ×2 for a very rich dry one. A bud with no step written on it sieves at the recipe's
-     * {@code levels}, as every bud did before resin. Leaves and kief carry no step.
+     * very low plant up to ×2 for a very rich dry one. A bud with no step written on it carries the one its stamp
+     * leaves unwritten, very rich for a resinous strain's and average for any other ({@link SiftingRecipe#stepOf}).
+     * Leaves and kief carry no step and sieve at the recipe's {@code levels}.
      *
      * <p>There is no third rate for resin any more. <b>The box does not re-sift resin</b>: the ice
      * wash replaced that pass, and it is the honest version of it — what a further sieve buys is

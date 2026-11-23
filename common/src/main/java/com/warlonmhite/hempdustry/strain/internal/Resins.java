@@ -143,27 +143,14 @@ public final class Resins {
         return stack.is(ModTags.Items.SIFTABLE_RESINOUS) ? ResinStep.VERY_RICH : ResinStep.AVERAGE;
     }
 
-    /** Writes {@code step} on {@code stack}; the step it reads with none ({@link #legacy}) writes nothing. Returns the stack. */
+    /**
+     * Writes {@code step} on {@code stack}; the step it reads with none ({@link #legacy}) writes nothing, whatever the
+     * world's genetics or recipes, so a bud stacks with every other of its step, from before resin or after a datapack
+     * change. The Sifting Box reads an unwritten bud's legacy step through its strain's texture as it reads a written
+     * one ({@code SiftingRecipe#stepOf}). Returns the stack.
+     */
     public static ItemStack stamp(ItemStack stack, ResinStep step) {
         if (step == legacy(stack)) {
-            stack.remove(ModComponents.RESIN_STEP);
-        } else {
-            stack.set(ModComponents.RESIN_STEP, step);
-        }
-        return stack;
-    }
-
-    /**
-     * {@link #stamp(ItemStack, ResinStep)} for a bud of a strain of {@code texture}: its {@link #legacy} step is
-     * written too when a bud with nothing written would sieve otherwise. Only a strain a datapack adds to
-     * {@code #hempdustry:siftable/resinous} that is not dry meets it: its very rich buds sieve at its texture's
-     * rate, and left unwritten they would take the tag's double one. So does any very rich bud of a world whose
-     * {@code genetics} sieve it at another rate than the tag's, which stays the built-in very rich rate. Returns the
-     * stack.
-     */
-    public static ItemStack stamp(Genetics genetics, ItemStack stack, ResinStep step, ResinTexture texture) {
-        ResinStep legacy = legacy(stack);
-        if (step == legacy && sieveFactor(genetics, step, texture) == sieve(Genetics.BUILT_IN, legacy)) {
             stack.remove(ModComponents.RESIN_STEP);
         } else {
             stack.set(ModComponents.RESIN_STEP, step);

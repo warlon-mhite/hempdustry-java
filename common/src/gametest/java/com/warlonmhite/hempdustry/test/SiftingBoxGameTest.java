@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.test;
 
+import net.minecraft.network.chat.Component;
+import com.warlonmhite.hempdustry.strain.ResinStep;
+import com.warlonmhite.hempdustry.strain.internal.Resins;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JsonOps;
@@ -419,10 +422,26 @@ public final class SiftingBoxGameTest {
                 SiftingBoxBlock.Content.PLANT, 1.0F, Optional.empty()));
         RecipeHolder<SiftingRecipe> high = holder("b", new SiftingRecipe(Ingredient.of(ModItems.BELDIA_BUDS),
                 SiftingBoxBlock.Content.PLANT, 2.0F, Optional.empty()));
-        context.assertValueEqual(SiftingRecipe.pick(List.of(low, high), beldia), Optional.of(high),
+        net.minecraft.core.HolderLookup.Provider registries = world.registryAccess();
+        context.assertValueEqual(SiftingRecipe.pick(List.of(low, high), beldia, registries), Optional.of(high),
                 "a bud two recipes name took the one with fewer levels");
-        context.assertValueEqual(SiftingRecipe.pick(List.of(), beldia), Optional.empty(),
+        context.assertValueEqual(SiftingRecipe.pick(List.of(), beldia, registries), Optional.empty(),
                 "with no sifting recipe the box still sifts something");
+        // A bud with a resin step ranks the recipes naming it by what it would sieve at by each: under the mod's one
+        // level a step and a pack's flat 1.2, a rich bud (1.25) keeps the mod's, a very low one (0.5) and a bare one (1)
+        // take the pack's.
+        RecipeHolder<SiftingRecipe> stepped = holder("c", new SiftingRecipe(Ingredient.of(ModItems.INDICA_BUDS),
+                SiftingBoxBlock.Content.PLANT, 1.0F, Optional.of(1.0F)));
+        RecipeHolder<SiftingRecipe> flat = holder("d", new SiftingRecipe(Ingredient.of(ModItems.INDICA_BUDS),
+                SiftingBoxBlock.Content.PLANT, 1.2F, Optional.empty()));
+        context.assertValueEqual(SiftingRecipe.pick(List.of(stepped, flat),
+                        Resins.stamp(new ItemStack(ModItems.INDICA_BUDS), ResinStep.RICH), registries), Optional.of(stepped),
+                "a rich bud's recipe, of one reading its step and a flat one");
+        context.assertValueEqual(SiftingRecipe.pick(List.of(stepped, flat),
+                        Resins.stamp(new ItemStack(ModItems.INDICA_BUDS), ResinStep.VERY_LOW), registries), Optional.of(flat),
+                "a very low bud's recipe, of one reading its step and a flat one");
+        context.assertValueEqual(SiftingRecipe.pick(List.of(stepped, flat), new ItemStack(ModItems.INDICA_BUDS), registries),
+                Optional.of(flat), "a bare bud's recipe, of one reading its step and a flat one");
 
         List<ViewerRecipes.Entry> rows = ViewerRecipes.sifting(world).stream()
                 .filter(row -> Sweep.ours(row.id())).toList();
@@ -431,6 +450,14 @@ public final class SiftingBoxGameTest {
         for (ViewerRecipes.Entry row : rows) {
             Object count = ((TranslatableContents) row.notes().getFirst().getContents()).getArgs()[0];
             context.assertValueEqual(count, want.get(row.id().toString()).perBatch(), row.id() + "'s pieces per batch");
+            // A row whose recipe reads a bud's step tells the stepped buds' own counts, from its resin_levels: about
+            // 4 to 14 at one level a step, the resinous row's very rich dry Beldía included, never its levels' 2 to 8.
+            List<String> resin = row.notes().stream().map(Component::getContents)
+                    .filter(contents -> contents instanceof TranslatableContents translatable
+                            && translatable.getKey().equals("hempdustry.category.sifting.resin"))
+                    .map(contents -> List.of(((TranslatableContents) contents).getArgs()).toString()).toList();
+            context.assertValueEqual(resin, want.get(row.id().toString()).resinLevels().isPresent() ? List.of("[4, 14]") : List.of(),
+                    row.id() + "'s stepped buds per batch");
         }
         context.succeed();
     }
@@ -442,6 +469,18 @@ public final class SiftingBoxGameTest {
      */
     public static void aDatapackSiftingRecipeMovesTheBox(GameTestHelper context) {
         ServerLevel world = context.getLevel();
+        // The pack's dead bush recipe moves the screen no levels, plain or stepped: the box refuses it and says why,
+        // and the viewers give it no row.
+        context.setBlock(BOX, ModBlocks.SIFTING_BOX.defaultBlockState());
+        Players.Watched watched = Players.watched(context);
+        watched.sent();
+        Players.click(context, watched.player(), BOX, new ItemStack(Items.DEAD_BUSH, 2));
+        context.assertValueEqual(context.getBlockState(BOX).getValue(SiftingBoxBlock.LEVEL), 0, "a dead bush at no levels moved the screen");
+        context.assertTrue(watched.sent().stream().anyMatch(packet -> packet.toString().contains("hempdustry.sifting_box.too_little_resin")),
+                "a piece at no levels was refused without a word");
+        context.assertFalse(ViewerRecipes.sifting(world).stream().anyMatch(row -> row.id().getPath().endsWith("no_resin")),
+                "a recipe at no levels has a row");
+
         context.assertValueEqual(SiftingBoxBlock.sieveChance(new ItemStack(Items.WHEAT), world), 7.0F,
                 "the test pack's wheat recipe");
         context.setBlock(BOX, ModBlocks.SIFTING_BOX.defaultBlockState());

@@ -10,6 +10,8 @@ import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.balance.DeviceStats;
 import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.balance.GrowClimate;
+import com.warlonmhite.hempdustry.strain.ResinStep;
+import com.warlonmhite.hempdustry.strain.ResinTexture;
 import com.warlonmhite.hempdustry.strain.internal.Resins;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.ModCauldronBehaviors;
@@ -50,7 +52,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -96,10 +97,12 @@ public final class ViewerRecipes {
     /**
      * How many lines of notes a page of each category has room for. Both viewers ask a category for its height
      * once and use it for every page, so the room is fixed per category, and a note past it is drawn over the
-     * next page: every entry's notes must fit (held by a game test over every category's rows).
+     * next page: every entry's notes must fit (held by a game test over every category's rows, and for the sieve
+     * pages over a world's genetics too). A sieve row is a rate line and up to two resin lines (a range, and a
+     * second where a step sifts nothing, which a pack's genetics may set), and a wash row one jacket line more.
      */
     private static final Map<Identifier, Integer> NOTE_LINES = Map.of(
-            DECARBOXYLATING, 1, INFUSING, 4, CAULDRON, 1, PRESSING, 2, SIFTING, 2, ICE_O_LATOR, 3, WORLD, 3);
+            DECARBOXYLATING, 1, INFUSING, 4, CAULDRON, 1, PRESSING, 2, SIFTING, 3, ICE_O_LATOR, 4, WORLD, 3);
 
     /** The lines of notes a page of {@code category} has room for. */
     public static int noteLines(Identifier category) {
@@ -199,8 +202,8 @@ public final class ViewerRecipes {
     /**
      * The Sifting Box's dry screens, one row per {@code hempdustry:sifting} recipe: what it takes, what the
      * screen makes of it and about how many fill a batch. Read from the recipes the server sent, so a datapack's
-     * rate or input is on the page; plant screens first, then by id. A recipe at no levels sifts nothing and has
-     * no row.
+     * rate or input is on the page; plant screens first, then by id. A recipe that moves a screen neither at its
+     * {@code levels} nor at a bud's step sifts nothing and has no row.
      *
      * <p>Two categories rather than one, because <b>the water changes what comes out</b> and a
      * single page could not say that without lying about one of the two.
@@ -211,11 +214,7 @@ public final class ViewerRecipes {
         for (RecipeHolder<SiftingRecipe> holder : siftingRecipes(world)) {
             SiftingRecipe recipe = holder.value();
             List<Component> notes = new ArrayList<>();
-            notes.add(Component.translatable("hempdustry.category.sifting.info", perBatch(recipe.levels())));
-            // Buds sieve by their plant's resin, so their rows say so; leaves and kief carry none.
-            if (recipe.resinLevels().isPresent()) {
-                notes.add(sieveResin(genetics));
-            }
+            notes.addAll(rates(recipe, genetics, 1.0F));
             out.add(new Entry(holder.id().identifier(), List.of(recipe.ingredient()),
                     new ItemStack(SiftingBoxBlock.yieldOf(recipe.screen(), false), SiftingBoxBlock.YIELD), notes, true));
         }
@@ -247,10 +246,7 @@ public final class ViewerRecipes {
                 float rate = SiftingBoxBlock.iceRate(Block.byItem(jacket).defaultBlockState());
                 List<Component> notes = new ArrayList<>();
                 notes.add(Component.translatable("hempdustry.category.ice_o_lator.jacket").withStyle(ChatFormatting.DARK_GRAY));
-                notes.add(Component.translatable("hempdustry.category.sifting.info", perBatch(recipe.levels() * rate)));
-                if (recipe.resinLevels().isPresent()) {
-                    notes.add(sieveResin(genetics));
-                }
+                notes.addAll(rates(recipe, genetics, rate));
                 out.add(new Entry(Identifier.fromNamespaceAndPath(id.getNamespace(),
                                 "ice_o_lator/" + name + "/" + BuiltInRegistries.ITEM.getKey(jacket).getPath()),
                         List.of(recipe.ingredient(), Ingredient.of(Items.WATER_BUCKET), Ingredient.of(jacket)),
@@ -260,29 +256,68 @@ public final class ViewerRecipes {
         return out;
     }
 
-    /** Every sifting recipe that moves a screen at all: plant screens first, then by id. */
+    /**
+     * A row's rates at {@code rate} (a jacket's, or 1 dry): about how many pieces with no resin step fill a batch, and
+     * for a recipe that reads a bud's step, about how many stepped buds do ({@link #sieveResin}).
+     */
+    private static List<Component> rates(SiftingRecipe recipe, Genetics genetics, float rate) {
+        List<Component> notes = new ArrayList<>();
+        if (recipe.levels() > 0.0F) {
+            notes.add(Component.translatable("hempdustry.category.sifting.info", perBatch(recipe.levels() * rate)));
+        }
+        // Buds sieve by their plant's resin, so their rows say so; leaves and kief carry none.
+        recipe.resinLevels().ifPresent(resin -> notes.addAll(sieveResin(genetics, resin * rate)));
+        return notes;
+    }
+
+    /**
+     * Every sifting recipe that moves a screen at all, at its {@code levels} or at a bud's resin step: plant screens
+     * first, then by id.
+     */
     private static List<RecipeHolder<SiftingRecipe>> siftingRecipes(Level world) {
         return ModRecipes.allOfType(world, ModRecipes.SIFTING_TYPE).stream()
-                .filter(holder -> holder.value().levels() > 0.0F)
+                .filter(holder -> holder.value().levels() > 0.0F || holder.value().resinLevels().orElse(0.0F) > 0.0F)
                 .sorted(Comparator.<RecipeHolder<SiftingRecipe>, Boolean>comparing(
                                 holder -> holder.value().screen() != SiftingBoxBlock.Content.PLANT)
                         .thenComparing(holder -> holder.id().identifier()))
                 .toList();
     }
 
-    /** About how many pieces fill a screen at {@code levels} a piece. */
+    /** About how many pieces fill a screen at {@code levels} a piece: one at the least, as one piece always does. */
     private static int perBatch(float levels) {
-        return Math.round(SiftingBoxBlock.FULL_LEVEL / levels);
+        return Math.max(1, Math.round(SiftingBoxBlock.FULL_LEVEL / levels));
     }
 
     /**
-     * The sieve pages' resin line: the lowest and the highest factor a bud's resin step gives its rate in
-     * {@code genetics}, the world's, for any texture (×0.5 to ×2 built in), so a datapack that moves the steps moves
-     * the page with them. Both viewers build their pages from here.
+     * The sieve pages' resin lines for a recipe whose stepped buds move {@code resinLevels} times their step's factor:
+     * about how many of the richest and of the poorest fill a batch, by the lowest and the highest factor any step and
+     * texture has in {@code genetics}, the world's (4 to 14 at one level built in), so a datapack that moves the steps
+     * or the recipe moves the page with them. Where the poorest sift nothing at all, a second line says so; where none
+     * sifts, that line alone. Both viewers build their pages from here.
      */
-    public static Component sieveResin(Genetics genetics) {
-        float[] range = Resins.sieveRange(genetics);
-        return Component.translatable("hempdustry.category.sifting.resin", decimal(range[0]), decimal(range[1]));
+    public static List<Component> sieveResin(Genetics genetics, float resinLevels) {
+        float lowest = Float.MAX_VALUE;
+        float highest = 0.0F;
+        boolean nothing = false;
+        for (ResinStep step : ResinStep.values()) {
+            for (ResinTexture texture : ResinTexture.values()) {
+                float levels = resinLevels * Resins.sieveFactor(genetics, step, texture);
+                if (levels <= 0.0F) {
+                    nothing = true;
+                } else {
+                    lowest = Math.min(lowest, levels);
+                    highest = Math.max(highest, levels);
+                }
+            }
+        }
+        List<Component> lines = new ArrayList<>();
+        if (highest > 0.0F) {
+            lines.add(Component.translatable("hempdustry.category.sifting.resin", perBatch(highest), perBatch(lowest)));
+        }
+        if (nothing) {
+            lines.add(Component.translatable("hempdustry.category.sifting.resin.none"));
+        }
+        return lines;
     }
 
     /** The rubbing page's resin line: the worst and the best odds of a charas in {@code genetics} (1 in 8 to 1 in 2). */
@@ -290,19 +325,6 @@ public final class ViewerRecipes {
         float[] range = Resins.rubRange(genetics);
         return Component.translatable("hempdustry.category.world.rubbing.resin",
                 Math.round(1.0F / range[0]), Math.round(1.0F / range[1]));
-    }
-
-    /**
-     * {@code value} to two places as the reader's language writes a decimal ({@code hempdustry.number.decimal}: 0.5 in
-     * English, 0,5 in French), a whole number as it is.
-     */
-    static Object decimal(float value) {
-        int hundredths = Math.round(value * 100.0F);
-        if (hundredths % 100 == 0) {
-            return hundredths / 100;
-        }
-        String fraction = String.format(Locale.ROOT, "%02d", hundredths % 100).replaceAll("0+$", "");
-        return Component.translatable("hempdustry.number.decimal", hundredths / 100, fraction);
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.block.custom.SiftingBoxBlock;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
@@ -200,16 +201,19 @@ public final class GeneticsGameTest {
         JsonObject english = locales.get("en_us");
         JsonObject french = locales.get("fr_fr");
         Genetics shipped = Genetics.of(context.getLevel().registryAccess());
-        expect(context, english, ViewerRecipes.sieveResin(shipped), "A bud's resin moves it: ×0.5 to ×2");
+        expect(context, english, ViewerRecipes.sieveResin(shipped, 1.0F).getFirst(), "A bud's resin moves it: about 4 to 14 per batch");
         expect(context, english, ViewerRecipes.rubResin(shipped), "A plant's resin moves it: 1 in 8 to 1 in 2");
-        expect(context, french, ViewerRecipes.sieveResin(shipped), "La résine d'une fleur le change : ×0,5 à ×2");
+        expect(context, french, ViewerRecipes.sieveResin(shipped, 1.0F).getFirst(), "La résine d'une fleur le change : environ 4 à 14 par fournée");
         expect(context, french, ViewerRecipes.rubResin(shipped), "La résine du plant le change : 1 sur 8 à 1 sur 2");
 
+        float[] movedRange = Resins.sieveRange(moved);
+        String movedFewest = String.valueOf(Math.round(SiftingBoxBlock.FULL_LEVEL / movedRange[1]));
+        String movedMost = String.valueOf(Math.round(SiftingBoxBlock.FULL_LEVEL / movedRange[0]));
         Map<String, String> findings = new TreeMap<>();
         int checked = 0;
         for (Map.Entry<String, JsonObject> locale : locales.entrySet()) {
             for (Map.Entry<Component, List<String>> want : Map.of(
-                    ViewerRecipes.sieveResin(moved), List.of("×0", "25", "×3"),
+                    ViewerRecipes.sieveResin(moved, 1.0F).getFirst(), List.of(movedFewest, movedMost),
                     ViewerRecipes.rubResin(moved), List.of("16", "1")).entrySet()) {
                 String key = ((TranslatableContents) want.getKey().getContents()).getKey();
                 if (!locale.getValue().has(key)) continue;
@@ -222,6 +226,23 @@ public final class GeneticsGameTest {
         }
         Sweep.atLeast(context, "resin lines in the locales", checked, 16);
         Sweep.report(context, "Every resin line shows the moved genetics' range", findings, Map.of());
+
+        // A pack may set a step to sift nothing: the sieve pages then carry a second resin line, and a dry row (rate
+        // and resin lines) and a wash row (one jacket line more) must still fit the room their page asks for.
+        Map<String, Genetics> sieves = Map.of("shipped", shipped, "moved", moved,
+                "a step sifting nothing", read("{\"resin\": {\"sieve\": {\"very_low\": 0.0}}}"),
+                "both low steps sifting nothing", read("{\"resin\": {\"sieve\": {\"very_low\": 0.0, \"low\": 0.0}}}"));
+        Map<String, String> over = new TreeMap<>();
+        for (Map.Entry<String, Genetics> sieve : sieves.entrySet()) {
+            int resin = ViewerRecipes.sieveResin(sieve.getValue(), 1.0F).size();
+            if (1 + resin > ViewerRecipes.noteLines(ViewerRecipes.SIFTING)
+                    || 2 + resin > ViewerRecipes.noteLines(ViewerRecipes.ICE_O_LATOR)) {
+                over.put(sieve.getKey(), resin + " resin lines");
+            }
+        }
+        context.assertValueEqual(ViewerRecipes.sieveResin(sieves.get("a step sifting nothing"), 1.0F).size(), 2,
+                "resin lines where one step sifts nothing");
+        Sweep.report(context, "Every sieve row fits its page at any genetics", over, Map.of());
         context.succeed();
     }
 

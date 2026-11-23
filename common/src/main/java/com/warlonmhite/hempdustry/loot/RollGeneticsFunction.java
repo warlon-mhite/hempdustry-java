@@ -63,7 +63,7 @@ public final class RollGeneticsFunction extends LootItemConditionalFunction {
         ResinStep resin = Rolls.roll(sheet.traits().resin(), random);
         Bands.stamp(stack, band);
         Tiers.stamp(stack, tier);
-        return Resins.stamp(genetics, stack, resin, sheet.traits().resin().texture());
+        return Resins.stamp(stack, resin);
     }
 
     /** The function as a loot table builder takes it. */
