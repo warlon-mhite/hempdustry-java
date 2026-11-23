@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.block.custom.PlantStress;
 import com.warlonmhite.hempdustry.block.custom.SiftingBoxBlock;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -187,6 +188,8 @@ public final class GeneticsGameTest {
         context.assertTrue(Hardiness.factor(moved, Resistance.VERY_WEAK) == 4.0F
                         && Hardiness.apply(moved, Resistance.VERY_RESISTANT, 0.5F) == 0.0F
                         && Hardiness.lightLossAge(moved, Resistance.WEAK) == 2
+                        // and the night leak a touchy plant takes from the same age (built in, 3)
+                        && PlantStress.touchyAge(moved) == 2 && PlantStress.touchyAge(Genetics.BUILT_IN) == 3
                         && Hardiness.lightLossAge(moved, Resistance.RESISTANT) == 6
                         && !Hardiness.ignoresLostLight(moved, Resistance.RESISTANT, RandomSource.create(1L)),
                 "the resistance steps did not follow the file");

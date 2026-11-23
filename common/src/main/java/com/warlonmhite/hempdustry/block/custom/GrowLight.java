@@ -80,7 +80,7 @@ public enum GrowLight implements StringRepresentable {
     /**
      * As {@link #afterStep(int, GrowLight)}, for a plant that a lost light stresses once a step takes
      * it to {@code lossAge} or past: {@link #FLOWERING_AGE} for most, a stage earlier for a plant
-     * touchy about its light ({@link PlantStress#TOUCHY_AGE}).
+     * touchy about its light ({@link PlantStress#touchyAge}).
      */
     public GrowLight afterStep(int fromAge, GrowLight now, int lossAge) {
         if (fromAge == 0) {

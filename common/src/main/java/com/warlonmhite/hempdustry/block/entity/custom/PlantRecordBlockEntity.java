@@ -393,12 +393,12 @@ public class PlantRecordBlockEntity extends BlockEntity {
     /**
      * One random tick of the growing plant whose root is at {@code root}, {@code age} old and standing {@code height}
      * blocks tall once grown: it now has seen a dark night if it reads night where it stands
-     * ({@link PlantStress#hours}), is flowering ({@link PlantStress#TOUCHY_AGE} on) and not yet ripe, and no light
+     * ({@link PlantStress#hours}), is flowering ({@link PlantStress#touchyAge} on) and not yet ripe, and no light
      * leaks onto it ({@link PlantStress#leaks}). Kept once seen, until the plant is replanted. A root with no
      * record, or a dimension with no night, never sees one.
      */
     public static void recordNight(Level level, BlockPos root, int age, int maxAge, int height) {
-        if (level.isClientSide() || age < PlantStress.TOUCHY_AGE || age >= maxAge
+        if (level.isClientSide() || age < PlantStress.touchyAge(Genetics.of(level.registryAccess())) || age >= maxAge
                 || !(level.getBlockEntity(root) instanceof PlantRecordBlockEntity record) || record.sawNight) {
             return;
         }

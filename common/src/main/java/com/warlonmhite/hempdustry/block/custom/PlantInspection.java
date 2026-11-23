@@ -179,7 +179,7 @@ public final class PlantInspection {
                 return;
             }
         } else if (indica != null && indica.leaksAtNight() && PlantStress.hours(world, root) == PlantStress.Hours.NIGHT
-                && next >= PlantStress.TOUCHY_AGE && PlantStress.leaks(world, root, height)) {
+                && next >= PlantStress.touchyAge(genetics) && PlantStress.leaks(world, root, height)) {
             lines.add(Component.translatable(KEY + "stress.leak").withStyle(ChatFormatting.GOLD));
             return;
         } else if (indica == null || !indica.leaksAtNight() || PlantStress.hours(world, root) == PlantStress.Hours.DAY) {

@@ -72,10 +72,14 @@ public final class PlantStress {
     public static final float STAGNANT = GrowClimate.Stress.DEFAULT.stagnant();
     public static final float DRY_FIELD = GrowClimate.Stress.DEFAULT.dryField();
     /**
-     * The age from which a light leaking into the night stresses a plant touchy about its light: a stage
-     * before {@link GrowLight#FLOWERING_AGE}, the age a lost light stresses a weak plant from.
+     * The age from which a light leaking into the night stresses a plant touchy about its light: the age a lost light
+     * stresses a weak plant from, in {@code genetics} ({@code resistance.light_loss_age.weak}), a stage before
+     * {@link GrowLight#FLOWERING_AGE} built in. Read off the world's genetics, so a pack that moves the weak age moves
+     * the night leak with it.
      */
-    public static final int TOUCHY_AGE = Hardiness.WEAK_LIGHT_LOSS_AGE;
+    public static int touchyAge(Genetics genetics) {
+        return Hardiness.lightLossAge(genetics, Resistance.WEAK);
+    }
 
     private PlantStress() {
     }
@@ -184,7 +188,7 @@ public final class PlantStress {
      *       so a Grow Lamp wired to one is a 12/12 timer: lit whenever the plant reads day, dark whenever
      *       it reads night, in any weather. Around each switch lies a twilight in which neither a leak nor
      *       a loss counts, as long as the detector takes to notice and the lamp to go out.</li>
-     *   <li><b>A leak</b>, at night and from {@link #TOUCHY_AGE}, is a lit light over the plant (anything
+     *   <li><b>A leak</b>, at night and from {@link #touchyAge}, is a lit light over the plant (anything
      *       the record counts) or a light-15 block touching it ({@link #leaks}). It stresses the plant,
      *       whatever its light step: every plant of a leaking strain leaks.</li>
      *   <li><b>Darkness at night never counts as a lost light.</b> A dark night keeps the record as it
@@ -192,17 +196,17 @@ public final class PlantStress {
      *       first step reads if it falls at night.</li>
      *   <li><b>By day</b>, the record's own ladder, read with the plant's light step as any plant's
      *       ({@link #lightStep}): a weak or very weak plant is stressed by a lost light from
-     *       {@link #TOUCHY_AGE}.</li>
+     *       {@link #touchyAge}.</li>
      * </ul>
      */
     static GrowLight touchyStep(Level world, BlockPos lower, GrowLight record, int fromAge, int toAge, int height,
                                 Resistance light, RandomSource random) {
         Hours hours = hours(world, lower);
+        Genetics genetics = Genetics.of(world.registryAccess());
         if (hours == Hours.DAY) {
-            return lightStep(Genetics.of(world.registryAccess()), record, fromAge, GrowLight.over(world, lower, height),
-                    light, random);
+            return lightStep(genetics, record, fromAge, GrowLight.over(world, lower, height), light, random);
         }
-        if (hours == Hours.NIGHT && toAge >= TOUCHY_AGE && leaks(world, lower, height)) {
+        if (hours == Hours.NIGHT && toAge >= touchyAge(genetics) && leaks(world, lower, height)) {
             return GrowLight.STRESSED;
         }
         GrowLight fixture = GrowLight.fixtureOver(world, lower, height);
