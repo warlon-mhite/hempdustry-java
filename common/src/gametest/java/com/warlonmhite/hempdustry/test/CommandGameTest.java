@@ -8,6 +8,7 @@ import com.warlonmhite.hempdustry.block.custom.GrowLight;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
 import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
 import com.warlonmhite.hempdustry.config.ConfigReport;
+import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.strain.PotencyBand;
@@ -27,6 +28,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.server.level.ServerLevel;
@@ -160,6 +162,32 @@ public final class CommandGameTest {
         context.assertFalse(Services.PLATFORM.isOwnPack(new KnownPack("vanilla", "another", "1")),
                 "another mod's pack counted as the mod's");
         refused(context, "hempdustry config");
+        context.succeed();
+    }
+
+    /**
+     * The start-up log line: nothing at the defaults with only the mod's own registries; with two values set in the
+     * file, each with its default and nothing else; and an entry another pack replaced or added, with the pack.
+     */
+    public static void theStartUpLineNamesOnlyWhatDiffers(GameTestHelper context) {
+        List<ConfigReport.RegistryReport> registries = ConfigReport.registries(context.getLevel().getServer());
+        context.assertTrue(ConfigReport.differences(ConfigReport.settings(HempdustryConfig.DEFAULT), registries).isEmpty(),
+                "a server on the defaults logged " + ConfigReport.differences(ConfigReport.settings(HempdustryConfig.DEFAULT),
+                        registries));
+        ConfigGameTest.withConfig("{ \"effects\": { \"maxLevel\": 6 }, \"loot\": { \"discs\": false } }", () -> {
+            String line = ConfigReport.differences(ConfigReport.settings(), registries).orElse("");
+            context.assertTrue(line.contains("effects.maxLevel=6 (default 4)") && line.contains("loot.discs=false (default true)")
+                            && !line.contains("maxBuffLevel") && !line.contains("datapack"),
+                    "two values set in the file logged as: " + line);
+        });
+        List<ConfigReport.RegistryReport> packed = List.of(new ConfigReport.RegistryReport(
+                Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "grow_climate"), 1,
+                List.of(new ConfigReport.Entry(Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "default"),
+                        ConfigReport.Origin.REPLACED, "file/climate.zip"))));
+        String line = ConfigReport.differences(ConfigReport.settings(HempdustryConfig.DEFAULT), packed).orElse("");
+        context.assertTrue(line.contains("hempdustry:grow_climate hempdustry:default replaced by file/climate.zip")
+                        && !line.contains("config values"),
+                "a replaced grow climate logged as: " + line);
         context.succeed();
     }
 

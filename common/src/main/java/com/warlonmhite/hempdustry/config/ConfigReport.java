@@ -3,6 +3,7 @@ package com.warlonmhite.hempdustry.config;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.JsonOps;
+import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.balance.DeviceStats;
 import com.warlonmhite.hempdustry.balance.EdibleBundle;
 import com.warlonmhite.hempdustry.balance.GreenOut;
@@ -28,7 +29,7 @@ import net.minecraft.util.StringRepresentable;
 /**
  * What a server runs with that is not the mod's own default: each config value and where it comes from, and every
  * entry of the mod's datapack registries that a pack other than the mod's own supplied. {@code /hempdustry config}
- * prints it.
+ * prints it, and the server logs what differs once its world is open ({@link #logDifferences}).
  */
 public final class ConfigReport {
     /** The six datapack registries, in the order the mod registers them. */
@@ -158,5 +159,47 @@ public final class ConfigReport {
             others.add(new Entry(id, ours ? Origin.REPLACED : Origin.ADDED, winner));
         });
         return new RegistryReport(key.identifier(), registry.size(), others);
+    }
+
+    /** Logs {@link #differences} once the server's world is open and its datapacks are known. */
+    public static void register() {
+        Services.EVENTS.onServerStarted(ConfigReport::logDifferences);
+    }
+
+    /**
+     * One INFO line naming everything this server runs with that the mod does not ship, read by whoever helps with a
+     * modpack, who reads its log and not its files. Nothing at all when everything is the mod's own default.
+     */
+    public static void logDifferences(MinecraftServer server) {
+        differences(settings(), registries(server)).ifPresent(Hempdustry.LOGGER::info);
+    }
+
+    /**
+     * The start-up log line: every config value not at its default and every registry entry another pack supplied,
+     * or nothing when the server runs on the mod's defaults alone.
+     */
+    public static Optional<String> differences(List<Setting> settings, List<RegistryReport> registries) {
+        List<String> changed = settings.stream().filter(Setting::changed)
+                .map(setting -> setting.key() + "=" + setting.value() + " (default " + setting.defaultValue() + ")")
+                .toList();
+        List<String> entries = new ArrayList<>();
+        for (RegistryReport report : registries) {
+            for (Entry entry : report.fromOtherPacks()) {
+                entries.add(report.registry() + " " + entry.id() + " " + entry.origin().getSerializedName()
+                        + " by " + entry.pack());
+            }
+        }
+        if (changed.isEmpty() && entries.isEmpty()) {
+            return Optional.empty();
+        }
+        StringBuilder line = new StringBuilder("Running with");
+        if (!changed.isEmpty()) {
+            line.append(" config values changed from their defaults: ").append(String.join(", ", changed));
+        }
+        if (!entries.isEmpty()) {
+            line.append(changed.isEmpty() ? "" : ";").append(" datapack entries from packs other than the mod's own: ")
+                    .append(String.join(", ", entries));
+        }
+        return Optional.of(line.toString());
     }
 }

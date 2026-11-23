@@ -13,6 +13,7 @@ import com.warlonmhite.hempdustry.block.ModDispenserBehaviors;
 import com.warlonmhite.hempdustry.block.entity.ModBlockEntities;
 import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ConfigReport;
 import com.warlonmhite.hempdustry.config.ModCommands;
 import com.warlonmhite.hempdustry.platform.Registration;
 import com.warlonmhite.hempdustry.platform.Services;
@@ -75,6 +76,7 @@ public class Hempdustry {
 		// The config first: everything below can read it, and a broken file must not stop the mod.
 		HempdustryConfig.load();
 		ModCommands.registerCommands();
+		ConfigReport.register();
 		ModComponents.registerModComponents();
 		ModStrains.registerStrains();
 		ModBalance.registerBalance();
