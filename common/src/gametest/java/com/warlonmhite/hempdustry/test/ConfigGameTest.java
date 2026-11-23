@@ -86,6 +86,26 @@ public final class ConfigGameTest {
     }
 
     /**
+     * A client section written before the puff switches existed still loads: what it sets is applied, the two
+     * switches it has never heard of come in on, and the file is written back with them in it.
+     */
+    public static void aClientSectionWithoutThePuffSwitchesLoads(GameTestHelper context) {
+        withConfig("{ \"client\": { \"_comment\": \"an older build's comment\", \"updateCheck\": false,"
+                + " \"biomeTintStrength\": 0.5, \"ripeAroma\": false } }", () -> {
+            HempdustryConfig.Client client = HempdustryConfig.get().client();
+            context.assertTrue(!client.updateCheck() && client.biomeTintStrength() == 0.5 && !client.ripeAroma(),
+                    "an older client section was not applied: " + client);
+            context.assertTrue(client.fanPuffs() && client.terpenePuffs(),
+                    "switches an older file never named are not on: " + client);
+            String rewritten = new String(read(Services.PLATFORM.configDir().resolve(Hempdustry.MOD_ID + ".json")),
+                    StandardCharsets.UTF_8);
+            context.assertTrue(rewritten.contains("\"fanPuffs\": true") && rewritten.contains("\"terpenePuffs\": true"),
+                    "the file was not written back with the new switches in it");
+        });
+        context.succeed();
+    }
+
+    /**
      * Every key the config file holds is named in its section's {@code _comment} with its default, and a number with
      * the range it is clamped to: {@code key (default 4, 1-10)}. A pack maker reads the file, not the source, and a
      * comment written by hand drifts the day a default or a bound moves.
@@ -140,7 +160,7 @@ public final class ConfigGameTest {
             write(path, original);
             HempdustryConfig.load();
         }
-        Sweep.atLeast(context, "config keys described", keys, 23);
+        Sweep.atLeast(context, "config keys described", keys, 25);
         Sweep.report(context, "Every config key is described in its comment", findings, Map.of());
         context.succeed();
     }

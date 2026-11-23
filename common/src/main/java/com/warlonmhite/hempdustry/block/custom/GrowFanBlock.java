@@ -1,6 +1,7 @@
 package com.warlonmhite.hempdustry.block.custom;
 
 import com.warlonmhite.hempdustry.balance.GrowClimate;
+import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.particle.FanPuffOption;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -117,7 +118,7 @@ public class GrowFanBlock extends FaceAttachedHorizontalDirectionalBlock {
      */
     @Override
     public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource random) {
-        if (!running(state)) {
+        if (!puffs(state)) {
             return;
         }
         Puff puff = puff(state, world, pos, GrowClimate.of(world.registryAccess()).fan(),
@@ -168,6 +169,14 @@ public class GrowFanBlock extends FaceAttachedHorizontalDirectionalBlock {
         return blows.getAxis() == Direction.Axis.X
                 ? new Vec3(pos.getX() + front, middle.y, middle.z)
                 : new Vec3(middle.x, middle.y, pos.getZ() + front);
+    }
+
+    /**
+     * Whether this client draws puffs off the Grow Fan standing as {@code state}: a running one, unless its player
+     * turned them off ({@code client.fanPuffs}). Read on every animate tick, so a reload takes effect at once.
+     */
+    public static boolean puffs(BlockState state) {
+        return running(state) && HempdustryConfig.get().client().fanPuffs();
     }
 
     /** Whether {@code state} is a Grow Fan that is running. */

@@ -4,6 +4,7 @@ import com.warlonmhite.hempdustry.strain.internal.Terpenes;
 import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.warlonmhite.hempdustry.block.ModBlocks;
+import com.warlonmhite.hempdustry.block.custom.GrowFanBlock;
 import com.warlonmhite.hempdustry.block.custom.stash.StashNose;
 import com.warlonmhite.hempdustry.block.custom.stash.TerpenePuff;
 import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
@@ -24,6 +25,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
@@ -171,6 +173,54 @@ public final class StashPuffGameTest {
                 });
             });
         });
+    }
+
+    /**
+     * {@code client.terpenePuffs} and {@code client.fanPuffs} are each player's own: off, this game draws neither a
+     * jar's puff nor a fan's, and on (the default) a running fan puffs and a stopped one does not. A server's file
+     * has a client section too, and it must change nothing for anyone else: with both off there, an opened jar still
+     * sends its puff to the players near it. The puffs themselves are drawn on a client, which a game test has none
+     * of, so what is held here is the switch each draw asks and what the server sends.
+     */
+    public static void thePuffSwitchesAreEachClientsOwn(GameTestHelper context) {
+        BlockState running = ModBlocks.GROW_FAN.defaultBlockState().setValue(GrowFanBlock.POWERED, true);
+        BlockState stopped = ModBlocks.GROW_FAN.defaultBlockState();
+        // An empty file is every default, whatever the test run's own file was left saying.
+        ConfigGameTest.withConfig("{}", () -> {
+            context.assertTrue(GrowFanBlock.puffs(running) && !GrowFanBlock.puffs(stopped),
+                    "at the defaults a running fan puffs " + GrowFanBlock.puffs(running) + ", a stopped one "
+                            + GrowFanBlock.puffs(stopped));
+            context.assertTrue(TerpenePuff.drawn(), "at the defaults a jar's puff is not drawn");
+        });
+
+        BlockPos floor = new BlockPos(3, 1, 3);
+        BlockPos jarPos = floor.above();
+        context.setBlock(floor, Blocks.STONE);
+        context.setBlock(jarPos, ModBlocks.STASH_JAR.defaultBlockState());
+        StashJarBlockEntity jar = (StashJarBlockEntity) context.getLevel().getBlockEntity(context.absolutePos(jarPos));
+        jar.setContents(jar(buds(ModItems.INDICA_BUDS, 64, BudTier.DANK)));
+        Players.Watched opener = Players.watched(context);
+        Players.Watched near = Players.watched(context);
+        Vec3 at = Vec3.atCenterOf(context.absolutePos(jarPos));
+        opener.player().setPos(at.add(1.5, 0.0, 0.0));
+        near.player().setPos(at.add(0.0, 0.0, 6.0));
+        clear(opener, near);
+        int smoke = Terpenes.smokeTint(Strain.fromBuds(context.getLevel().registryAccess(), ModItems.INDICA_BUDS)
+                .orElseThrow().value(), context.getLevel().registryAccess()).orElse(TerpenePuff.PLAIN);
+        TerpenePuffOption expected = new TerpenePuffOption(smoke, StashNose.of(jar.contents()));
+
+        ConfigGameTest.withConfig("{ \"client\": { \"fanPuffs\": false, \"terpenePuffs\": false } }", () -> {
+            context.assertTrue(!GrowFanBlock.puffs(running), "with fanPuffs off a running fan still puffs");
+            context.assertTrue(!TerpenePuff.drawn(), "with terpenePuffs off a jar's puff is still drawn");
+            Players.click(context, opener.player(), jarPos, ItemStack.EMPTY);
+            context.assertTrue(opener.player().getMainHandItem().is(ModItems.INDICA_BUDS), "an empty hand took nothing out");
+            List<TerpenePuffOption> seen = puffs(near.sent());
+            context.assertTrue(seen.contains(expected), "with the server's own terpenePuffs off, a player near an opened"
+                    + " jar was sent " + seen + ", not " + expected);
+        });
+        // Shut again, so the creepers of the tests beside this one are not drawn to it.
+        jar.letSmellOut(context.getLevel().getGameTime());
+        context.succeed();
     }
 
     private static void clear(Players.Watched... players) {

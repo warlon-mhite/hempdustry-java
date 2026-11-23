@@ -210,6 +210,8 @@ public final class HempdustryGameTests {
         register("a_broken_config_is_left_alone", ConfigGameTest::aBrokenConfigIsLeftAlone);
         register("effects_off_means_no_green_out", ConfigGameTest::effectsOffMeansNoGreenOut);
         register("every_config_key_is_described_in_its_comment", ConfigGameTest::everyConfigKeyIsDescribedInItsComment);
+        register("a_client_section_without_the_puff_switches_loads",
+                ConfigGameTest::aClientSectionWithoutThePuffSwitchesLoads);
         register("a_hemp_boat_does_not_stop_the_data_fixer", DataFixerGameTest::aHempBoatDoesNotStopTheDataFixer);
         register("one_bud_per_slot_is_the_dose", PackingGameTest::oneBudPerSlotIsTheDose);
         register("a_strain_reusing_items_keeps_the_tab_whole",
@@ -346,6 +348,7 @@ public final class HempdustryGameTests {
         register("a_jars_nose_is_the_whole_jar", StashPuffGameTest::aJarsNoseIsTheWholeJar);
         register("an_opened_jar_puffs_for_everyone_near", StashPuffGameTest::anOpenedJarPuffsForEveryoneNear);
         register("a_hand_opening_a_jar_lifts_its_lid", StashPuffGameTest::aHandOpeningAJarLiftsItsLid);
+        register("the_puff_switches_are_each_clients_own", StashPuffGameTest::thePuffSwitchesAreEachClientsOwn);
         register("the_tier_table_is_vanillas_luck_grammar", TierGameTest::theTierTableIsVanillasLuckGrammar);
         register("a_plant_rolls_its_gene_and_knows_its_ceiling", TierGameTest::aPlantRollsItsGeneAndKnowsItsCeiling);
         register("grow_luck_adds_up", TierGameTest::growLuckAddsUp);

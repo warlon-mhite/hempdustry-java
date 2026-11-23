@@ -38,7 +38,8 @@ import net.minecraft.util.RandomSource;
  * glitter, vanilla's noxious gas, vanilla's smallest dot. Every particle skips the world collision query
  * ({@code hasPhysics} off) and moves by arithmetic alone, like the ripe plant's wisp; the most a puff
  * makes is the Epic one's 43. The emitter goes through vanilla's particle setting like any particle the
- * server sends: none on Minimal, two puffs in three on Decreased.
+ * server sends: none on Minimal, two puffs in three on Decreased. A player who sets {@code client.terpenePuffs}
+ * false sees none of it, whatever the server sends.
  */
 public class TerpenePuffParticle extends NoRenderParticle {
     // Where each part of particles/terpene_puff.json starts, and how long it is.
@@ -401,9 +402,13 @@ public class TerpenePuffParticle extends NoRenderParticle {
             this.sprites = sprites;
         }
 
+        /** None at all where this client's player turned the jar's puff off ({@link TerpenePuff#drawn}). */
         @Override
         public Particle createParticle(TerpenePuffOption option, ClientLevel level, double x, double y, double z,
                                        double velocityX, double velocityY, double velocityZ, RandomSource random) {
+            if (!TerpenePuff.drawn()) {
+                return null;
+            }
             return new TerpenePuffParticle(level, x, y, z, option, sprites);
         }
     }

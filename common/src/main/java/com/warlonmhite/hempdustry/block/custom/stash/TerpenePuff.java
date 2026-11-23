@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom.stash;
 
+import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.strain.internal.Terpenes;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.particle.TerpenePuffOption;
@@ -27,6 +28,14 @@ public final class TerpenePuff {
     private static final double LID = 12.5 / 16.0;
 
     private TerpenePuff() {
+    }
+
+    /**
+     * Whether this client plays the puffs it is sent: {@code client.terpenePuffs}, the player's own choice. The
+     * server never asks: it sends the puff to everyone near enough, and each client decides.
+     */
+    public static boolean drawn() {
+        return HempdustryConfig.get().client().terpenePuffs();
     }
 
     /** The puff a jar of this {@code nose} lets off as {@code out} comes out of it. */

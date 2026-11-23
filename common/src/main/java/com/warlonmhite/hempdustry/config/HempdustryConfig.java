@@ -192,7 +192,11 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
                     + "animations (default auto; auto, vanilla or off): how this client animates a player smoking, "
                     + "coughing, sniffing a jar or kicking a footbag. auto follows whatever animates the rest of the "
                     + "body (Not Enough Animations, Fresh Animations' player pack, or vanilla), vanilla is always "
-                    + "vanilla's rigid style, off shows none of it.");
+                    + "vanilla's rigid style, off shows none of it. "
+                    + "fanPuffs (default true): false stops the puffs of air a running Grow Fan lets off down the "
+                    + "lane it blows on. terpenePuffs (default true): false stops the puff a Stash Jar lets off when "
+                    + "a hand opens it. Both are this client's alone: the fan still blows, the jar's smell still "
+                    + "gets out, and other players still see the puffs if their own files let them.");
             comment(root, "effects", "enabled (default true): false is 'industrial hemp only': no drug effects anywhere. "
                     + "maxLevel (default 4, 1-10) caps every effect the mod applies; maxBuffLevel (default 2, 1-10) "
                     + "caps only the helpful ones (Speed, Resistance, Absorption...), so a big dose still costs its "
@@ -293,8 +297,14 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
      *                           kicking a footbag: {@code auto} in the style of whatever animates the rest
      *                           of the body (Not Enough Animations, Fresh Animations' player pack, or
      *                           vanilla), {@code vanilla} always vanilla's rigid style, {@code off} not at all
+     * @param fanPuffs           whether this client draws the puffs of air a running Grow Fan lets off down its
+     *                           lane. The fan blows the same either way; see {@code GrowFanBlock#animateTick}
+     * @param terpenePuffs       whether this client draws the puff a Stash Jar lets off when a hand opens it. The
+     *                           server sends it whatever this says, to every player near enough; each client
+     *                           decides for itself whether to play it. See {@code TerpenePuffParticle}
      */
-    public record Client(boolean updateCheck, double biomeTintStrength, boolean ripeAroma, Animations animations) {
+    public record Client(boolean updateCheck, double biomeTintStrength, boolean ripeAroma, Animations animations,
+                         boolean fanPuffs, boolean terpenePuffs) {
 
         /**
          * 0.35 is the whole point of the knob's existence: enough of the biome to stop a bright
@@ -302,18 +312,21 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
          * different plants and the gold pistils stay gold. A full 1.0 is vanilla's grass behaviour
          * and collapses both strains onto the same green.
          */
-        public static final Client DEFAULT = new Client(true, 0.35, true, Animations.AUTO);
+        public static final Client DEFAULT = new Client(true, 0.35, true, Animations.AUTO, true, true);
 
         public static final Codec<Client> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.BOOL.fieldOf("updateCheck").forGetter(Client::updateCheck),
                 Codec.DOUBLE.fieldOf("biomeTintStrength").forGetter(Client::biomeTintStrength),
                 Codec.BOOL.fieldOf("ripeAroma").forGetter(Client::ripeAroma),
-                Animations.CODEC.fieldOf("animations").forGetter(Client::animations)
+                Animations.CODEC.fieldOf("animations").forGetter(Client::animations),
+                Codec.BOOL.fieldOf("fanPuffs").forGetter(Client::fanPuffs),
+                Codec.BOOL.fieldOf("terpenePuffs").forGetter(Client::terpenePuffs)
         ).apply(instance, Client::new));
 
         Client clamped() {
             return new Client(updateCheck,
-                    clampDouble("client.biomeTintStrength", biomeTintStrength, 0.0, 1.0), ripeAroma, animations);
+                    clampDouble("client.biomeTintStrength", biomeTintStrength, 0.0, 1.0), ripeAroma, animations,
+                    fanPuffs, terpenePuffs);
         }
 
         /** {@link Client#animations()}: whose style the player animations take, or none. */
