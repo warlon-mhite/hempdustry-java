@@ -132,7 +132,29 @@ public final class MildewGameTest {
         context.assertTrue(GrowClimate.CODEC.parse(JsonOps.INSTANCE,
                         JsonParser.parseString("{\"fan\": {\"ahead\": 0}}")).isError(),
                 "a fan reaching no block ahead loaded");
+        // A fan's width and height either way stop at 4, which keeps its box, read on every growth step, in bounds. A
+        // file written when they went to 8 still loads, read as 4 with a warning: the climate is a registry, and one
+        // value it refuses stops the world loading. Past 8 is refused as any value out of range is.
+        for (String key : new String[] {"side", "below", "above"}) {
+            List<String> quiet = LogLines.warnings(() -> context.assertValueEqual(
+                    fanValue(climate("{\"fan\": {\"" + key + "\": 4}}"), key), 4, "a fan's " + key + " of 4"));
+            List<String> warned = LogLines.warnings(() -> context.assertValueEqual(
+                    fanValue(climate("{\"fan\": {\"" + key + "\": 8}}"), key), 4, "a fan's " + key + " of 8"));
+            context.assertTrue(quiet.isEmpty() && warned.size() == 1 && warned.getFirst().contains("a fan's " + key + " of 8"),
+                    "a fan's " + key + " of 4 warned " + quiet + ", or one of 8 warned " + warned);
+            context.assertTrue(GrowClimate.CODEC.parse(JsonOps.INSTANCE,
+                            JsonParser.parseString("{\"fan\": {\"" + key + "\": 9}}")).isError(),
+                    "a fan's " + key + " of 9 loaded");
+        }
         context.succeed();
+    }
+
+    private static int fanValue(GrowClimate climate, String key) {
+        return switch (key) {
+            case "side" -> climate.fan().side();
+            case "below" -> climate.fan().below();
+            default -> climate.fan().above();
+        };
     }
 
     private static GrowClimate climate(String json) {

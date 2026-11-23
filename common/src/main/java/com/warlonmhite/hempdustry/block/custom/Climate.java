@@ -14,6 +14,9 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunkSection;
+import java.util.function.Predicate;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -143,6 +146,12 @@ public final class Climate {
      */
     public static boolean ventilated(Level world, BlockPos root) {
         GrowClimate.Fan fan = GrowClimate.of(world.registryAccess()).fan();
+        int wide = Math.max(fan.ahead(), fan.side());
+        // Most plants have no fan anywhere near: the sections' palettes say so without a block read.
+        if (!mayHold(world, root.offset(-wide, -fan.above(), -wide), root.offset(wide, fan.below(), wide),
+                state -> state.getBlock() instanceof GrowFanBlock)) {
+            return false;
+        }
         BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
         for (Direction blows : Direction.Plane.HORIZONTAL) {
             Direction across = blows.getClockWise();
@@ -181,6 +190,36 @@ public final class Climate {
         }
     }
 
+    /**
+     * Whether any block in the box from {@code from} to {@code to} may be one {@code kind} accepts, read off each chunk
+     * section's palette rather than block by block: a section that holds no such state at all is passed over, and a
+     * chunk that is not loaded is neither loaded nor counted. {@code true} means only "look closer". A grow room's
+     * reaches are read on every growth step of every plant in it, and a pack may set them wide; this keeps a plant
+     * with no fan or Dehumidifier near it to a handful of palette checks however wide they are.
+     */
+    public static boolean mayHold(Level world, BlockPos from, BlockPos to, Predicate<BlockState> kind) {
+        int minY = Math.max(from.getY(), world.getMinY());
+        int maxY = Math.min(to.getY(), world.getMaxY());
+        if (minY > maxY) {
+            return false;
+        }
+        for (int x = from.getX() >> 4; x <= to.getX() >> 4; x++) {
+            for (int z = from.getZ() >> 4; z <= to.getZ() >> 4; z++) {
+                if (!world.hasChunk(x, z)) {
+                    continue;
+                }
+                ChunkAccess chunk = world.getChunk(x, z);
+                for (int section = chunk.getSectionIndex(minY); section <= chunk.getSectionIndex(maxY); section++) {
+                    LevelChunkSection held = chunk.getSection(section);
+                    if (!held.hasOnlyAir() && held.maybeHas(kind)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     /** A device a reach looks for: a block, read where it stands. */
     @FunctionalInterface
     interface Device {
@@ -192,7 +231,11 @@ public final class Climate {
      * from the lowest up, each row by row.
      */
     @Nullable
-    static BlockPos find(Level world, BlockPos root, GrowClimate.Reach reach, Device device) {
+    static BlockPos find(Level world, BlockPos root, GrowClimate.Reach reach, Predicate<BlockState> kind, Device device) {
+        if (!mayHold(world, root.offset(-reach.reach(), -reach.above(), -reach.reach()),
+                root.offset(reach.reach(), reach.below(), reach.reach()), kind)) {
+            return null;
+        }
         BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
         for (int dy = -reach.above(); dy <= reach.below(); dy++) {
             for (int dx = -reach.reach(); dx <= reach.reach(); dx++) {
@@ -241,7 +284,8 @@ public final class Climate {
     /** The running Dehumidifier whose reach takes in {@code pos}, if there is one; the first found. */
     @Nullable
     public static BlockPos drier(Level world, BlockPos pos, GrowClimate climate) {
-        return find(world, pos, climate.dehumidifier().area(), DehumidifierBlock::working);
+        return find(world, pos, climate.dehumidifier().area(), state -> state.getBlock() instanceof DehumidifierBlock,
+                DehumidifierBlock::working);
     }
 
     /**

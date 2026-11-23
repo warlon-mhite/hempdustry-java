@@ -62,6 +62,24 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
     private static final class Ranges {
         static final Codec<Float> FACTOR = Codec.floatRange(0.0F, 64.0F);
         static final Codec<Integer> BLOCKS = Codec.intRange(0, 8);
+        /**
+         * A fan's width and height either way: 0 to {@value #FAN_MOST}. Its lane is read from the four sides of every
+         * roofed plant at each growth step, so its box is the widest there is: 4 keeps it at 5,184 blocks at the most,
+         * where 8 let it reach 18,496. Builds before this allowed 8, so a file written for them still loads: 5 to 8
+         * reads as 4, with a warning naming the key. Past 8 is an error, as any other value out of range is.
+         */
+        static final int FAN_MOST = 4;
+
+        static Codec<Integer> fanBlocks(String key) {
+            return Codec.intRange(0, 8).xmap(blocks -> {
+                if (blocks > FAN_MOST) {
+                    Hempdustry.LOGGER.warn("Grow climate: a fan's {} of {} is past {}, so it reads as {} (a fan's box is read"
+                            + " on every growth step of the plants around it)", key, blocks, FAN_MOST, FAN_MOST);
+                    return FAN_MOST;
+                }
+                return blocks;
+            }, blocks -> blocks);
+        }
         /** Odds as one in this many: from always (1) to all but never. */
         static final Codec<Integer> ONE_IN = Codec.intRange(1, 1_000_000);
     }
@@ -111,9 +129,9 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
         public static final Fan DEFAULT = new Fan(9, 2, 3, 1);
         public static final Codec<Fan> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 FileFields.written(Codec.intRange(1, 16), "ahead", DEFAULT.ahead).forGetter(Fan::ahead),
-                FileFields.written(Ranges.BLOCKS, "side", DEFAULT.side).forGetter(Fan::side),
-                FileFields.written(Ranges.BLOCKS, "below", DEFAULT.below).forGetter(Fan::below),
-                FileFields.written(Ranges.BLOCKS, "above", DEFAULT.above).forGetter(Fan::above)
+                FileFields.written(Ranges.fanBlocks("side"), "side", DEFAULT.side).forGetter(Fan::side),
+                FileFields.written(Ranges.fanBlocks("below"), "below", DEFAULT.below).forGetter(Fan::below),
+                FileFields.written(Ranges.fanBlocks("above"), "above", DEFAULT.above).forGetter(Fan::above)
         ).apply(instance, Fan::new));
     }
 

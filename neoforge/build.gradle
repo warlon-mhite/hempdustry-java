@@ -119,6 +119,8 @@ def expectedGametestLog = [
 	// a_broken_client_file_is_left_alone and the reload test do the same with a client file, in a folder of
 	// their own named hempdustry-client…
 	~/\[hempdustry\/\]: .*\/hempdustry-client[^\/]*\//,
+	// the climate test loads a fan file written when its width went to 8, read as 4 on purpose
+	~/\[hempdustry\/\]: Grow climate: a fan's (side|below|above) of 8 is past 4/,
 	// every_config_extreme_keeps_the_numbers_sane pushes every setting past its range
 	~/\[hempdustry\/\]: Config \S+ was (-?1000000000|-?1\.0E9|1\.0E-9), clamped to/,
 ]

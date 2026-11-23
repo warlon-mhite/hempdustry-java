@@ -115,6 +115,24 @@ public final class GrowClimateGameTest {
 
         BlockPos root = context.absolutePos(PLANT);
         context.assertTrue(!Climate.ventilated(world, root), "a plant with no fan near it reads ventilated");
+        // The palettes are asked before a block is read: no fan in the box, no closer look; one anywhere in it, a closer
+        // look; and a box in chunks nobody loaded is not looked into, nor loaded.
+        java.util.function.Predicate<net.minecraft.world.level.block.state.BlockState> isFan =
+                state -> state.getBlock() instanceof GrowFanBlock;
+        // High over the test, where its section has held nothing but air and the stone set there: a palette keeps every
+        // state a section has held, so a box where fans have stood still says "maybe" after they are gone.
+        BlockPos sky = new BlockPos(root.getX(), world.getMaxY() - 24, root.getZ());
+        world.setBlock(sky, Blocks.STONE.defaultBlockState(), Block.UPDATE_CLIENTS);
+        context.assertFalse(Climate.mayHold(world, sky.offset(-9, -1, -9), sky.offset(9, 3, 9), isFan),
+                "a box with stone and no fan in it may hold a fan, by its palettes");
+        world.setBlock(sky.above(), ModBlocks.GROW_FAN.defaultBlockState(), Block.UPDATE_CLIENTS);
+        context.assertTrue(Climate.mayHold(world, sky.offset(-9, -1, -9), sky.offset(9, 3, 9), isFan),
+                "a box with a fan in it holds none, by its palettes");
+        world.setBlock(sky.above(), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+        world.setBlock(sky, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+        BlockPos far = root.offset(30_000 * 16, 0, 0);
+        context.assertFalse(Climate.mayHold(world, far, far.offset(16, 0, 16), isFan) || world.hasChunk(far.getX() >> 4,
+                far.getZ() >> 4), "a box in an unloaded chunk was looked into, or loaded");
         // Every edge of the lane, from a fan east of the plant blowing west.
         for (BlockPos at : List.of(PLANT.east(), PLANT.east(9), PLANT.east(5).north(2), PLANT.east(5).south(2),
                 PLANT.east(2).below(), PLANT.east(2).above(3))) {
