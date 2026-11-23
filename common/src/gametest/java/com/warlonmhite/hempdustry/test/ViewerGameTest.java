@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.google.gson.JsonObject;
+import com.warlonmhite.hempdustry.balance.GrowClimate;
+import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.compat.ViewerRecipes;
 import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.item.ModItems;
@@ -8,10 +11,14 @@ import com.warlonmhite.hempdustry.recipe.PackingRecipe;
 import com.warlonmhite.hempdustry.strain.Strain;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.world.item.Item;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
@@ -131,5 +138,61 @@ public final class ViewerGameTest {
         context.assertTrue(seen >= 20, "only " + seen + " viewer rows to measure");
         context.assertTrue(over.isEmpty(), "viewer notes past their page's room: " + over);
         context.succeed();
+    }
+
+    /**
+     * The Grow Fan's and the Dehumidifier's information pages take their reach from the grow climate: at the shipped
+     * climate every English page reads as it was written with the numbers in it ("9 blocks ahead, 5 wide, down to 3
+     * below", "9×9 and 2 blocks up and down"), and at a climate a pack moved (a fan 12 ahead, side 3, 4 below; a
+     * Dehumidifier of reach 5, 1 below and 3 above) the pages say 12, 7 and 4, and 11×11 and 3. Every locale carrying
+     * the two pages is formatted with the moved numbers and must show each one, with no placeholder left over.
+     */
+    public static void theClimatePagesReadTheClimate(GameTestHelper context) {
+        GrowClimate shipped = GrowClimate.of(context.getLevel().registryAccess());
+        Map<String, JsonObject> locales = new TreeMap<>();
+        for (Map.Entry<String, java.nio.file.Path> file : Sweep.modFiles().entrySet()) {
+            if (file.getKey().startsWith("assets/hempdustry/lang/")) {
+                locales.put(file.getKey().substring(file.getKey().lastIndexOf('/') + 1).replace(".json", ""),
+                        Sweep.json(file.getValue()).getAsJsonObject());
+            }
+        }
+        JsonObject english = locales.get("en_us");
+        Map<Item, Component> pages = ViewerRecipes.info(context.getLevel().registryAccess());
+        String fan = page(english, pages.get(ModBlocks.GROW_FAN.asItem()));
+        String drier = page(english, pages.get(ModBlocks.DEHUMIDIFIER.asItem()));
+        context.assertTrue(fan.contains("in front of it: 9 blocks ahead, 5 wide, down to 3 below."),
+                "the Grow Fan's page at the shipped climate reads: " + fan);
+        context.assertTrue(drier.contains("around it, 9×9 and 2 blocks up and down:"),
+                "the Dehumidifier's page at the shipped climate reads: " + drier);
+
+        GrowClimate moved = new GrowClimate(shipped.onsetOneIn(), shipped.spreadOneIn(), shipped.air(), shipped.humidity(),
+                shipped.biome(), shipped.wetReach(), shipped.trimmed(), new GrowClimate.Fan(12, 3, 4, 1),
+                new GrowClimate.Drier(5, 1, 3, shipped.dehumidifier().dries(), shipped.dehumidifier().stepsPerLevel()),
+                shipped.stress(), shipped.boneMealFailsOneIn());
+        Map<Item, Component> movedPages = ViewerRecipes.info(moved);
+        Map<String, String> findings = new TreeMap<>();
+        int checked = 0;
+        for (Map.Entry<String, JsonObject> locale : locales.entrySet()) {
+            for (Map.Entry<Item, List<String>> want : Map.of(ModBlocks.GROW_FAN.asItem(), List.of("12", "7", "4"),
+                    ModBlocks.DEHUMIDIFIER.asItem(), List.of("11×11", "3")).entrySet()) {
+                Component page = movedPages.get(want.getKey());
+                String key = ((TranslatableContents) page.getContents()).getKey();
+                if (!locale.getValue().has(key)) continue;
+                checked++;
+                String text = page(locale.getValue(), page);
+                if (text.contains("%") || !want.getValue().stream().allMatch(text::contains)) {
+                    findings.put(locale.getKey() + " " + key, text);
+                }
+            }
+        }
+        Sweep.atLeast(context, "climate pages in the locales", checked, 16);
+        Sweep.report(context, "Every climate page shows the moved climate's numbers", findings, Map.of());
+        context.succeed();
+    }
+
+    /** {@code page} as {@code lang} formats it, the way the game fills a translation's arguments. */
+    private static String page(JsonObject lang, Component page) {
+        TranslatableContents contents = (TranslatableContents) page.getContents();
+        return String.format(Locale.ROOT, lang.get(contents.getKey()).getAsString(), contents.getArgs());
     }
 }

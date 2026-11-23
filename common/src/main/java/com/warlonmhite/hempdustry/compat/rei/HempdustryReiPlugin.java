@@ -108,7 +108,7 @@ public class HempdustryReiPlugin implements REIClientPlugin {
         add(registry, SIFTING, ViewerRecipes.sifting(client.level));
         add(registry, ICE_O_LATOR, ViewerRecipes.iceOLator(client.level));
         add(registry, WORLD, ViewerRecipes.world(client.level));
-        ViewerRecipes.info().forEach((item, text) -> BuiltinClientPlugin.getInstance()
+        ViewerRecipes.info(client.level.registryAccess()).forEach((item, text) -> BuiltinClientPlugin.getInstance()
                 .registerInformation(EntryStacks.of(item), item.getName(item.getDefaultInstance()), lines -> {
                     lines.add(text);
                     return lines;

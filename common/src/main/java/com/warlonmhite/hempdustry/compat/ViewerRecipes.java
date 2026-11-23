@@ -8,6 +8,7 @@ import com.warlonmhite.hempdustry.strain.PotencyBand;
 import com.warlonmhite.hempdustry.strain.Chemotype;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.balance.DeviceStats;
+import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.ModCauldronBehaviors;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
@@ -367,8 +368,19 @@ public final class ViewerRecipes {
      * what each one does is a paragraph, not a row of slots.
      * And Dud Weed has no wild plant and no recipe: its seeds say where they come from. Echo OG's say how
      * it grows, since nothing it eats (experience, a catalyst's charge) is an item a row could show.
+     *
+     * <p>The Grow Fan's and the Dehumidifier's reach come from the world's grow climate, a synced datapack
+     * registry, so a pack that moves them moves the text: whole blocks only, and a width as the blocks it covers
+     * ({@code 2 × side + 1}). The Dehumidifier's page names one height for up and down, the greater of the two.
      */
-    public static Map<Item, Component> info() {
+    public static Map<Item, Component> info(HolderLookup.Provider registries) {
+        return info(GrowClimate.of(registries));
+    }
+
+    /** {@link #info(HolderLookup.Provider)} at {@code climate}. */
+    public static Map<Item, Component> info(GrowClimate climate) {
+        GrowClimate.Fan fan = climate.fan();
+        GrowClimate.Drier drier = climate.dehumidifier();
         Map<Item, Component> out = new LinkedHashMap<>();
         for (Item bong : ModItems.bongs()) {
             out.put(bong, Component.translatable("hempdustry.info.bong"));
@@ -376,8 +388,10 @@ public final class ViewerRecipes {
         out.put(ModBlocks.GROW_POT.asItem(), Component.translatable("hempdustry.info.grow_pot"));
         out.put(ModBlocks.HYDRO_TRAY.asItem(), Component.translatable("hempdustry.info.hydro_tray"));
         out.put(ModBlocks.GROW_LAMP.asItem(), Component.translatable("hempdustry.info.grow_lamp"));
-        out.put(ModBlocks.GROW_FAN.asItem(), Component.translatable("hempdustry.info.grow_fan"));
-        out.put(ModBlocks.DEHUMIDIFIER.asItem(), Component.translatable("hempdustry.info.dehumidifier"));
+        out.put(ModBlocks.GROW_FAN.asItem(), Component.translatable("hempdustry.info.grow_fan",
+                fan.ahead(), 2 * fan.side() + 1, fan.below()));
+        out.put(ModBlocks.DEHUMIDIFIER.asItem(), Component.translatable("hempdustry.info.dehumidifier",
+                2 * drier.reach() + 1, Math.max(drier.above(), drier.below())));
         out.put(ModBlocks.HYGROMETER.asItem(), Component.translatable("hempdustry.info.hygrometer"));
         out.put(ModItems.DUD_WEED_SEEDS, Component.translatable("hempdustry.info.dud_weed_seeds"));
         out.put(ModItems.ECHO_OG_SEEDS, Component.translatable("hempdustry.info.echo_og_seeds"));
