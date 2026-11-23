@@ -381,11 +381,11 @@ public final class EnderHazeGameTest {
             Players.breakAs(context, player, ROOT);
             context.assertTrue(!calm.isAngryAt(player, world), "the off switch did not stop the harvest waking the endermen");
         });
-        GameRuleGameTest.withRule(context, ModGameRules.CREEPERS_SEEK_HEMP, false, () -> {
+        GameRuleGameTest.withRule(context, ModGameRules.MOBS_DRAWN_TO_HEMP, false, () -> {
             standRipe(context);
             Players.breakAs(context, player, ROOT);
             context.assertTrue(!calm.isAngryAt(player, world),
-                    "the creepers_seek_hemp game rule off did not stop the harvest waking the endermen");
+                    "the mobs_drawn_to_hemp game rule off did not stop the harvest waking the endermen");
         });
         standRipe(context);
         Players.breakAs(context, player, ROOT);

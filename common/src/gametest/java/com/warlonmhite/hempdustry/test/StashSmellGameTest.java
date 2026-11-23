@@ -98,8 +98,8 @@ public final class StashSmellGameTest {
 
         ConfigGameTest.withConfig("{ \"world\": { \"creepersSeekHemp\": false } }", () ->
                 expect(context, player, "a bud, with creepersSeekHemp off", 1.0));
-        GameRuleGameTest.withRule(context, ModGameRules.CREEPERS_SEEK_HEMP, false, () ->
-                expect(context, player, "a bud, with the creepers_seek_hemp game rule off", 1.0));
+        GameRuleGameTest.withRule(context, ModGameRules.MOBS_DRAWN_TO_HEMP, false, () ->
+                expect(context, player, "a bud, with the mobs_drawn_to_hemp game rule off", 1.0));
         context.succeed();
     }
 
@@ -256,11 +256,11 @@ public final class StashSmellGameTest {
             context.assertFalse(noticesWithin(nearGoal, 200), "a creeper noticed an opened jar with creepersSeekHemp off");
             context.assertFalse(nearGoal.canContinueToUse(), "a creeper stayed by a jar with creepersSeekHemp off");
         });
-        GameRuleGameTest.withRule(context, ModGameRules.CREEPERS_SEEK_HEMP, false, () -> {
+        GameRuleGameTest.withRule(context, ModGameRules.MOBS_DRAWN_TO_HEMP, false, () -> {
             context.assertFalse(noticesWithin(nearGoal, 200),
-                    "a creeper noticed an opened jar with the creepers_seek_hemp game rule off");
+                    "a creeper noticed an opened jar with the mobs_drawn_to_hemp game rule off");
             context.assertFalse(nearGoal.canContinueToUse(),
-                    "a creeper stayed by a jar with the creepers_seek_hemp game rule off");
+                    "a creeper stayed by a jar with the mobs_drawn_to_hemp game rule off");
         });
 
         // Two minutes on, the jar is shut and the creeper is an ordinary creeper again.

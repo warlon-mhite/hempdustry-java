@@ -67,7 +67,7 @@ public class SeekStashJarGoal extends Goal {
      */
     @Override
     public boolean canUse() {
-        if (!ModGameRules.Switch.CREEPERS_SEEK_HEMP.on(mob.level()) || !StashSmell.drawnToStash(mob) || mob.hasControllingPassenger()
+        if (!ModGameRules.Switch.MOBS_DRAWN_TO_HEMP.on(mob.level()) || !StashSmell.drawnToStash(mob) || mob.hasControllingPassenger()
                 || mob.getTarget() != null) {
             return false;
         }
@@ -83,7 +83,7 @@ public class SeekStashJarGoal extends Goal {
     /** While the jar still smells, and only while. */
     @Override
     public boolean canContinueToUse() {
-        return jar != null && ModGameRules.Switch.CREEPERS_SEEK_HEMP.on(mob.level()) && StashSmell.drawnToStash(mob)
+        return jar != null && ModGameRules.Switch.MOBS_DRAWN_TO_HEMP.on(mob.level()) && StashSmell.drawnToStash(mob)
                 && !mob.hasControllingPassenger() && StashSmell.smellsOpen(mob.level(), jar);
     }
 

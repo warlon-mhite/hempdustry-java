@@ -264,7 +264,7 @@ public class SeekHempCropGoal extends RandomStrollGoal {
      */
     @Override
     public boolean canUse() {
-        if (!ModGameRules.Switch.CREEPERS_SEEK_HEMP.on(mob.level()) || tagged && !drawnToHemp(mob)
+        if (!ModGameRules.Switch.MOBS_DRAWN_TO_HEMP.on(mob.level()) || tagged && !drawnToHemp(mob)
                 || pullNeeded(mob) > strongestPull || mob.level().getGameTime() < restingUntil) {
             return false;
         }
@@ -278,7 +278,7 @@ public class SeekHempCropGoal extends RandomStrollGoal {
      */
     @Override
     public boolean canContinueToUse() {
-        if (!ModGameRules.Switch.CREEPERS_SEEK_HEMP.on(mob.level()) || mob.hasControllingPassenger()) {
+        if (!ModGameRules.Switch.MOBS_DRAWN_TO_HEMP.on(mob.level()) || mob.hasControllingPassenger()) {
             return false;
         }
         if (!mob.getNavigation().isDone()) {

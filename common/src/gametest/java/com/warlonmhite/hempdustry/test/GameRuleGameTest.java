@@ -30,7 +30,7 @@ public final class GameRuleGameTest {
      */
     public static void theGameRulesAreRegistered(GameTestHelper context) {
         Map<Switch, String> ids = Map.of(Switch.EFFECTS, "hempdustry:effects", Switch.GREEN_OUTS, "hempdustry:green_outs",
-                Switch.CREEPERS_SEEK_HEMP, "hempdustry:creepers_seek_hemp", Switch.MILDEW, "hempdustry:mildew",
+                Switch.MOBS_DRAWN_TO_HEMP, "hempdustry:mobs_drawn_to_hemp", Switch.MILDEW, "hempdustry:mildew",
                 Switch.PLANT_STRESS, "hempdustry:plant_stress");
         MinecraftServer server = context.getLevel().getServer();
         int ours = 0;

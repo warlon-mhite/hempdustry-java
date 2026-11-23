@@ -38,7 +38,7 @@ public final class ModGameRules {
 
     public static final GameRule<Boolean> EFFECTS = register("effects");
     public static final GameRule<Boolean> GREEN_OUTS = register("green_outs");
-    public static final GameRule<Boolean> CREEPERS_SEEK_HEMP = register("creepers_seek_hemp");
+    public static final GameRule<Boolean> MOBS_DRAWN_TO_HEMP = register("mobs_drawn_to_hemp");
     public static final GameRule<Boolean> MILDEW = register("mildew");
     public static final GameRule<Boolean> PLANT_STRESS = register("plant_stress");
 
@@ -55,7 +55,7 @@ public final class ModGameRules {
     public enum Switch {
         EFFECTS("effects.enabled", config -> config.effects().enabled()),
         GREEN_OUTS("effects.greenOut", config -> config.effects().greenOut()),
-        CREEPERS_SEEK_HEMP("world.creepersSeekHemp", config -> config.world().creepersSeekHemp()),
+        MOBS_DRAWN_TO_HEMP("world.creepersSeekHemp", config -> config.world().creepersSeekHemp()),
         MILDEW("world.mildew", config -> config.world().mildew()),
         PLANT_STRESS("world.plantStress", config -> config.world().plantStress());
 
@@ -77,7 +77,7 @@ public final class ModGameRules {
             return switch (this) {
                 case EFFECTS -> ModGameRules.EFFECTS;
                 case GREEN_OUTS -> ModGameRules.GREEN_OUTS;
-                case CREEPERS_SEEK_HEMP -> ModGameRules.CREEPERS_SEEK_HEMP;
+                case MOBS_DRAWN_TO_HEMP -> ModGameRules.MOBS_DRAWN_TO_HEMP;
                 case MILDEW -> ModGameRules.MILDEW;
                 case PLANT_STRESS -> ModGameRules.PLANT_STRESS;
             };

@@ -513,7 +513,7 @@ public class EnderHazeCropBlock extends CropBlock implements RecordOnTheRoot {
      * for angry endermen instead. One already angry at this player is left as it is.
      */
     public static void provoke(ServerLevel world, BlockPos pos, Player player) {
-        if (!ModGameRules.Switch.CREEPERS_SEEK_HEMP.on(world)
+        if (!ModGameRules.Switch.MOBS_DRAWN_TO_HEMP.on(world)
                 || world.getDifficulty() == Difficulty.PEACEFUL
                 || player.isCreative() || player.isSpectator()
                 || player.hasEffect(ModEffects.AVERTED_GAZE)) {

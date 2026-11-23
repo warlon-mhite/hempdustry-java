@@ -124,7 +124,7 @@ public final class StashSmell {
      * {@link #SOME_BUDS} with any, {@link #A_STACK} with a stack or more.
      */
     public static double reachFactor(Player player) {
-        if (!ModGameRules.Switch.CREEPERS_SEEK_HEMP.on(player.level())) {
+        if (!ModGameRules.Switch.MOBS_DRAWN_TO_HEMP.on(player.level())) {
             return 1.0;
         }
         int buds = looseBuds(player);
