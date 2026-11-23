@@ -38,7 +38,8 @@ import net.minecraft.world.phys.HitResult;
  *   <li>{@code inspect [pos]} tells what the plant (or the Stash Jar) at {@code pos}, or at the block looked at,
  *       holds and why it stands as it does ({@link PlantInspection}). At level 2 because it shows the genes a
  *       player is never shown.</li>
- *   <li>{@code config} prints every config value and where it comes from, and which entries of the mod's datapack
+ *   <li>{@code config} prints every config value and where it comes from (the file, or a game rule that turns a
+ *       switch off in this world: {@link ModGameRules}), and which entries of the mod's datapack
  *       registries a pack other than the mod's own supplied ({@link ConfigReport}). The client preferences are this
  *       game's own file's in a game hosting its own world; a dedicated server reads none, and says so.</li>
  * </ul>
@@ -147,7 +148,7 @@ public class ModCommands {
     /** Prints every config value with its source, then the mod's registries and what other packs put in them. */
     private static int config(CommandContext<CommandSourceStack> context) {
         CommandSourceStack source = context.getSource();
-        List<ConfigReport.Setting> settings = ConfigReport.settings();
+        List<ConfigReport.Setting> settings = ConfigReport.settings(source.getServer());
         long changed = settings.stream().filter(ConfigReport.Setting::changed).count();
         source.sendSuccess(() -> Component.translatable(CONFIG + "settings",
                 value("config/" + Hempdustry.MOD_ID + ".json"), value(changed)), false);
@@ -180,10 +181,17 @@ public class ModCommands {
         return settings.size();
     }
 
-    /** One line per value: where it comes from, and its default beside it when it is not the default. */
+    /**
+     * One line per value: where it comes from, and its default beside it when it is not the default; a switch a game
+     * rule turned off names the rule instead, the file having left it at its default.
+     */
     private static void values(CommandSourceStack source, List<ConfigReport.Setting> settings) {
         for (ConfigReport.Setting setting : settings) {
-            Component line = setting.changed()
+            Component line = setting.source() == ConfigReport.Source.GAME_RULE
+                    ? Component.translatable(CONFIG + "value." + setting.source().getSerializedName(),
+                            Component.literal(setting.key()), value(setting.value()).withStyle(ChatFormatting.GOLD),
+                            value(setting.gameRule().orElseThrow().rule().id()))
+                    : setting.changed()
                     ? Component.translatable(CONFIG + "value." + setting.source().getSerializedName(),
                             Component.literal(setting.key()), value(setting.value()).withStyle(ChatFormatting.GOLD),
                             value(setting.defaultValue()))

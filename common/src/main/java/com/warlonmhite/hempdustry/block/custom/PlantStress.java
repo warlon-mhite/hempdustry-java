@@ -2,7 +2,7 @@ package com.warlonmhite.hempdustry.block.custom;
 
 import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.balance.GrowClimate;
-import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.warlonmhite.hempdustry.strain.StressPhenomenon;
 import com.warlonmhite.hempdustry.strain.internal.Hardiness;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
@@ -151,7 +151,7 @@ public final class PlantStress {
                 random);
         // Switched off, every plant steps as one that cannot be stressed: a lost light leaves it the sun's record,
         // and no ground is rolled. Read after the light step, so the draws at the default are the ones they were.
-        if (!stressable || !switchedOn()) {
+        if (!stressable || !switchedOn(world)) {
             return next == GrowLight.STRESSED ? GrowLight.NATURAL : next;
         }
         if (next == GrowLight.STRESSED || toAge < GrowLight.FLOWERING_AGE) {
@@ -316,7 +316,7 @@ public final class PlantStress {
      */
     public static void roll(Level world, BlockPos lower, StressCause cause, RandomSource random) {
         BlockState plant = world.getBlockState(lower);
-        if (!switchedOn() || !isFlowering(plant) || plant.getValue(GrowLight.PROPERTY) == GrowLight.STRESSED
+        if (!switchedOn(world) || !isFlowering(plant) || plant.getValue(GrowLight.PROPERTY) == GrowLight.STRESSED
                 || plant.getBlock() instanceof CropBlock crop && crop.isMaxAge(plant)
                 || random.nextFloat() >= cause.chanceFor(Genetics.of(world.registryAccess()),
                 PlantRecordBlockEntity.resistancesAt(world, lower))) {
@@ -329,9 +329,12 @@ public final class PlantStress {
         }
     }
 
-    /** Whether plants can be stressed at all: {@code world.plantStress}, read at every use so a reload takes. */
-    public static boolean switchedOn() {
-        return HempdustryConfig.get().world().plantStress();
+    /**
+     * Whether plants can be stressed at all in {@code world}: {@code world.plantStress} and the world's
+     * {@code hempdustry:plant_stress} game rule, both read at every use so a reload or a {@code /gamerule} takes.
+     */
+    public static boolean switchedOn(Level world) {
+        return ModGameRules.Switch.PLANT_STRESS.on(world);
     }
 
     /**
@@ -340,7 +343,7 @@ public final class PlantStress {
      * grows, is put back on the sun's record, as a mildewed plant is cleaned with {@code world.mildew} off.
      */
     public static void randomTick(Level world, BlockPos root, Direction growth) {
-        if (switchedOn()) {
+        if (switchedOn(world)) {
             return;
         }
         BlockState plant = world.getBlockState(root);

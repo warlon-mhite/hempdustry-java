@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
@@ -204,6 +205,15 @@ public final class MildewGameTest {
                         Mildew.randomTick(world, context.absolutePos(CROP), MISS);
                         expect(context, context.getBlockState(CROP.above()).getValue(Mildew.PROPERTY), Mildew.CLEAN,
                                 "a mildewed plant's random tick with world.mildew=false");
+                    });
+                    // The same off by the world's game rule, the file leaving it on.
+                    GameRuleGameTest.withRule(context, ModGameRules.MILDEW, false, () -> {
+                        expect(context, step(context, ModBlocks.INDICA_CROP, 4, Blocks.GLOWSTONE, HIT), Mildew.CLEAN,
+                                "a plant under a roof with the mildew game rule off");
+                        plant(context, ModBlocks.INDICA_CROP, 4, Mildew.MILDEWED);
+                        Mildew.randomTick(world, context.absolutePos(CROP), MISS);
+                        expect(context, context.getBlockState(CROP.above()).getValue(Mildew.PROPERTY), Mildew.CLEAN,
+                                "a mildewed plant's random tick with the mildew game rule off");
                     });
                 })
                 .thenSucceed();

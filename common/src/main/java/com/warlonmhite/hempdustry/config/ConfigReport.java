@@ -15,6 +15,7 @@ import com.warlonmhite.hempdustry.strain.Strain;
 import com.warlonmhite.hempdustry.strain.Terpene;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -49,11 +50,14 @@ public final class ConfigReport {
     /**
      * Where a value the server runs with comes from. The config file is read over the defaults and written back
      * whole, so a value equal to its default reads {@link #DEFAULT} wherever it was written, and one that differs
-     * came from the file. A source a later build adds (a game rule that overrides the file) is one more constant.
+     * came from the file. {@link #GAME_RULE}: the file leaves a switch on and the world's game rule turns it off
+     * ({@link ModGameRules}); a switch the file turns off reads {@link #FILE}, whatever the rule says, since the file
+     * wins.
      */
     public enum Source implements StringRepresentable {
         DEFAULT("default"),
-        FILE("file");
+        FILE("file"),
+        GAME_RULE("game_rule");
 
         private final String name;
 
@@ -72,6 +76,11 @@ public final class ConfigReport {
         public boolean changed() {
             return source != Source.DEFAULT;
         }
+
+        /** The game rule a world can turn this value off with, if it is one of the switches that have one. */
+        public Optional<ModGameRules.Switch> gameRule() {
+            return Arrays.stream(ModGameRules.Switch.values()).filter(on -> on.configKey().equals(key)).findFirst();
+        }
     }
 
     /**
@@ -81,6 +90,22 @@ public final class ConfigReport {
      */
     public static List<Setting> settings() {
         return settings(HempdustryConfig.get());
+    }
+
+    /**
+     * As {@link #settings()}, with {@code server}'s game rules over the file: a switch the file leaves on and the
+     * world's rule turns off runs as {@code false}, from {@link Source#GAME_RULE}.
+     */
+    public static List<Setting> settings(MinecraftServer server) {
+        return withGameRules(settings(), server);
+    }
+
+    /** {@code settings} with each switch's game rule on {@code server} applied, as {@link #settings(MinecraftServer)}. */
+    public static List<Setting> withGameRules(List<Setting> settings, MinecraftServer server) {
+        return settings.stream().map(setting -> setting.gameRule()
+                .filter(on -> setting.value().equals("true") && !on.ruleOn(server))
+                .map(on -> new Setting(setting.key(), "false", setting.defaultValue(), Source.GAME_RULE))
+                .orElse(setting)).toList();
     }
 
     /** Every value of {@code config} but its {@code client} section, against the defaults. */
@@ -195,10 +220,11 @@ public final class ConfigReport {
 
     /**
      * One INFO line naming everything this server runs with that the mod does not ship, read by whoever helps with a
-     * modpack, who reads its log and not its files. Nothing at all when everything is the mod's own default.
+     * modpack, who reads its log and not its files: a game rule that turns a switch off is named with its value. A
+     * {@code /gamerule} changed later is not logged; {@code /hempdustry config} tells it. Nothing at all when everything is the mod's own default.
      */
     public static void logDifferences(MinecraftServer server) {
-        List<Setting> settings = new ArrayList<>(settings());
+        List<Setting> settings = new ArrayList<>(settings(server));
         client().ifPresent(client -> settings.addAll(client.settings()));
         differences(settings, registries(server)).ifPresent(Hempdustry.LOGGER::info);
     }
@@ -209,7 +235,9 @@ public final class ConfigReport {
      */
     public static Optional<String> differences(List<Setting> settings, List<RegistryReport> registries) {
         List<String> changed = settings.stream().filter(Setting::changed)
-                .map(setting -> setting.key() + "=" + setting.value() + " (default " + setting.defaultValue() + ")")
+                .map(setting -> setting.key() + "=" + setting.value() + " (default " + setting.defaultValue()
+                        + (setting.source() == Source.GAME_RULE
+                        ? ", game rule " + setting.gameRule().orElseThrow().rule().id() : "") + ")")
                 .toList();
         List<String> entries = new ArrayList<>();
         for (RegistryReport report : registries) {

@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.mojang.serialization.JsonOps;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
@@ -379,6 +380,12 @@ public final class EnderHazeGameTest {
             standRipe(context);
             Players.breakAs(context, player, ROOT);
             context.assertTrue(!calm.isAngryAt(player, world), "the off switch did not stop the harvest waking the endermen");
+        });
+        GameRuleGameTest.withRule(context, ModGameRules.CREEPERS_SEEK_HEMP, false, () -> {
+            standRipe(context);
+            Players.breakAs(context, player, ROOT);
+            context.assertTrue(!calm.isAngryAt(player, world),
+                    "the creepers_seek_hemp game rule off did not stop the harvest waking the endermen");
         });
         standRipe(context);
         Players.breakAs(context, player, ROOT);

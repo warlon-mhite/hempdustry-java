@@ -1,6 +1,6 @@
 package com.warlonmhite.hempdustry.entity.ai;
 
-import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ModGameRules;
 import java.util.EnumSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.PathfinderMob;
@@ -67,7 +67,7 @@ public class SeekStashJarGoal extends Goal {
      */
     @Override
     public boolean canUse() {
-        if (!HempdustryConfig.get().world().creepersSeekHemp() || !StashSmell.drawnToStash(mob) || mob.hasControllingPassenger()
+        if (!ModGameRules.Switch.CREEPERS_SEEK_HEMP.on(mob.level()) || !StashSmell.drawnToStash(mob) || mob.hasControllingPassenger()
                 || mob.getTarget() != null) {
             return false;
         }
@@ -83,7 +83,7 @@ public class SeekStashJarGoal extends Goal {
     /** While the jar still smells, and only while. */
     @Override
     public boolean canContinueToUse() {
-        return jar != null && HempdustryConfig.get().world().creepersSeekHemp() && StashSmell.drawnToStash(mob)
+        return jar != null && ModGameRules.Switch.CREEPERS_SEEK_HEMP.on(mob.level()) && StashSmell.drawnToStash(mob)
                 && !mob.hasControllingPassenger() && StashSmell.smellsOpen(mob.level(), jar);
     }
 

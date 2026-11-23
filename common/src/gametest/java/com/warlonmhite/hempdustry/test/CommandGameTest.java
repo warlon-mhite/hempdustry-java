@@ -10,6 +10,7 @@ import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
 import com.warlonmhite.hempdustry.config.ClientConfig;
 import com.warlonmhite.hempdustry.config.ConfigReport;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.strain.PotencyBand;
@@ -32,6 +33,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.repository.KnownPack;
 import net.minecraft.server.permissions.LevelBasedPermissionSet;
@@ -100,9 +102,16 @@ public final class CommandGameTest {
 
         ConfigGameTest.withConfig("{ \"world\": { \"plantStress\": false } }", () -> {
             List<String> off = run(context, "hempdustry inspect" + at, LevelBasedPermissionSet.GAMEMASTER);
-            expectLine(context, off, "commands.hempdustry.inspect.stress.off()");
+            expectLine(context, off, "commands.hempdustry.inspect.stress.off(world.plantStress)");
             context.assertFalse(off.stream().anyMatch(line -> line.startsWith("commands.hempdustry.inspect.stress.risk")),
                     "a stress risk was told with world.plantStress off: " + off);
+        });
+        // Turned off by the world's game rule instead, it names the rule.
+        GameRuleGameTest.withRule(context, ModGameRules.PLANT_STRESS, false, () -> {
+            List<String> off = run(context, "hempdustry inspect" + at, LevelBasedPermissionSet.GAMEMASTER);
+            expectLine(context, off, "commands.hempdustry.inspect.stress.off(hempdustry:plant_stress)");
+            context.assertFalse(off.stream().anyMatch(line -> line.startsWith("commands.hempdustry.inspect.stress.risk")),
+                    "a stress risk was told with the plant_stress game rule off: " + off);
         });
 
         context.setBlock(JAR, ModBlocks.STASH_JAR);
@@ -176,6 +185,36 @@ public final class CommandGameTest {
         context.assertFalse(Services.PLATFORM.isOwnPack(new KnownPack("vanilla", "another", "1")),
                 "another mod's pack counted as the mod's");
         refused(context, "hempdustry config");
+        context.succeed();
+    }
+
+    /**
+     * A switch the file leaves on and the world's game rule turns off is told as off, from the rule, which it names;
+     * so is it in the start-up line. A switch the file turns off is the file's, whatever the rule says.
+     */
+    public static void configTellsAGameRuleThatTurnsASwitchOff(GameTestHelper context) {
+        MinecraftServer server = context.getLevel().getServer();
+        GameRuleGameTest.withRule(context, ModGameRules.EFFECTS, false, () -> {
+            List<String> said = run(context, "hempdustry config", LevelBasedPermissionSet.GAMEMASTER);
+            expectLine(context, said, "commands.hempdustry.config.settings(config/" + Hempdustry.MOD_ID + ".json,1)");
+            expectLine(context, said, "commands.hempdustry.config.value.game_rule(effects.enabled,false,hempdustry:effects)");
+            expectLine(context, said, "commands.hempdustry.config.value.default(effects.greenOut,true)");
+            String line = ConfigReport.differences(ConfigReport.settings(server), List.of()).orElse("");
+            context.assertTrue(line.contains("effects.enabled=false (default true, game rule hempdustry:effects)")
+                    && !line.contains("greenOut"), "a game rule turning effects off logged as: " + line);
+            context.assertTrue(ConfigReport.settings().stream().noneMatch(ConfigReport.Setting::changed),
+                    "the file's own values took the game rule in: " + ConfigReport.settings());
+        });
+        ConfigGameTest.withConfig("{ \"world\": { \"mildew\": false } }", () ->
+                GameRuleGameTest.withRule(context, ModGameRules.MILDEW, false, () -> {
+                    List<String> said = run(context, "hempdustry config", LevelBasedPermissionSet.GAMEMASTER);
+                    expectLine(context, said, "commands.hempdustry.config.value.file(world.mildew,false,true)");
+                    context.assertTrue(said.stream().noneMatch(line -> line.contains("value.game_rule")),
+                            "a switch the file turned off was told as the game rule's: " + said);
+                }));
+        context.assertTrue(ConfigReport.differences(ConfigReport.settings(server), List.of()).isEmpty(),
+                "with the rules back on a server on the defaults logged "
+                        + ConfigReport.differences(ConfigReport.settings(server), List.of()));
         context.succeed();
     }
 

@@ -20,6 +20,11 @@ import net.minecraft.world.effect.MobEffects;
  * <b>forgetting to call it is the only way to bypass the admin's settings</b>, which is a much easier
  * mistake to spot in review than a missing multiplier.
  *
+ * <p>{@code enabled} and {@code greenOut} are switches a world can also turn off with its game rules
+ * ({@link ModGameRules.Switch#EFFECTS}, {@link ModGameRules.Switch#GREEN_OUTS}). No world is passed in here, and
+ * none is needed: a world's game rules are its server's, so the running server's rules are the ones of the world
+ * the player is in.
+ *
  * <h2>What it does not do</h2>
  *
  * It scales and it removes; it never adds and never raises. {@code maxLevel} and {@code maxBuffLevel}
@@ -61,8 +66,7 @@ public final class EffectPolicy {
 
     private static List<MobEffectInstance> filter(List<MobEffectInstance> effects, boolean scaleDuration,
                                                      int buffBonus) {
-        Effects config = HempdustryConfig.get().effects();
-        if (!config.enabled()) {
+        if (!ModGameRules.Switch.EFFECTS.on()) {
             return List.of();
         }
         List<MobEffectInstance> out = new ArrayList<>(effects.size());
@@ -156,12 +160,12 @@ public final class EffectPolicy {
      *
      * <p><b>{@code enabled = false} gives never</b> for the same reason, and more so: every effect is
      * filtered then, yet a green-out would still strip the buffs and saturation it replaces and
-     * start its lockout.
+     * start its lockout. Either switch is off where the config or the world's game rule turns it off.
      */
     public static int greenOutChanceOneIn(int oneIn) {
         Effects config = HempdustryConfig.get().effects();
-        if (oneIn <= 0 || !config.enabled() || !config.greenOut() || !config.debuffs()
-                || config.greenOutChanceMultiplier() <= 0) {
+        if (oneIn <= 0 || !ModGameRules.Switch.EFFECTS.on() || !ModGameRules.Switch.GREEN_OUTS.on()
+                || !config.debuffs() || config.greenOutChanceMultiplier() <= 0) {
             return 0;
         }
         // Capped before the cast: a multiplier just above 0 makes the odds astronomical, and a long

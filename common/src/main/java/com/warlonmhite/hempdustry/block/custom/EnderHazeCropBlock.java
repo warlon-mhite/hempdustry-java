@@ -2,7 +2,7 @@ package com.warlonmhite.hempdustry.block.custom;
 
 import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.advancement.HarvestHempCriterion;
-import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.warlonmhite.hempdustry.effect.ModEffects;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.platform.Services;
@@ -513,7 +513,7 @@ public class EnderHazeCropBlock extends CropBlock implements RecordOnTheRoot {
      * for angry endermen instead. One already angry at this player is left as it is.
      */
     public static void provoke(ServerLevel world, BlockPos pos, Player player) {
-        if (!HempdustryConfig.get().world().creepersSeekHemp()
+        if (!ModGameRules.Switch.CREEPERS_SEEK_HEMP.on(world)
                 || world.getDifficulty() == Difficulty.PEACEFUL
                 || player.isCreative() || player.isSpectator()
                 || player.hasEffect(ModEffects.AVERTED_GAZE)) {

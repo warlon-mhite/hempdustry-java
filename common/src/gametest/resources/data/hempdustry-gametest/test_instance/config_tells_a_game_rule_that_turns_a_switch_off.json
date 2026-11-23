@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "hempdustry-gametest:config_tells_a_game_rule_that_turns_a_switch_off",
+  "structure": "hempdustry-gametest:empty",
+  "max_ticks": 200,
+  "setup_ticks": 0,
+  "required": true
+}

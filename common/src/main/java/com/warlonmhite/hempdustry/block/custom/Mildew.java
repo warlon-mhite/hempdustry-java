@@ -5,7 +5,7 @@ import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.strain.StressPhenomenon;
 import com.warlonmhite.hempdustry.strain.internal.Hardiness;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
-import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.warlonmhite.hempdustry.strain.Resistance;
 import com.warlonmhite.hempdustry.util.ModTags;
 import net.minecraft.core.BlockPos;
@@ -106,7 +106,7 @@ public enum Mildew implements StringRepresentable {
             return;
         }
         Mildew now = plant.getValue(PROPERTY);
-        if (!HempdustryConfig.get().world().mildew()) {
+        if (!ModGameRules.Switch.MILDEW.on(world)) {
             if (now != CLEAN) {
                 write(world, lower, CLEAN);
             }
@@ -205,7 +205,7 @@ public enum Mildew implements StringRepresentable {
 
     /** Mildew may take hold of this plant at all: switched on, a crop that takes it and does not resist it, unripe. */
     private static boolean canCatch(Level world, BlockPos lower, BlockState plant) {
-        return HempdustryConfig.get().world().mildew() && takesMildew(plant) && !ripe(plant);
+        return ModGameRules.Switch.MILDEW.on(world) && takesMildew(plant) && !ripe(plant);
     }
 
     /** A crop that takes mildew, and so the gas: one of its hosts, not of {@code #hempdustry:mildew_resistant}. */

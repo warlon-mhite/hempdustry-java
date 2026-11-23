@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
@@ -366,7 +367,7 @@ public final class PlantStressGameTest {
         // Stressed with the switch on, so the random tick that sets the plant up keeps it stressed.
         plant(context, ModBlocks.SATIVA_CROP, moist(), 7, GrowLight.STRESSED);
         ConfigGameTest.withConfig("{ \"world\": { \"plantStress\": false } }", () -> {
-            context.assertFalse(PlantStress.switchedOn(), "world.plantStress=false did not switch stress off");
+            context.assertFalse(PlantStress.switchedOn(world), "world.plantStress=false did not switch stress off");
             BlockPos lower = context.absolutePos(CROP);
             world.getBlockState(lower).randomTick(world, lower, MISS);
             for (int y = 0; y <= 2; y++) {
@@ -398,7 +399,22 @@ public final class PlantStressGameTest {
                         "a stressed Purple Kush's random tick with world.plantStress=false, " + y + " up,");
             }
         });
-        context.assertTrue(PlantStress.switchedOn(), "plant stress is not on at the default");
+        // The same off by the world's game rule, the file leaving it on.
+        GameRuleGameTest.withRule(context, ModGameRules.PLANT_STRESS, false, () -> {
+            context.assertFalse(PlantStress.switchedOn(world), "the plant_stress game rule off did not switch stress off");
+            expect(context, step(context, indica, pot, 4, GrowLight.NATURAL, HIT), GrowLight.NATURAL,
+                    "a step in a dry Grow Pot with the plant_stress game rule off");
+            expect(context, step(context, indica, wetPot, 4, GrowLight.GROW_LAMP, HIT), GrowLight.NATURAL,
+                    "a flowering Grow Lamp plant that lost its lamp, with the plant_stress game rule off");
+            plant(context, indica, wetPot, 5, GrowLight.NATURAL);
+            PlantStress.roll(world, context.absolutePos(CROP), StressCause.overwatering(1.0F), HIT);
+            expect(context, context.getBlockState(CROP).getValue(GrowLight.PROPERTY), GrowLight.NATURAL,
+                    "a bottle into a wet pot with the plant_stress game rule off");
+            plant(context, indica, moist(), 6, GrowLight.STRESSED);
+            expect(context, context.getBlockState(CROP).getValue(GrowLight.PROPERTY), GrowLight.NATURAL,
+                    "a stressed Purple Kush's random tick with the plant_stress game rule off");
+        });
+        context.assertTrue(PlantStress.switchedOn(world), "plant stress is not on at the default");
         expect(context, step(context, indica, pot, 4, GrowLight.NATURAL, HIT), GrowLight.STRESSED,
                 "a step in a dry Grow Pot with the switch back on");
         expect(context, step(context, indica, wetPot, 4, GrowLight.GROW_LAMP, HIT), GrowLight.STRESSED,

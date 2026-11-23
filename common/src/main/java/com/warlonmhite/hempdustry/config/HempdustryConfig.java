@@ -209,7 +209,10 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
                     + "greenOut (default true): false stops a bad hit replacing its effects. "
                     + "nausea (default true): false never applies nausea. munchies (default true): false never "
                     + "applies Hunger. debuffs (default true): false takes away every harmful effect, and the ones "
-                    + "in the #hempdustry:counts_as_harmful effect tag (Glowing).");
+                    + "in the #hempdustry:counts_as_harmful effect tag (Glowing). "
+                    + "A world can turn enabled and greenOut off for itself alone with its game rules "
+                    + "hempdustry:effects and hempdustry:green_outs (/gamerule, or the Game Rules screen); false "
+                    + "here turns them off in every world, whatever the rules say.");
             comment(root, "world", "cropGrowthMultiplier (default 1.0, 0.05-20.0) and machineSpeedMultiplier "
                     + "(default 1.0, 0.05-20.0) are speeds: 2.0 is twice as fast. "
                     + "machineSpeed drives the Decarboxylator and the Hemp Press; the Infuser has its own section. "
@@ -225,7 +228,10 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
                     + "plantStress (default true): false stops flowering hemp being stressed into seeding its own "
                     + "buds: no overfeeding, overwatering, dry bed, stagnant tray, bone-dry field or lost light does it, "
                     + "a plant that loses its lamp only falls back to the sun's light, and a plant that is stressed "
-                    + "already is healthy again on its next random tick.");
+                    + "already is healthy again on its next random tick. "
+                    + "A world can turn creepersSeekHemp, mildew and plantStress off for itself alone with its game "
+                    + "rules hempdustry:creepers_seek_hemp, hempdustry:mildew and hempdustry:plant_stress; false "
+                    + "here turns them off in every world, whatever the rules say.");
             comment(root, "infuser", "Ticks; 20 ticks = 1 second. minTimeTicks (default 6000, 20-31980) is the "
                     + "earliest a batch can be pulled, 5 minutes; fullTimeTicks (default 18000, 40-32000, and at "
                     + "least minTimeTicks + 20) a full simmer, 15 minutes. The ceiling, 32000 (about 26 minutes), "

@@ -3,7 +3,7 @@ package com.warlonmhite.hempdustry.block.custom;
 import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
-import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.warlonmhite.hempdustry.strain.BudTier;
 import com.warlonmhite.hempdustry.strain.Resistance;
 import com.warlonmhite.hempdustry.strain.ResistanceGenes;
@@ -147,13 +147,13 @@ public final class PlantInspection {
         GrowLight kept = plant.getValue(GrowLight.PROPERTY);
         if (kept == GrowLight.STRESSED) {
             lines.add(Component.translatable(KEY + "stressed").withStyle(ChatFormatting.RED));
-            if (!PlantStress.switchedOn()) {
-                lines.add(Component.translatable(KEY + "stress.off"));
+            if (!PlantStress.switchedOn(world)) {
+                lines.add(Component.translatable(KEY + "stress.off", value(ModGameRules.Switch.PLANT_STRESS.offBy())));
             }
             return;
         }
-        if (!PlantStress.switchedOn()) {
-            lines.add(Component.translatable(KEY + "stress.off"));
+        if (!PlantStress.switchedOn(world)) {
+            lines.add(Component.translatable(KEY + "stress.off", value(ModGameRules.Switch.PLANT_STRESS.offBy())));
             return;
         }
         if (!stressable(plant)) {
@@ -222,8 +222,8 @@ public final class PlantInspection {
         lines.add(Component.translatable(KEY + "mildew", value(plant.getValue(Mildew.PROPERTY)),
                 value(Climate.air(world, root, height(plant), roofed)),
                 value(Climate.humidity(world, root, roofed, Climate.onTray(world, root)))));
-        if (!HempdustryConfig.get().world().mildew()) {
-            lines.add(Component.translatable(KEY + "mildew.off"));
+        if (!ModGameRules.Switch.MILDEW.on(world)) {
+            lines.add(Component.translatable(KEY + "mildew.off", value(ModGameRules.Switch.MILDEW.offBy())));
         } else if (!(plant.getBlock() instanceof Mildew.Host host) || !host.catchesMildew()
                 || plant.is(ModTags.Blocks.MILDEW_RESISTANT)) {
             lines.add(Component.translatable(KEY + "mildew.never"));

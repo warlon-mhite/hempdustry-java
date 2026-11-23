@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.component.StashContents;
 import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
@@ -97,6 +98,8 @@ public final class StashSmellGameTest {
 
         ConfigGameTest.withConfig("{ \"world\": { \"creepersSeekHemp\": false } }", () ->
                 expect(context, player, "a bud, with creepersSeekHemp off", 1.0));
+        GameRuleGameTest.withRule(context, ModGameRules.CREEPERS_SEEK_HEMP, false, () ->
+                expect(context, player, "a bud, with the creepers_seek_hemp game rule off", 1.0));
         context.succeed();
     }
 
@@ -252,6 +255,12 @@ public final class StashSmellGameTest {
         ConfigGameTest.withConfig("{ \"world\": { \"creepersSeekHemp\": false } }", () -> {
             context.assertFalse(noticesWithin(nearGoal, 200), "a creeper noticed an opened jar with creepersSeekHemp off");
             context.assertFalse(nearGoal.canContinueToUse(), "a creeper stayed by a jar with creepersSeekHemp off");
+        });
+        GameRuleGameTest.withRule(context, ModGameRules.CREEPERS_SEEK_HEMP, false, () -> {
+            context.assertFalse(noticesWithin(nearGoal, 200),
+                    "a creeper noticed an opened jar with the creepers_seek_hemp game rule off");
+            context.assertFalse(nearGoal.canContinueToUse(),
+                    "a creeper stayed by a jar with the creepers_seek_hemp game rule off");
         });
 
         // Two minutes on, the jar is shut and the creeper is an ordinary creeper again.

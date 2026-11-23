@@ -226,6 +226,9 @@ public final class HempdustryGameTests {
         register("config_tells_each_value_and_its_source", CommandGameTest::configTellsEachValueAndItsSource);
         register("the_start_up_line_names_only_what_differs", CommandGameTest::theStartUpLineNamesOnlyWhatDiffers);
         register("a_reload_says_when_the_viewers_go_stale", CommandGameTest::aReloadSaysWhenTheViewersGoStale);
+        register("config_tells_a_game_rule_that_turns_a_switch_off", CommandGameTest::configTellsAGameRuleThatTurnsASwitchOff);
+        register("the_game_rules_are_registered", GameRuleGameTest::theGameRulesAreRegistered);
+        register("the_config_and_the_game_rule_both_decide", GameRuleGameTest::theConfigAndTheGameRuleBothDecide);
         register("the_servers_timings_reach_what_a_client_shows", ServerSettingsGameTest::theServersTimingsReachWhatAClientShows);
         register("the_timings_pass_over_players_without_the_channel",
                 ServerSettingsGameTest::theTimingsPassOverPlayersWithoutTheChannel);

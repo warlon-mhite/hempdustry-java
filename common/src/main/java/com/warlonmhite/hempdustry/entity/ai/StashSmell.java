@@ -2,7 +2,7 @@ package com.warlonmhite.hempdustry.entity.ai;
 
 import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
 import com.warlonmhite.hempdustry.component.StashContents;
-import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.warlonmhite.hempdustry.item.custom.StashJarItem;
 import com.warlonmhite.hempdustry.util.ModTags;
 import java.util.HashSet;
@@ -124,7 +124,7 @@ public final class StashSmell {
      * {@link #SOME_BUDS} with any, {@link #A_STACK} with a stack or more.
      */
     public static double reachFactor(Player player) {
-        if (!HempdustryConfig.get().world().creepersSeekHemp()) {
+        if (!ModGameRules.Switch.CREEPERS_SEEK_HEMP.on(player.level())) {
             return 1.0;
         }
         int buds = looseBuds(player);

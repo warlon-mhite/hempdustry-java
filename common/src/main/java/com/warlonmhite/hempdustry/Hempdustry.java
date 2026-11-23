@@ -16,6 +16,7 @@ import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.config.ConfigReport;
 import com.warlonmhite.hempdustry.config.ModCommands;
+import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.warlonmhite.hempdustry.platform.Registration;
 import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.strain.ModStrains;
@@ -101,6 +102,7 @@ public class Hempdustry {
 		ModParticles.registerParticles();
 		ModPlacementModifiers.registerPlacementModifiers();
 		ModLootEntryTypes.registerLootEntryTypes();
+		ModGameRules.registerGameRules();
 		ModWorldGeneration.generateModWorldGeneration();
 
 		registration.compostable(ModItems.HEMP_BRICK, 0.05f);

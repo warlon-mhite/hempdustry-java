@@ -8,13 +8,17 @@ import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.config.ClientConfig;
 import com.warlonmhite.hempdustry.config.EffectPolicy;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.warlonmhite.hempdustry.platform.Services;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
@@ -82,6 +86,24 @@ public final class ConfigGameTest {
                 context.assertTrue(odds == 0, "with effects off a hit still greens out one in " + odds
                         + " (one in " + oneIn + " at the defaults)");
             }
+        });
+        // The same off by the world's game rules, the file leaving them on: effects off filters every effect and
+        // greens nobody out; green-outs off keeps the effects and only stops the green-outs.
+        List<MobEffectInstance> speed = List.of(new MobEffectInstance(MobEffects.SPEED, 200, 0));
+        context.assertTrue(EffectPolicy.filter(speed).size() == 1 && EffectPolicy.greenOutChanceOneIn(10) == 10,
+                "the control failed: at the defaults a Speed hit gave " + EffectPolicy.filter(speed)
+                        + " and greened out one in " + EffectPolicy.greenOutChanceOneIn(10));
+        GameRuleGameTest.withRule(context, ModGameRules.EFFECTS, false, () -> {
+            context.assertTrue(EffectPolicy.filter(speed).isEmpty(), "with the effects game rule off a hit still gave "
+                    + EffectPolicy.filter(speed));
+            context.assertTrue(EffectPolicy.greenOutChanceOneIn(10) == 0, "with the effects game rule off a hit greens out one in "
+                    + EffectPolicy.greenOutChanceOneIn(10));
+        });
+        GameRuleGameTest.withRule(context, ModGameRules.GREEN_OUTS, false, () -> {
+            context.assertTrue(EffectPolicy.greenOutChanceOneIn(10) == 0, "with the green_outs game rule off a hit greens out "
+                    + "one in " + EffectPolicy.greenOutChanceOneIn(10));
+            context.assertTrue(EffectPolicy.filter(speed).size() == 1, "the green_outs game rule took a hit's effects: "
+                    + EffectPolicy.filter(speed));
         });
         context.succeed();
     }

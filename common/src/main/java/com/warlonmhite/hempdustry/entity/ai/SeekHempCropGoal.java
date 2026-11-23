@@ -3,7 +3,7 @@ package com.warlonmhite.hempdustry.entity.ai;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.GrowLight;
 import com.warlonmhite.hempdustry.block.custom.SativaCropBlock;
-import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.warlonmhite.hempdustry.util.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
@@ -264,7 +264,7 @@ public class SeekHempCropGoal extends RandomStrollGoal {
      */
     @Override
     public boolean canUse() {
-        if (!HempdustryConfig.get().world().creepersSeekHemp() || tagged && !drawnToHemp(mob)
+        if (!ModGameRules.Switch.CREEPERS_SEEK_HEMP.on(mob.level()) || tagged && !drawnToHemp(mob)
                 || pullNeeded(mob) > strongestPull || mob.level().getGameTime() < restingUntil) {
             return false;
         }
@@ -278,7 +278,7 @@ public class SeekHempCropGoal extends RandomStrollGoal {
      */
     @Override
     public boolean canContinueToUse() {
-        if (!HempdustryConfig.get().world().creepersSeekHemp() || mob.hasControllingPassenger()) {
+        if (!ModGameRules.Switch.CREEPERS_SEEK_HEMP.on(mob.level()) || mob.hasControllingPassenger()) {
             return false;
         }
         if (!mob.getNavigation().isDone()) {

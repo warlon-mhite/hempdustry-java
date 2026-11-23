@@ -35,6 +35,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.gamerules.GameRule;
 
 /**
  * Every string in every lang file is one the game actually asks for — <b>and this test exists
@@ -118,6 +119,15 @@ public final class LangGameTest {
                 read.add("tag.entity_type." + id.getNamespace() + "." + id.getPath().replace('/', '.'));
             }
         });
+
+        // A game rule's name, its description and its heading, as the Game Rules screen asks for them.
+        for (GameRule<?> rule : BuiltInRegistries.GAME_RULE) {
+            if (Sweep.ours(rule.getIdentifier())) {
+                read.add(rule.getDescriptionId());
+                read.add(rule.getDescriptionId() + ".description");
+                keys(rule.category().label(), read);
+            }
+        }
 
         Set<String> literals = new HashSet<>();
         Set<String> langKeys = new TreeSet<>();
