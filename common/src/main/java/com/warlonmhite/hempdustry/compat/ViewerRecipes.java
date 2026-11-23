@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.compat;
 
+import com.warlonmhite.hempdustry.config.ShownConfig;
 import com.warlonmhite.hempdustry.recipe.StashJarUpgradeRecipe;
 import com.warlonmhite.hempdustry.component.StashContents;
 import com.warlonmhite.hempdustry.item.custom.StampedItem;
@@ -131,7 +132,7 @@ public final class ViewerRecipes {
                     output.setCount(recipe.midCount(new ItemStack(item), world.registryAccess())));
             out.add(new Entry(entry.id().identifier(), List.of(recipe.ingredient()), output,
                     List.of(Component.translatable("hempdustry.category.decarboxylating.info",
-                            seconds(DecarboxylatorBlockEntity.cookTime()))),
+                            seconds(DecarboxylatorBlockEntity.cookTime(ShownConfig.machineSpeedMultiplier())))),
                     false));
         }
         return out;
@@ -159,8 +160,8 @@ public final class ViewerRecipes {
                     Component.translatable("hempdustry.category.infusing.heat"),
                     Component.translatable("hempdustry.category.infusing.batch",
                             InfuserBlockEntity.BATCH_CAP,
-                            minutes(InfuserBlockEntity.minTime()),
-                            minutes(InfuserBlockEntity.fullTime()))));
+                            minutes(ShownConfig.infuser().minTimeTicks()),
+                            minutes(ShownConfig.infuser().fullTimeTicks()))));
             // Scorched hemp's whole price is invisible from its slot: it counts a quarter and holds
             // the grade down. A player comparing it with the oven's hemp on this page is exactly the
             // one who needs telling -- and a pack that dropped it gets neither the slot nor the note.
@@ -182,7 +183,7 @@ public final class ViewerRecipes {
             out.add(new Entry(entry.id().identifier(), List.of(recipe.ingredient()), recipe.result().create(),
                     List.of(Component.translatable("hempdustry.category.pressing.heat"),
                             Component.translatable("hempdustry.category.pressing.info",
-                                    seconds(HempPressBlockEntity.pressTime()))),
+                                    seconds(HempPressBlockEntity.pressTime(ShownConfig.machineSpeedMultiplier())))),
                     false));
         }
         return out;

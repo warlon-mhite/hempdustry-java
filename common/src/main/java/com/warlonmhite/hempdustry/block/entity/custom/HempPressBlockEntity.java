@@ -5,6 +5,7 @@ import com.warlonmhite.hempdustry.block.entity.ImplementedInventory;
 import com.warlonmhite.hempdustry.block.entity.ModBlockEntities;
 import com.warlonmhite.hempdustry.block.entity.NamedMachineBlockEntity;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ShownConfig;
 import com.warlonmhite.hempdustry.platform.ItemTransfer;
 import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.recipe.ModRecipes;
@@ -141,7 +142,14 @@ public class HempPressBlockEntity extends NamedMachineBlockEntity
 
     /** {@link #PRESS_TIME} after {@code world.machineSpeedMultiplier}, synced so the bar cannot lie. */
     public static int pressTime() {
-        double speed = HempdustryConfig.get().world().machineSpeedMultiplier();
+        return pressTime(HempdustryConfig.get().world().machineSpeedMultiplier());
+    }
+
+    /**
+     * The squeeze at {@code speed}: the server's own for the press, the one the server sent
+     * ({@code ShownConfig}) for the platen and a recipe viewer's page.
+     */
+    public static int pressTime(double speed) {
         return Math.max(1, (int) Math.round(PRESS_TIME / speed));
     }
 
@@ -320,7 +328,8 @@ public class HempPressBlockEntity extends NamedMachineBlockEntity
      * <p>The client never sees {@code progress}, and syncing it would be a packet a tick. It does not
      * need to: a run of squeezes starts on the tick {@link HempPressBlock#PRESSING} turns on, and each
      * squeeze lasts exactly {@link #pressTime()} — progress resets to 0 and climbs again on the next
-     * tick — so the phase falls out of the world clock.
+     * tick — so the phase falls out of the world clock. The length is the server's, as it sent it
+     * ({@code ShownConfig}), not the client's own file's.
      */
     public float strokeTicks(float tickDelta) {
         // ponytail: the phase restarts from the top whenever the press is first seen, or resumes
@@ -333,7 +342,7 @@ public class HempPressBlockEntity extends NamedMachineBlockEntity
         if (strokeStart < 0) {
             strokeStart = level.getGameTime();
         }
-        return (level.getGameTime() - strokeStart) % pressTime() + tickDelta;
+        return (level.getGameTime() - strokeStart) % pressTime(ShownConfig.machineSpeedMultiplier()) + tickDelta;
     }
 
     // ----- inventory -----

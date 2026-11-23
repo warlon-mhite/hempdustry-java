@@ -95,4 +95,9 @@ public final class FabricClientRegistration implements ClientRegistration {
     public void onJoinWorld(Runnable listener) {
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> listener.run());
     }
+
+    @Override
+    public void onLeaveWorld(Runnable listener) {
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> listener.run());
+    }
 }

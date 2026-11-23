@@ -1,6 +1,8 @@
 package com.warlonmhite.hempdustry.neoforge;
 
 import com.warlonmhite.hempdustry.network.PlayerGesture;
+import com.warlonmhite.hempdustry.network.ServerSettings;
+import net.neoforged.neoforge.network.event.RegisterConfigurationTasksEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
 
@@ -50,7 +52,15 @@ public final class HempdustryNeoForge {
         modBus.addListener(BlockEntityTypeAddBlocksEvent.class, registration::onAddBlocks);
         // Optional, so a connection without the channel is not refused for it; NeoForgeNetwork never sends there.
         modBus.addListener(RegisterPayloadHandlersEvent.class, event -> event.registrar("1").optional()
-                .playToClient(PlayerGesture.TYPE, PlayerGesture.CODEC));
+                .playToClient(PlayerGesture.TYPE, PlayerGesture.CODEC)
+                .commonToClient(ServerSettings.TYPE, ServerSettings.CODEC));
+        // The server's displayed values go out while the connection is configured, before the recipe viewers build
+        // their pages, and again in play after /hempdustry reload.
+        modBus.addListener(RegisterConfigurationTasksEvent.class, event -> {
+            if (event.getListener().hasChannel(ServerSettings.TYPE)) {
+                event.register(ServerSettings.task());
+            }
+        });
         modBus.addListener(ModifyDefaultComponentsEvent.class, registration::onModifyDefaultComponents);
         modBus.addListener(RegisterCapabilitiesEvent.class, HempdustryNeoForge::exposeContainers);
         modBus.addListener(GatherDataEvent.Client.class, NeoForgeData::gather);

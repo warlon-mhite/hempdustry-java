@@ -6,6 +6,7 @@ import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.block.custom.PlantInspection;
 import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
 import com.warlonmhite.hempdustry.component.StashContents;
+import com.warlonmhite.hempdustry.network.ServerSettings;
 import com.warlonmhite.hempdustry.platform.Services;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,9 @@ import net.minecraft.world.phys.HitResult;
  * {@code /reload} and {@code /gamerule}.
  *
  * <ul>
- *   <li>{@code reload} re-reads {@code config/hempdustry.json} without a restart.</li>
+ *   <li>{@code reload} re-reads {@code config/hempdustry.json} without a restart. The values a client shows (the machine
+ *       timings) go to every player again; a recipe viewer's pages keep the old ones until the recipes are sent again
+ *       ({@code /reload} or a rejoin), and the reply says so when one moved.</li>
  *   <li>{@code inspect [pos]} tells what the plant (or the Stash Jar) at {@code pos}, or at the block looked at,
  *       holds and why it stands as it does ({@link PlantInspection}). At level 2 because it shows the genes a
  *       player is never shown.</li>
@@ -58,6 +61,7 @@ public class ModCommands {
                 .requires(Commands.hasPermission(
                         new PermissionCheck.Require(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS))))
                 .then(Commands.literal("reload").executes(context -> {
+                    ServerSettings before = ServerSettings.of(HempdustryConfig.get());
                     if (!HempdustryConfig.load()) {
                         // The file could not be read and was left alone; the settings already running
                         // stay. Say so, or a typo looks exactly like a reload that took.
@@ -68,6 +72,14 @@ public class ModCommands {
                     // operators online want to know happened, the way /gamerule announces itself.
                     context.getSource().sendSuccess(
                             () -> Component.translatable("commands.hempdustry.reload"), true);
+                    // The clients hear the new values at once and the press's platen keeps the new rhythm,
+                    // but a recipe viewer built its pages when the recipes came and keeps them until they come
+                    // again. Told only to the one who reloaded, and only when a shown value moved.
+                    ServerSettings.sendToAll(context.getSource().getServer());
+                    if (!ServerSettings.of(HempdustryConfig.get()).equals(before)) {
+                        context.getSource().sendSuccess(
+                                () -> Component.translatable("commands.hempdustry.reload.viewers"), false);
+                    }
                     return 1;
                 }))
                 .then(Commands.literal("inspect")

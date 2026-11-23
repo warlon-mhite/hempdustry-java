@@ -191,6 +191,38 @@ public final class CommandGameTest {
         context.succeed();
     }
 
+    /**
+     * {@code /hempdustry reload} tells the one who ran it that the recipe viewers keep the old machine times, when a
+     * time they show moved, and only then: a reload that moves nothing a client shows, or moves only what no client
+     * shows, says nothing of the viewers. A file it cannot read says only that.
+     */
+    public static void aReloadSaysWhenTheViewersGoStale(GameTestHelper context) {
+        String viewers = "commands.hempdustry.reload.viewers()";
+        ConfigGameTest.withConfig("{}", () -> {
+            ConfigGameTest.writeFile("{ \"world\": { \"machineSpeedMultiplier\": 2.0 } }");
+            List<String> moved = run(context, "hempdustry reload", LevelBasedPermissionSet.GAMEMASTER);
+            context.assertTrue(HempdustryConfig.get().world().machineSpeedMultiplier() == 2.0, "the reload did not take");
+            context.assertTrue(moved.equals(List.of("commands.hempdustry.reload()", viewers)),
+                    "a reload that moved the machine speed said " + moved);
+
+            ConfigGameTest.writeFile("{ \"world\": { \"machineSpeedMultiplier\": 2.0, \"cropGrowthMultiplier\": 3.0 },"
+                    + " \"effects\": { \"maxLevel\": 2 } }");
+            List<String> unmoved = run(context, "hempdustry reload", LevelBasedPermissionSet.GAMEMASTER);
+            context.assertTrue(unmoved.equals(List.of("commands.hempdustry.reload()")),
+                    "a reload that moved nothing a client shows said " + unmoved);
+
+            ConfigGameTest.writeFile("{ \"infuser\": { \"minTimeTicks\": 2000 } }");
+            List<String> infuser = run(context, "hempdustry reload", LevelBasedPermissionSet.GAMEMASTER);
+            context.assertTrue(infuser.contains(viewers), "a reload that moved the Infuser's time said " + infuser);
+
+            ConfigGameTest.writeFile("{ \"world\": ");
+            List<String> broken = run(context, "hempdustry reload", LevelBasedPermissionSet.GAMEMASTER);
+            context.assertTrue(broken.equals(List.of("commands.hempdustry.reload.failed()")),
+                    "a reload of a broken file said " + broken);
+        });
+        context.succeed();
+    }
+
     /** Runs {@code command} from a source of {@code permissions}, and answers each line it was told, flattened. */
     private static List<String> run(GameTestHelper context, String command, PermissionSet permissions) {
         List<String> said = new ArrayList<>();

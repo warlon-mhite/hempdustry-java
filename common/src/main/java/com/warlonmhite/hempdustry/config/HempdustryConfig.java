@@ -39,14 +39,16 @@ import java.util.Optional;
  *       the vanilla answer, and it works today.</li>
  * </ul>
  *
- * <h2>Server-side only, and that is not an accident</h2>
+ * <h2>Server-side, and that is not an accident</h2>
  *
- * Nothing here has to reach a client. Effects, cooldowns, growth and loot are all applied
- * server-side, and <b>the Infuser's timings ride to the screen on its existing
- * {@code ContainerData}</b> rather than needing a config packet — the GUI reads the values the
- * block is actually using, so a client with a different file (or no file) still draws a truthful bar.
- * No packet carries any of this file: the mod's one payload is a player's gesture (a cough, a sniff
- * at a jar, a kick at a footbag), which says nothing about the config.
+ * Effects, cooldowns, growth and loot are all applied server-side, and <b>the machine screens' timings
+ * ride on each block's {@code ContainerData}</b> — the GUI reads the values the block is actually
+ * using, so a client with a different file (or no file) still draws a truthful bar. <b>Three values
+ * reach a client in a payload of their own</b>, {@code ServerSettings}: {@code world.machineSpeedMultiplier}
+ * and the two {@code infuser} times, which the recipe viewers' pages and the Hemp Press's platen show
+ * with no block to ask. They are sent while the connection is configured and again after
+ * {@code /hempdustry reload}, and held on the client apart from its own file ({@code ShownConfig}); no
+ * server ever writes a client's file. Nothing else of this file leaves the server.
  *
  * <h2>Reading it</h2>
  *
@@ -301,12 +303,12 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
     }
 
     /**
-     * The one section a <b>client</b> reads, and the only one in this file that a server never
-     * applies to anybody.
+     * The one section a <b>client</b> reads from its own file, and the only one in this file that a
+     * server never applies to anybody.
      *
-     * <p>It disturbs nothing about the "server-side only, and that is not an accident" note above:
-     * this section is read by the client that owns the file and is sent nowhere, so it still needs
-     * no sync code. A dedicated server writes the section out and ignores it.
+     * <p>It is read by the client that owns the file and is sent nowhere, in either direction: a server
+     * never sends a client its preferences, and the values it does send ({@code ServerSettings}) are
+     * held apart from this file. A dedicated server writes the section out and ignores it.
      *
      * @param updateCheck       whether this client asks Modrinth for a newer release on start-up
      * @param biomeTintStrength  how far the crops and wild flowers are pulled towards the local

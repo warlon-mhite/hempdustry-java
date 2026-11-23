@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry;
 
+import com.warlonmhite.hempdustry.config.ShownConfig;
 import com.warlonmhite.hempdustry.client.anim.BodyPoses;
 import com.warlonmhite.hempdustry.client.anim.Gestures;
 import com.warlonmhite.hempdustry.client.anim.Style;
@@ -125,6 +126,8 @@ public class HempdustryClient {
         };
 
         registerPlayerAnimations(client);
+        // What a server sent of its config holds for that server only.
+        client.onLeaveWorld(ShownConfig::forget);
     }
 
     /**

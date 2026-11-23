@@ -1,6 +1,7 @@
 {
   "commands.hempdustry.reload": "Hempdustry config reloaded.",
   "commands.hempdustry.reload.failed": "Could not read config/hempdustry.json, so nothing changed — the server log says why.",
+  "commands.hempdustry.reload.viewers": "JEI and REI keep showing the old machine times until the recipes are sent again: run /reload, or rejoin.",
   "commands.hempdustry.inspect.no_target": "Look at a plant or a Stash Jar, or give its position.",
   "commands.hempdustry.inspect.none": "Nothing at %s to inspect: only the mod's plants and Stash Jars can be.",
   "commands.hempdustry.inspect.plant": "%s at %s: strain %s, age %s of %s",

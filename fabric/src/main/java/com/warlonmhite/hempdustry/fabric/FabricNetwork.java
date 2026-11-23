@@ -12,14 +12,15 @@ public final class FabricNetwork implements Network {
     public void sendToTracking(Entity entity, CustomPacketPayload payload, boolean andSelf) {
         // Fabric's lookup leaves a player out of the players tracking it.
         for (ServerPlayer player : PlayerLookup.tracking(entity)) {
-            send(player, payload);
+            sendTo(player, payload);
         }
         if (andSelf && entity instanceof ServerPlayer self) {
-            send(self, payload);
+            sendTo(self, payload);
         }
     }
 
-    private static void send(ServerPlayer player, CustomPacketPayload payload) {
+    @Override
+    public void sendTo(ServerPlayer player, CustomPacketPayload payload) {
         if (ServerPlayNetworking.canSend(player, payload.type())) {
             ServerPlayNetworking.send(player, payload);
         }

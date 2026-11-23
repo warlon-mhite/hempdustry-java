@@ -5,6 +5,7 @@
 	"client": [
 		"AbstractContainerScreenMixin",
 		"AvatarRendererMixin",
+		"ClientConfigurationPacketListenerImplMixin",
 		"DrawContextMixin",
 		"FirstPersonHandsAndItemsRendererMixin",
 		"HumanoidModelMixin",

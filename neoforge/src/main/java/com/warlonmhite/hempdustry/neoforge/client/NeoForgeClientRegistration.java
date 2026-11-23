@@ -134,4 +134,9 @@ public final class NeoForgeClientRegistration implements ClientRegistration {
     public void onJoinWorld(Runnable listener) {
         NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingIn.class, event -> listener.run());
     }
+
+    @Override
+    public void onLeaveWorld(Runnable listener) {
+        NeoForge.EVENT_BUS.addListener(ClientPlayerNetworkEvent.LoggingOut.class, event -> listener.run());
+    }
 }

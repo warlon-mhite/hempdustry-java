@@ -66,6 +66,9 @@ public interface ClientRegistration {
     /** Each time the player joins a world or a server. */
     void onJoinWorld(Runnable listener);
 
+    /** Each time the player leaves a world or a server. */
+    void onLeaveWorld(Runnable listener);
+
     /** A menu screen's constructor. Vanilla's own interface for it is not public. */
     @FunctionalInterface
     interface ScreenFactory<M extends AbstractContainerMenu, U extends Screen & MenuAccess<M>> {

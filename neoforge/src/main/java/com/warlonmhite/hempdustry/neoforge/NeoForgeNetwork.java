@@ -17,8 +17,15 @@ public final class NeoForgeNetwork implements Network {
         // (a game test's player, a fake player): each one is asked first.
         level.getChunkSource().sendToTrackingPlayersFiltered(entity, new ClientboundCustomPayloadPacket(payload),
                 player -> hears(player, payload));
-        if (andSelf && entity instanceof ServerPlayer self && hears(self, payload)) {
-            self.connection.send(new ClientboundCustomPayloadPacket(payload));
+        if (andSelf && entity instanceof ServerPlayer self) {
+            sendTo(self, payload);
+        }
+    }
+
+    @Override
+    public void sendTo(ServerPlayer player, CustomPacketPayload payload) {
+        if (hears(player, payload)) {
+            player.connection.send(new ClientboundCustomPayloadPacket(payload));
         }
     }
 

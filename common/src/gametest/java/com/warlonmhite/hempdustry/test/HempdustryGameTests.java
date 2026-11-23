@@ -220,6 +220,10 @@ public final class HempdustryGameTests {
         register("inspect_tells_a_plants_facts", CommandGameTest::inspectTellsAPlantsFacts);
         register("config_tells_each_value_and_its_source", CommandGameTest::configTellsEachValueAndItsSource);
         register("the_start_up_line_names_only_what_differs", CommandGameTest::theStartUpLineNamesOnlyWhatDiffers);
+        register("a_reload_says_when_the_viewers_go_stale", CommandGameTest::aReloadSaysWhenTheViewersGoStale);
+        register("the_servers_timings_reach_what_a_client_shows", ServerSettingsGameTest::theServersTimingsReachWhatAClientShows);
+        register("the_timings_pass_over_players_without_the_channel",
+                ServerSettingsGameTest::theTimingsPassOverPlayersWithoutTheChannel);
         register("a_hemp_boat_does_not_stop_the_data_fixer", DataFixerGameTest::aHempBoatDoesNotStopTheDataFixer);
         register("one_bud_per_slot_is_the_dose", PackingGameTest::oneBudPerSlotIsTheDose);
         register("a_strain_reusing_items_keeps_the_tab_whole",

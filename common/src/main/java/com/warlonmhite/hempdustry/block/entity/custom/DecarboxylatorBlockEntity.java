@@ -108,7 +108,14 @@ public class DecarboxylatorBlockEntity extends NamedMachineBlockEntity
      * so the progress arrows stay truthful on a server whose settings differ from the player's file.
      */
     public static int cookTime() {
-        double speed = HempdustryConfig.get().world().machineSpeedMultiplier();
+        return cookTime(HempdustryConfig.get().world().machineSpeedMultiplier());
+    }
+
+    /**
+     * The cook time at {@code speed}: the server's own for the oven, the one the server sent
+     * ({@code ShownConfig}) for a recipe viewer's page.
+     */
+    public static int cookTime(double speed) {
         return Math.max(1, (int) Math.round(COOK_TIME / speed));
     }
 

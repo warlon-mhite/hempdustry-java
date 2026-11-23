@@ -2,6 +2,7 @@ package com.warlonmhite.hempdustry.client.render;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import com.warlonmhite.hempdustry.config.ShownConfig;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.block.entity.custom.HempPressBlockEntity;
 import net.minecraft.client.renderer.SubmitNodeCollector;
@@ -86,7 +87,7 @@ public class HempPressBlockEntityRenderer
         itemModels.updateForTopItem(state.platen, PLATEN.create(), ItemDisplayContext.NONE, press.getLevel(), null, 0);
         itemModels.updateForTopItem(state.screw, SCREW.create(), ItemDisplayContext.NONE, press.getLevel(), null, 0);
         float ticks = press.strokeTicks(tickDelta);
-        state.depth = ticks < 0 ? 0.0F : depth(ticks / HempPressBlockEntity.pressTime());
+        state.depth = ticks < 0 ? 0.0F : depth(ticks / HempPressBlockEntity.pressTime(ShownConfig.machineSpeedMultiplier()));
     }
 
     /**

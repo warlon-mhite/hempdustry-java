@@ -1,6 +1,7 @@
 package com.warlonmhite.hempdustry.platform;
 
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 
 /**
@@ -14,4 +15,10 @@ public interface Network {
      * mod's channel (a fake player) is passed over.
      */
     void sendToTracking(Entity entity, CustomPacketPayload payload, boolean andSelf);
+
+    /**
+     * Sends {@code payload} to {@code player} alone, in play. A player whose connection never agreed to
+     * the mod's channel (a fake player, a client without the mod) is passed over.
+     */
+    void sendTo(ServerPlayer player, CustomPacketPayload payload);
 }

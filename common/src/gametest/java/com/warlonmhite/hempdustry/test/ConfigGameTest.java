@@ -254,6 +254,11 @@ public final class ConfigGameTest {
      * Runs {@code body} with {@code json} as the config, and puts the real file back afterwards
      * whatever happens -- for a test elsewhere that needs a setting other than the default.
      */
+    /** Writes {@code json} as the config file, without loading it. {@link #withConfig} puts the real one back. */
+    static void writeFile(String json) {
+        write(Services.PLATFORM.configDir().resolve(Hempdustry.MOD_ID + ".json"), json);
+    }
+
     static void withConfig(String json, Runnable body) {
         Path path = Services.PLATFORM.configDir().resolve(Hempdustry.MOD_ID + ".json");
         byte[] original = read(path);

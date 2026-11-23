@@ -1,6 +1,7 @@
 {
   "commands.hempdustry.reload": "Configuration d'Hempdustry rechargée.",
   "commands.hempdustry.reload.failed": "Impossible de lire config/hempdustry.json, rien n'a changé — le journal du serveur dit pourquoi.",
+  "commands.hempdustry.reload.viewers": "JEI et REI affichent les anciens temps des machines jusqu'au prochain envoi des recettes : faites /reload, ou reconnectez-vous.",
   "commands.hempdustry.inspect.no_target": "Regardez un plant ou un bocal à beuh, ou donnez sa position.",
   "commands.hempdustry.inspect.none": "Rien à examiner en %s : seuls les plants du mod et les bocaux à beuh s'examinent.",
   "commands.hempdustry.inspect.plant": "%s en %s : variété %s, âge %s sur %s",
