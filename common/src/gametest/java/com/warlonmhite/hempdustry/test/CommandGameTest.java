@@ -268,6 +268,13 @@ public final class CommandGameTest {
             List<String> infuser = run(context, "hempdustry reload", LevelBasedPermissionSet.GAMEMASTER);
             context.assertTrue(infuser.contains(viewers), "a reload that moved the Infuser's time said " + infuser);
 
+            // A bad value: everything else is applied, and the reply names the value that kept its old setting.
+            ConfigGameTest.writeFile("{ \"effects\": { \"maxLevel\": \"four\", \"nausea\": false } }");
+            List<String> partly = run(context, "hempdustry reload", LevelBasedPermissionSet.GAMEMASTER);
+            context.assertTrue(partly.equals(List.of("commands.hempdustry.reload()",
+                            "commands.hempdustry.reload.kept(effects.maxLevel)", viewers)) && !HempdustryConfig.get().effects().nausea(),
+                    "a reload of a file with one bad value said " + partly + " and runs with " + HempdustryConfig.get().effects());
+
             ConfigGameTest.writeFile("{ \"world\": ");
             List<String> broken = run(context, "hempdustry reload", LevelBasedPermissionSet.GAMEMASTER);
             context.assertTrue(broken.equals(List.of("commands.hempdustry.reload.failed()")),

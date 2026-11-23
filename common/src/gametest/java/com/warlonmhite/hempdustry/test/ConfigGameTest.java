@@ -36,25 +36,39 @@ import java.util.regex.Pattern;
  */
 public final class ConfigGameTest {
 
-    private static final String[] BROKEN = {
+    private static final String[] UNREADABLE = {
             "{ \"effects\": { \"maxBuffLevel\": 3, }",           // not JSON: cut off mid-edit
-            "{ \"effects\": { \"maxLevel\": \"four\" } }",       // JSON, but a word where a number goes
-            "{ \"effects\": 3 }",                                // a whole section replaced by a number
             "[ \"effects\" ]"                                    // JSON, but not an object
     };
+
+    /** Files that read, each with one thing in them that does not, and what that thing is called. */
+    private static final Map<String, String> ONE_BAD_THING = Map.of(
+            "{ \"effects\": { \"maxLevel\": \"four\" } }", "effects.maxLevel",  // a word where a number goes
+            "{ \"effects\": 3 }", "effects");                                    // a whole section replaced by a number
 
     public static void aBrokenConfigIsLeftAlone(GameTestHelper context) {
         Path path = Services.PLATFORM.configDir().resolve(Hempdustry.MOD_ID + ".json");
         byte[] original = read(path);
         try {
             HempdustryConfig running = HempdustryConfig.get();
-            for (String broken : BROKEN) {
+            for (String broken : UNREADABLE) {
                 write(path, broken);
                 context.assertFalse(HempdustryConfig.load(), "load() reported success on: " + broken);
                 context.assertTrue(broken.equals(new String(read(path), StandardCharsets.UTF_8)),
                         "the file was written over after failing to read: " + broken);
                 context.assertTrue(HempdustryConfig.get() == running,
                         "the running config changed after failing to read: " + broken);
+            }
+            for (var bad : ONE_BAD_THING.entrySet()) {
+                write(path, bad.getKey());
+                HempdustryConfig.Outcome outcome = HempdustryConfig.loadFile();
+                context.assertTrue(outcome.read() && !outcome.applied() && outcome.kept().equals(List.of(bad.getValue())),
+                        "a file with one bad thing in it came out as " + outcome + ", not read but for " + bad.getValue()
+                                + ": " + bad.getKey());
+                context.assertTrue(bad.getKey().equals(new String(read(path), StandardCharsets.UTF_8)),
+                        "the file was written over after failing to read part of it: " + bad.getKey());
+                context.assertTrue(HempdustryConfig.get().effects().equals(running.effects()),
+                        "the running effects changed after failing to read them: " + bad.getKey());
             }
 
             // And a good file still goes in: a field it leaves out keeps its default, and the file
@@ -70,6 +84,48 @@ public final class ConfigGameTest {
             write(path, original);
             HempdustryConfig.load();
         }
+        context.succeed();
+    }
+
+    /**
+     * One bad value costs that value alone. A server set to industrial hemp only, with a typo in another setting,
+     * comes up still industrial hemp only: every value that reads is applied, the bad one keeps what was running (the
+     * last good read's, not the default), a section that is not a section keeps its own, and the file is left as it
+     * is. The client's own file is read the same way.
+     */
+    public static void oneBadValueCostsOnlyItself(GameTestHelper context) {
+        Path path = Services.PLATFORM.configDir().resolve(Hempdustry.MOD_ID + ".json");
+        withConfig("{ \"effects\": { \"maxLevel\": 6 }, \"loot\": { \"chanceMultiplier\": 0.5 } }", () -> {
+            String file = "{ \"effects\": { \"enabled\": false, \"maxLevel\": \"four\", \"debuffs\": \"false\" },"
+                    + " \"world\": { \"mildew\": false, \"cropGrowthMultiplier\": \"fast\" }, \"loot\": 3 }";
+            write(path, file);
+            HempdustryConfig.Outcome outcome = HempdustryConfig.loadFile();
+            HempdustryConfig config = HempdustryConfig.get();
+            context.assertTrue(outcome.read() && outcome.kept().equals(List.of("effects.debuffs", "effects.maxLevel",
+                            "world.cropGrowthMultiplier", "loot")) || outcome.read() && outcome.kept().equals(
+                            List.of("effects.maxLevel", "effects.debuffs", "world.cropGrowthMultiplier", "loot")),
+                    "the bad values were reported as " + outcome);
+            context.assertTrue(!config.effects().enabled() && !config.world().mildew(),
+                    "a typo elsewhere took the good values with it: effects " + config.effects() + ", world " + config.world());
+            context.assertTrue(config.effects().maxLevel() == 6 && config.effects().debuffs()
+                            && config.world().cropGrowthMultiplier() == 1.0 && config.loot().chanceMultiplier() == 0.5,
+                    "a bad value did not keep what was running: " + config);
+            context.assertTrue(file.equals(new String(read(path), StandardCharsets.UTF_8)),
+                    "a file with bad values in it was written over");
+        });
+        inClientFolder(folder -> {
+            Path file = folder.resolve(ClientConfig.FILE);
+            Path legacy = folder.resolve(Hempdustry.MOD_ID + ".json");
+            write(file, "{ \"client\": { \"biomeTintStrength\": 0.7 } }");
+            context.assertTrue(ClientConfig.load(file, legacy), "a good client file was refused");
+            String bad = "{ \"client\": { \"fanPuffs\": false, \"biomeTintStrength\": \"pale\" } }";
+            write(file, bad);
+            context.assertFalse(ClientConfig.load(file, legacy), "a client file with a bad value read as good");
+            context.assertTrue(!ClientConfig.get().fanPuffs() && ClientConfig.get().biomeTintStrength() == 0.7,
+                    "the client file's good value was not applied, or its bad one did not keep 0.7: " + ClientConfig.get());
+            context.assertTrue(bad.equals(new String(read(file), StandardCharsets.UTF_8)),
+                    "a client file with a bad value in it was written over");
+        });
         context.succeed();
     }
 
@@ -354,7 +410,7 @@ public final class ConfigGameTest {
                 context.assertFalse(ClientConfig.load(file, legacy), "load() reported success on: " + broken);
                 context.assertTrue(broken.equals(new String(read(file), StandardCharsets.UTF_8)),
                         "the client file was written over after failing to read: " + broken);
-                context.assertTrue(ClientConfig.get() == running, "the running preferences changed on: " + broken);
+                context.assertTrue(ClientConfig.get().equals(running), "the running preferences changed on: " + broken);
             }
         });
         inClientFolder(folder -> {

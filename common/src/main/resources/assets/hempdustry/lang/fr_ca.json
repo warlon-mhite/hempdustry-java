@@ -1,6 +1,7 @@
 {
   "commands.hempdustry.reload": "Configuration d'Hempdustry rechargée.",
   "commands.hempdustry.reload.failed": "Impossible de lire config/hempdustry.json, rien n'a changé — le journal du serveur dit pourquoi.",
+  "commands.hempdustry.reload.kept": "Ces valeurs de config/hempdustry.json n'ont pas pu être lues et gardent leur valeur en place : %s. Tout le reste a été appliqué ; le fichier est laissé tel quel, et le journal du serveur dit pourquoi.",
   "commands.hempdustry.reload.viewers": "JEI et REI affichent les anciens temps des machines jusqu'au prochain envoi des recettes : faites /reload, ou reconnectez-vous.",
   "commands.hempdustry.reload.client_failed": "Impossible de lire config/hempdustry-client.json, les préférences de ce jeu n'ont pas changé — le journal dit pourquoi.",
   "commands.hempdustry.inspect.no_target": "Regardez un plant ou un bocal à beuh, ou donnez sa position.",

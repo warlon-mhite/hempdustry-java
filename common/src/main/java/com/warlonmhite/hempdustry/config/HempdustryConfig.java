@@ -16,6 +16,8 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -54,9 +56,10 @@ import java.util.Optional;
  *
  * Missing fields fall back to the default rather than failing, so a half-written file still loads and
  * an upgrade that adds a knob needs no migration. Values outside their sane range are <b>clamped and
- * logged</b>, not rejected — a server should never fail to boot over a config typo. A file that cannot
- * be read at all — not valid JSON, or a value of the wrong type — logs the error, is applied not at
- * all, and is <b>left exactly as it is</b> so the typo can be fixed; see {@link #load()}.
+ * logged</b>, not rejected — a server should never fail to boot over a config typo. A value of the wrong
+ * type is logged and <b>only that value</b> keeps what was running; every other value in the file is
+ * applied, and the file is <b>left exactly as it is</b> so the typo can be fixed. A file that cannot be
+ * read at all — not valid JSON — is applied not at all and left as it is too; see {@link #load()}.
  *
  * <p>{@code /hempdustry reload} re-reads it in place.
  *
@@ -103,50 +106,127 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
      *
      * <h2>A file it cannot read is never written over</h2>
      *
-     * Invalid JSON, a value of the wrong type, or JSON that is not an object at all: the error is
-     * logged, nothing in the file is applied, and <b>the file is left untouched</b>. Rewriting it
-     * would replace every setting in it with its default over one typo, which is what this used to
-     * do. The config already running stays — the defaults at start-up, the last good read on a
-     * {@code /hempdustry reload}. An empty file is not an error: it is read as "all defaults" and
-     * written out in full, which is the way to get a fresh one.
+     * Invalid JSON, or JSON that is not an object at all: the error is logged, nothing in the file is
+     * applied, and <b>the file is left untouched</b>. Rewriting it would replace every setting in it
+     * with its default over one typo, which is what this used to do. The config already running stays
+     * — the defaults at start-up, the last good read on a {@code /hempdustry reload}. An empty file is
+     * not an error: it is read as "all defaults" and written out in full, which is the way to get a
+     * fresh one.
      *
-     * @return whether the file was read and applied; {@code false} means it was left alone
+     * <h2>A bad value costs that value alone</h2>
+     *
+     * A value of the wrong type ({@code "debuffs": "false"}, a word where a number goes) or a section
+     * that is not an object keeps what was running for that value or section alone, logged by name;
+     * every other value in the file is applied. A server set to industrial hemp only must not come up
+     * with every high back on because of a typo in its loot section, which is what reading the file as
+     * one piece did. The file is still left as it is, so the typo can be found and fixed.
+     *
+     * @return whether the file was read and applied in full; {@code false} means it was left alone, and
+     *         some or all of what was running stays ({@link #loadFile()} tells which)
      */
     public static boolean load() {
-        Path path = Services.PLATFORM.configDir().resolve(Hempdustry.MOD_ID + ".json");
-        Optional<HempdustryConfig> parsed = read(path, CODEC, defaultJson());
-        if (parsed.isEmpty()) {
-            return false;
-        }
-        instance = parsed.get().clamped();
-        write(path, instance);
-        return true;
+        return loadFile().applied();
     }
 
     /**
-     * {@code path} decoded by {@code codec} over {@code defaults}: the defaults alone when there is no file, and
-     * nothing — the error logged — when there is one it cannot read. The client's own file is read the same way
+     * What {@link #load()} made of the file: applied in full, applied but for the values {@link #kept()} names, or
+     * not read at all.
+     */
+    public record Outcome(boolean read, List<String> kept) {
+        /** Whether every value in the file was applied. */
+        public boolean applied() {
+            return read && kept.isEmpty();
+        }
+    }
+
+    /** Reads the file as {@link #load()} does, and says what came of it. */
+    public static Outcome loadFile() {
+        Path path = Services.PLATFORM.configDir().resolve(Hempdustry.MOD_ID + ".json");
+        Optional<JsonObject> file = readObject(path);
+        if (file.isEmpty()) {
+            return new Outcome(false, List.of());
+        }
+        JsonObject merged = merge(defaultJson(), file.get());
+        HempdustryConfig running = instance;
+        List<String> kept = new ArrayList<>();
+        HempdustryConfig read = new HempdustryConfig(
+                section(path, merged, "client", Client.CODEC, running.client(), kept),
+                section(path, merged, "effects", Effects.CODEC, running.effects(), kept),
+                section(path, merged, "world", World.CODEC, running.world(), kept),
+                section(path, merged, "infuser", Infuser.CODEC, running.infuser(), kept),
+                section(path, merged, "loot", Loot.CODEC, running.loot(), kept));
+        instance = read.clamped();
+        if (kept.isEmpty()) {
+            write(path, instance);
+        } else {
+            Hempdustry.LOGGER.error("{}: {} could not be read and kept what was running; everything else in the file"
+                    + " was applied, and the file is left as it is so it can be fixed", path, String.join(", ", kept));
+        }
+        return new Outcome(true, List.copyOf(kept));
+    }
+
+    /**
+     * The JSON object in {@code path}: an empty one when there is no file or the file is empty, and nothing — the
+     * error logged — when it is not JSON or not an object. The client's own file is read the same way
      * ({@link ClientConfig}).
      */
-    static <T> Optional<T> read(Path path, Codec<T> codec, JsonObject defaults) {
+    static Optional<JsonObject> readObject(Path path) {
         if (!Files.exists(path)) {
-            return codec.parse(JsonOps.INSTANCE, defaults).result();
+            return Optional.of(new JsonObject());
         }
         try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
             JsonElement json = new GsonBuilder().create().fromJson(reader, JsonElement.class);
-            if (json != null && !json.isJsonObject()) {
+            if (json == null) {
+                return Optional.of(new JsonObject());
+            }
+            if (!json.isJsonObject()) {
                 Hempdustry.LOGGER.error("{} is not a JSON object — nothing in it was applied, and it is"
                         + " left as it is", path);
                 return Optional.empty();
             }
-            return codec.parse(JsonOps.INSTANCE, merge(defaults, json))
-                    .resultOrPartial(error -> Hempdustry.LOGGER.error("Bad value in {}: {} — nothing in it"
-                            + " was applied, and it is left as it is", path, error));
+            return Optional.of(json.getAsJsonObject());
         } catch (IOException | RuntimeException e) {
             Hempdustry.LOGGER.error("Could not read {} — nothing in it was applied, and it is left as it is",
                     path, e);
             return Optional.empty();
         }
+    }
+
+    /**
+     * Section {@code name} of {@code merged} (a file laid over the defaults) decoded by {@code codec}. A value the
+     * codec refuses keeps {@code running}'s value and is added to {@code kept} as {@code section.key}; a section that
+     * is not an object at all keeps {@code running} whole and is added by its name. Each is logged with why.
+     */
+    static <T> T section(Path path, JsonObject merged, String name, Codec<T> codec, T running, List<String> kept) {
+        JsonElement given = merged.get(name);
+        var whole = codec.parse(JsonOps.INSTANCE, given);
+        if (whole.result().isPresent()) {
+            return whole.result().get();
+        }
+        JsonObject base = codec.encodeStart(JsonOps.INSTANCE, running).getOrThrow().getAsJsonObject();
+        if (!(given instanceof JsonObject values)) {
+            Hempdustry.LOGGER.error("Bad value in {}: {} is {}, not a section of settings — it keeps what was running",
+                    path, name, given);
+            kept.add(name);
+            return running;
+        }
+        JsonObject good = base.deepCopy();
+        for (var entry : values.entrySet()) {
+            if (!base.has(entry.getKey())) {
+                continue;
+            }
+            JsonObject one = base.deepCopy();
+            one.add(entry.getKey(), entry.getValue());
+            var error = codec.parse(JsonOps.INSTANCE, one).error();
+            if (error.isPresent()) {
+                Hempdustry.LOGGER.error("Bad value in {}: {}.{} is {} ({}) — it keeps what was running, {}", path, name,
+                        entry.getKey(), entry.getValue(), error.get().message(), base.get(entry.getKey()));
+                kept.add(name + "." + entry.getKey());
+            } else {
+                good.add(entry.getKey(), entry.getValue());
+            }
+        }
+        return codec.parse(JsonOps.INSTANCE, good).getOrThrow();
     }
 
     /** The defaults as JSON, which is the base every file is read on top of. */

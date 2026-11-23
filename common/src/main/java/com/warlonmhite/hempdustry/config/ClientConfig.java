@@ -7,6 +7,8 @@ import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.platform.Services;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -30,8 +32,9 @@ import java.util.Optional;
  * <h2>Read like the main file</h2>
  *
  * Merged over the defaults, so a file missing a key still loads; numbers clamped and logged; every key named in its
- * {@code _comment} with its default and range; a file it cannot read is applied not at all and <b>left exactly as it
- * is</b> ({@link HempdustryConfig#read}).
+ * {@code _comment} with its default and range; a value of the wrong type keeps what was running and the rest is
+ * applied; a file it cannot read is applied not at all; either way the file is <b>left exactly as it is</b>
+ * ({@link HempdustryConfig#load()}).
  *
  * <p>Only a client loads it, when the client starts ({@code HempdustryClient#init}), and {@code /hempdustry reload}
  * re-reads it in a game that did. A dedicated server never reads or writes it: its players' preferences are in
@@ -124,19 +127,24 @@ public final class ClientConfig {
      */
     public static boolean load(Path file, Path legacy) {
         boolean starting = !Files.exists(file);
-        Optional<HempdustryConfig.Client> read = HempdustryConfig.read(starting ? legacy : file, CODEC, defaultJson());
-        if (read.isEmpty()) {
+        Path source = starting ? legacy : file;
+        Optional<JsonObject> json = HempdustryConfig.readObject(source);
+        List<String> kept = new ArrayList<>();
+        HempdustryConfig.Client read = json.isEmpty() ? null : HempdustryConfig.section(source,
+                HempdustryConfig.merge(defaultJson(), json.get()), "client", HempdustryConfig.Client.CODEC,
+                state.client(), kept);
+        if (read == null || !kept.isEmpty()) {
             if (starting) {
-                Hempdustry.LOGGER.error("{} was not started from {}, which could not be read; it will be on the next"
-                        + " start or /hempdustry reload that reads it", file, legacy);
+                Hempdustry.LOGGER.error("{} was not started from {}, which could not be read in full; it will be on the"
+                        + " next start or /hempdustry reload that reads it", file, legacy);
             }
-            state = new State(state.client(), Optional.of(file));
+            state = new State(read == null ? state.client() : read.clamped(), Optional.of(file));
             return false;
         }
         if (starting) {
             Hempdustry.LOGGER.info("Started {} from the client section of {}", file, legacy);
         }
-        state = new State(read.get().clamped(), Optional.of(file));
+        state = new State(read.clamped(), Optional.of(file));
         write(file, state.client());
         return true;
     }

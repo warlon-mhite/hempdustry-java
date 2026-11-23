@@ -65,7 +65,8 @@ public class ModCommands {
                         new PermissionCheck.Require(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS))))
                 .then(Commands.literal("reload").executes(context -> {
                     ServerSettings before = ServerSettings.of(HempdustryConfig.get());
-                    if (!HempdustryConfig.load()) {
+                    HempdustryConfig.Outcome outcome = HempdustryConfig.loadFile();
+                    if (!outcome.read()) {
                         // The file could not be read and was left alone; the settings already running
                         // stay. Say so, or a typo looks exactly like a reload that took.
                         context.getSource().sendFailure(Component.translatable("commands.hempdustry.reload.failed"));
@@ -75,6 +76,12 @@ public class ModCommands {
                     // operators online want to know happened, the way /gamerule announces itself.
                     context.getSource().sendSuccess(
                             () -> Component.translatable("commands.hempdustry.reload"), true);
+                    if (!outcome.kept().isEmpty()) {
+                        // Everything else took; the values named kept what was running, and the file was left
+                        // as it is so they can be fixed.
+                        context.getSource().sendFailure(Component.translatable("commands.hempdustry.reload.kept",
+                                String.join(", ", outcome.kept())));
+                    }
                     // The clients hear the new values at once and the press's platen keeps the new rhythm,
                     // but a recipe viewer built its pages when the recipes came and keeps them until they come
                     // again. Told only to the one who reloaded, and only when a shown value moved.
