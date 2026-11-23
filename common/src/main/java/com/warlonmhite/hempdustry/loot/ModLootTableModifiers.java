@@ -3,6 +3,7 @@ package com.warlonmhite.hempdustry.loot;
 import com.warlonmhite.hempdustry.block.ModCrops;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.platform.Events;
 import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.strain.Strain;
 import net.minecraft.advancements.predicates.BlockPredicate;
@@ -68,6 +69,12 @@ import java.util.function.Predicate;
  * <p>And the mod's music discs in the two chests vanilla stocks its common discs in. Their creeper drop is
  * <em>not</em> here — that comes free from joining {@code #minecraft:creeper_drop_music_discs}
  * (see {@code ModItemTagProvider}), which the vanilla creeper table already rolls.
+ *
+ * <p>Each kind of addition has a switch of its own under {@code loot} in the config, all of them under
+ * {@code loot.enabled}: {@code grassSeeds}, {@code chestSeeds} (every seed stash in a chest, the shipwreck's fibre-crop
+ * seeds too), {@code chestBuds} (buds in the Ancient City, buried treasure and a bastion's treasure, schwag in a
+ * shipwreck), {@code archaeologySeeds} (brushing and a sniffer's dig), {@code barterSeeds}, {@code shipwreckFiber},
+ * {@code fisherBait}, {@code fishingJunk} and {@code discs}. See {@link #modify}.
  */
 public class ModLootTableModifiers {
 
@@ -413,171 +420,188 @@ public class ModLootTableModifiers {
     }
 
     public static void modifyLootTables() {
-        Services.EVENTS.onLootTableLoad((key, builtIn, registries, table) -> {
-            if (!builtIn) {
-                // Don't touch datapack overrides, only the game's and the mods' tables: a pack
-                // curator who replaces a chest table meant to replace it, and an injection they cannot
-                // see is not something to hand them. Mojang's experiment packs count as the game's --
-                // Villager Trade Rebalance replaces the desert temple, mineshaft and outpost chests,
-                // and a player who turns it on keeps the mod's loot in them (LootTableOrigin).
-                return;
-            }
-            // A pack curator can override a loot *table* with a datapack, but not an injection like
-            // this one -- which is exactly why the switch exists. Read per event rather than cached:
-            // loot tables are rebuilt on /reload, so the setting takes effect with everything else.
-            if (!HempdustryConfig.get().loot().enabled()) {
-                return;
-            }
-            if (GRASS_SOURCES.containsKey(key)) {
-                Holder<Enchantment> fortune =
-                        registries.lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.FORTUNE);
-                // One entry per active strain at equal weight inside a single roll: the *chance* of
-                // finding a hemp seed stays GRASS_SEED_CHANCE no matter how many strains exist, and
-                // which strain you get is a coin flip. (A pool picks exactly one of its entries.)
-                LootPool.Builder pool = LootPool.lootPool()
-                        .setRolls(ContextIntProviders.exactly(1))
-                        .when(onlyTheHalfThatWasBroken(registries, GRASS_SOURCES.get(key)))
-                        .when(withoutShears(registries))
-                        .when(LootItemRandomChanceCondition.randomChance(chance(GRASS_SEED_CHANCE)));
-                // Driven off the loaded strain registry, so a datapack strain's seeds appear in
-                // grass without touching this file.
-                // Seedless strains — the hash family — are simply not in the pool: there is no
-                // seed to find, and a pool entry per plant strain is what keeps the coin flip fair.
-                // Nor is a region's own: Beldía is found where it grows, nothing from warped nylium
-                // grows in a meadow's grass, and Ruderalis grows nowhere until it is dug up. Nor is
-                // Cherry Wine's, which the chests share but the grass leaves to its grove.
-                for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    strain.value().seedItem().filter(seeds -> ModCrops.home(seeds) == ModCrops.Home.SHARED)
-                            .ifPresent(seeds -> pool.add(LootItem.lootTableItem(seeds)
-                            .apply(ApplyBonusCount.addUniformBonusCount(fortune, 2))
-                            .apply(ApplyExplosionDecay.explosionDecay())));
-                }
-                table.addPool(pool);
-            } else if (CHEST_SOURCES.contains(key)) {
-                table.addPool(seedStash(registries, CHEST_SEED_CHANCE, seeds -> !isRegionBound(seeds)));
-                if (key.equals(BuiltInLootTables.WOODLAND_MANSION)) {
-                    table.addPool(seedStash(registries, MANSION_SEED_CHANCE, from(ModCrops.Home.PALE)));
-                }
-            } else if (key.equals(BuiltInLootTables.ABANDONED_CAMP_COMMON_CHEST)) {
-                table.addPool(seedStash(registries, PALE_CAMP_SEED_CHANCE, from(ModCrops.Home.PALE))
-                        .when(LocationCheck.checkLocation(LocationPredicate.Builder.inBiome(
-                                registries.lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.PALE_GARDEN)))));
-                // A pool of its own, after the pale garden's: no draw of the pools before it moves.
-                table.addPool(seedStash(registries, GROVE_CAMP_SEED_CHANCE, from(ModCrops.Home.GROVE))
-                        .when(LocationCheck.checkLocation(LocationPredicate.Builder.inBiome(
-                                registries.lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.CHERRY_GROVE)))));
-            } else if (VILLAGE_HOUSE_SOURCES.contains(key)) {
-                table.addPool(seedStash(registries, VILLAGE_HOUSE_SEED_CHANCE, seeds -> !isRegionBound(seeds)));
-            } else if (key.equals(BuiltInLootTables.DESERT_PYRAMID)) {
-                table.addPool(seedStash(registries, DESERT_TEMPLE_SEED_CHANCE, from(ModCrops.Home.DESERT)));
-            } else if (key.equals(BuiltInLootTables.VILLAGE_DESERT_HOUSE)) {
-                table.addPool(seedStash(registries, DESERT_HOUSE_SEED_CHANCE, from(ModCrops.Home.DESERT)));
-            } else if (NETHER_CHEST_SOURCES.contains(key)) {
-                table.addPool(seedStash(registries, CHEST_SEED_CHANCE, from(ModCrops.Home.NETHER)));
-            } else if (DESERT_ARCHAEOLOGY_SOURCES.contains(key)) {
-                // Into vanilla's one brushing pool, as a weighted entry beside the sherds.
-                for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    strain.value().seedItem().filter(from(ModCrops.Home.DESERT))
-                            .ifPresent(seeds -> table.addToEveryPool(LootItem.lootTableItem(seeds)
-                                    .setWeight(DESERT_ARCHAEOLOGY_SEED_WEIGHT)));
-                }
-            } else if (key.equals(BuiltInLootTables.TRAIL_RUINS_ARCHAEOLOGY_COMMON)) {
-                // Into vanilla's one brushing pool, beside its wheat and beetroot seeds.
-                for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    strain.value().seedItem().filter(from(ModCrops.Home.BURIED))
-                            .ifPresent(seeds -> table.addToEveryPool(LootItem.lootTableItem(seeds)
-                                    .setWeight(TRAIL_RUINS_SEED_WEIGHT)));
-                }
-            } else if (key.equals(BuiltInLootTables.SNIFFER_DIGGING)) {
-                // A second pool, never a third entry in vanilla's -- see SNIFFER_SEED_CHANCE.
-                LootPool.Builder pool = LootPool.lootPool()
-                        .setRolls(ContextIntProviders.exactly(1))
-                        .when(LootItemRandomChanceCondition.randomChance(chance(SNIFFER_SEED_CHANCE)));
-                for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    strain.value().seedItem().filter(from(ModCrops.Home.BURIED))
-                            .ifPresent(seeds -> pool.add(LootItem.lootTableItem(seeds)));
-                }
-                table.addPool(pool);
-            } else if (key.equals(BuiltInLootTables.BASTION_HOGLIN_STABLE)) {
-                table.addPool(seedStash(registries, HOGLIN_STABLE_SEED_CHANCE, from(ModCrops.Home.STABLE)));
-            } else if (key.equals(BuiltInLootTables.END_CITY_TREASURE)) {
-                table.addPool(seedStash(registries, END_CITY_SEED_CHANCE, from(ModCrops.Home.END)));
-            } else if (key.equals(BuiltInLootTables.ANCIENT_CITY)) {
-                // Buds, never seeds: a city's chests hold its smoke, its ice box its seed.
-                LootPool.Builder pool = LootPool.lootPool()
-                        .setRolls(ContextIntProviders.exactly(1))
-                        .when(LootItemRandomChanceCondition.randomChance(chance(ANCIENT_CITY_BUD_CHANCE)));
-                for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    Strain value = strain.value();
-                    if (value.seedItem().filter(from(ModCrops.Home.CITY)).isPresent()) {
-                        pool.add(LootItem.lootTableItem(value.buds())
-                                .apply(SetItemCountFunction.setCount(ContextIntProviders.between(1, 3)))
-                                .apply(RollGeneticsFunction.rollGenetics()));
-                    }
-                }
-                table.addPool(pool);
-            } else if (key.equals(BuiltInLootTables.ANCIENT_CITY_ICE_BOX)) {
-                LootPool.Builder pool = LootPool.lootPool()
-                        .setRolls(ContextIntProviders.exactly(1))
-                        .when(LootItemRandomChanceCondition.randomChance(chance(ICE_BOX_SEED_CHANCE)));
-                for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    strain.value().seedItem().filter(from(ModCrops.Home.CITY))
-                            .ifPresent(seeds -> pool.add(LootItem.lootTableItem(seeds)
-                                    .apply(SetItemCountFunction.setCount(ContextIntProviders.between(2, 4)))));
-                }
-                table.addPool(pool);
-            } else if (OCEAN_RUIN_SOURCES.contains(key)) {
-                table.addPool(seedStash(registries, OCEAN_RUIN_SEED_CHANCE, from(ModCrops.Home.OCEAN))
-                        .when(LocationCheck.checkLocation(LocationPredicate.Builder.location().setBiomes(
-                                registries.lookupOrThrow(Registries.BIOME).getOrThrow(ModTags.Biomes.MAUI_WOWIE_GEN)))));
-            } else if (key.equals(BuiltInLootTables.OCEAN_RUIN_WARM_ARCHAEOLOGY)) {
-                // Into vanilla's one brushing pool, beside its wheat.
-                for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    strain.value().seedItem().filter(from(ModCrops.Home.OCEAN))
-                            .ifPresent(seeds -> table.addToEveryPool(LootItem.lootTableItem(seeds)
-                                    .setWeight(WARM_RUIN_ARCHAEOLOGY_SEED_WEIGHT)));
-                }
-            } else if (key.equals(BuiltInLootTables.BURIED_TREASURE)) {
-                // Buds, never seeds: the ruins keep the seed, the treasure the smoke.
-                LootPool.Builder pool = LootPool.lootPool()
-                        .setRolls(ContextIntProviders.exactly(1))
-                        .when(LootItemRandomChanceCondition.randomChance(chance(BURIED_TREASURE_BUD_CHANCE)));
-                for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    Strain value = strain.value();
-                    if (value.seedItem().filter(from(ModCrops.Home.OCEAN)).isPresent()) {
-                        pool.add(LootItem.lootTableItem(value.buds())
-                                .apply(SetItemCountFunction.setCount(ContextIntProviders.between(1, 3)))
-                                .apply(RollGeneticsFunction.rollGenetics()));
-                    }
-                }
-                table.addPool(pool);
-            } else if (key.equals(BuiltInLootTables.BASTION_TREASURE)) {
-                LootPool.Builder pool = LootPool.lootPool()
-                        .setRolls(ContextIntProviders.exactly(1))
-                        .when(LootItemRandomChanceCondition.randomChance(chance(BASTION_TREASURE_BUD_CHANCE)));
-                for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    Strain value = strain.value();
-                    if (value.seedItem().filter(from(ModCrops.Home.NETHER)).isPresent()) {
-                        pool.add(LootItem.lootTableItem(value.buds())
-                                .apply(SetItemCountFunction.setCount(ContextIntProviders.between(1, 3)))
-                                .apply(RollGeneticsFunction.rollGenetics()));
-                    }
-                }
-                table.addPool(pool);
-            } else if (key.equals(BuiltInLootTables.PIGLIN_BARTERING)) {
-                // Into vanilla's one bartering pool, as a weighted entry beside soul sand and the rest,
-                // rather than a second pool -- which would hand one over on top of every barter.
-                for (Holder.Reference<Strain> strain : Strain.all(registries)) {
-                    strain.value().seedItem().filter(from(ModCrops.Home.NETHER))
-                            .ifPresent(seeds -> table.addToEveryPool(LootItem.lootTableItem(seeds)
-                                    .setWeight(BARTER_SEED_WEIGHT)
-                                    .apply(SetItemCountFunction.setCount(ContextIntProviders.between(1, 3)))));
-                }
-            }
+        Services.EVENTS.onLootTableLoad(ModLootTableModifiers::modify);
+    }
 
-            // Independent of the seed branch above — a shipwreck's supply chest is also a seed chest,
-            // and a wreck holding both rope and a few seeds is exactly what a wreck should hold.
-            if (FIBER_CHEST_SOURCES.contains(key)) {
+    /**
+     * What the mod adds to the table {@code key} as it loads, as the loot event hands it over: at start and on every
+     * {@code /reload}, never on {@code /hempdustry reload}. Each kind of addition has its own switch under
+     * {@code loot}, all of them under {@code loot.enabled}; one switched off adds nothing, and the others add exactly
+     * what they add with it on, in the same order.
+     */
+    public static void modify(ResourceKey<LootTable> key, boolean builtIn, HolderGetter.Provider registries,
+                              Events.LootTableEditor table) {
+        if (!builtIn) {
+            // Don't touch datapack overrides, only the game's and the mods' tables: a pack
+            // curator who replaces a chest table meant to replace it, and an injection they cannot
+            // see is not something to hand them. Mojang's experiment packs count as the game's --
+            // Villager Trade Rebalance replaces the desert temple, mineshaft and outpost chests,
+            // and a player who turns it on keeps the mod's loot in them (LootTableOrigin).
+            return;
+        }
+        // A pack curator can override a loot *table* with a datapack, but not an injection like
+        // this one -- which is exactly why the switches exist. Read per event rather than cached:
+        // loot tables are rebuilt on /reload, so a change takes effect with everything else then (not on
+        // /hempdustry reload, which reads the config file and rebuilds nothing).
+        HempdustryConfig.Loot loot = HempdustryConfig.get().loot();
+        if (!loot.enabled()) {
+            return;
+        }
+        // One switch per kind of addition. The tables each branch answers for are disjoint, so a branch switched off
+        // falls through the rest without a match, and adds nothing.
+        if (GRASS_SOURCES.containsKey(key) && loot.grassSeeds()) {
+            Holder<Enchantment> fortune =
+                    registries.lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.FORTUNE);
+            // One entry per active strain at equal weight inside a single roll: the *chance* of
+            // finding a hemp seed stays GRASS_SEED_CHANCE no matter how many strains exist, and
+            // which strain you get is a coin flip. (A pool picks exactly one of its entries.)
+            LootPool.Builder pool = LootPool.lootPool()
+                    .setRolls(ContextIntProviders.exactly(1))
+                    .when(onlyTheHalfThatWasBroken(registries, GRASS_SOURCES.get(key)))
+                    .when(withoutShears(registries))
+                    .when(LootItemRandomChanceCondition.randomChance(chance(GRASS_SEED_CHANCE)));
+            // Driven off the loaded strain registry, so a datapack strain's seeds appear in
+            // grass without touching this file.
+            // Seedless strains — the hash family — are simply not in the pool: there is no
+            // seed to find, and a pool entry per plant strain is what keeps the coin flip fair.
+            // Nor is a region's own: Beldía is found where it grows, nothing from warped nylium
+            // grows in a meadow's grass, and Ruderalis grows nowhere until it is dug up. Nor is
+            // Cherry Wine's, which the chests share but the grass leaves to its grove.
+            for (Holder.Reference<Strain> strain : Strain.all(registries)) {
+                strain.value().seedItem().filter(seeds -> ModCrops.home(seeds) == ModCrops.Home.SHARED)
+                        .ifPresent(seeds -> pool.add(LootItem.lootTableItem(seeds)
+                        .apply(ApplyBonusCount.addUniformBonusCount(fortune, 2))
+                        .apply(ApplyExplosionDecay.explosionDecay())));
+            }
+            table.addPool(pool);
+        } else if (CHEST_SOURCES.contains(key) && loot.chestSeeds()) {
+            table.addPool(seedStash(registries, CHEST_SEED_CHANCE, seeds -> !isRegionBound(seeds)));
+            if (key.equals(BuiltInLootTables.WOODLAND_MANSION)) {
+                table.addPool(seedStash(registries, MANSION_SEED_CHANCE, from(ModCrops.Home.PALE)));
+            }
+        } else if (key.equals(BuiltInLootTables.ABANDONED_CAMP_COMMON_CHEST) && loot.chestSeeds()) {
+            table.addPool(seedStash(registries, PALE_CAMP_SEED_CHANCE, from(ModCrops.Home.PALE))
+                    .when(LocationCheck.checkLocation(LocationPredicate.Builder.inBiome(
+                            registries.lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.PALE_GARDEN)))));
+            // A pool of its own, after the pale garden's: no draw of the pools before it moves.
+            table.addPool(seedStash(registries, GROVE_CAMP_SEED_CHANCE, from(ModCrops.Home.GROVE))
+                    .when(LocationCheck.checkLocation(LocationPredicate.Builder.inBiome(
+                            registries.lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.CHERRY_GROVE)))));
+        } else if (VILLAGE_HOUSE_SOURCES.contains(key) && loot.chestSeeds()) {
+            table.addPool(seedStash(registries, VILLAGE_HOUSE_SEED_CHANCE, seeds -> !isRegionBound(seeds)));
+        } else if (key.equals(BuiltInLootTables.DESERT_PYRAMID) && loot.chestSeeds()) {
+            table.addPool(seedStash(registries, DESERT_TEMPLE_SEED_CHANCE, from(ModCrops.Home.DESERT)));
+        } else if (key.equals(BuiltInLootTables.VILLAGE_DESERT_HOUSE) && loot.chestSeeds()) {
+            table.addPool(seedStash(registries, DESERT_HOUSE_SEED_CHANCE, from(ModCrops.Home.DESERT)));
+        } else if (NETHER_CHEST_SOURCES.contains(key) && loot.chestSeeds()) {
+            table.addPool(seedStash(registries, CHEST_SEED_CHANCE, from(ModCrops.Home.NETHER)));
+        } else if (DESERT_ARCHAEOLOGY_SOURCES.contains(key) && loot.archaeologySeeds()) {
+            // Into vanilla's one brushing pool, as a weighted entry beside the sherds.
+            for (Holder.Reference<Strain> strain : Strain.all(registries)) {
+                strain.value().seedItem().filter(from(ModCrops.Home.DESERT))
+                        .ifPresent(seeds -> table.addToEveryPool(LootItem.lootTableItem(seeds)
+                                .setWeight(DESERT_ARCHAEOLOGY_SEED_WEIGHT)));
+            }
+        } else if (key.equals(BuiltInLootTables.TRAIL_RUINS_ARCHAEOLOGY_COMMON) && loot.archaeologySeeds()) {
+            // Into vanilla's one brushing pool, beside its wheat and beetroot seeds.
+            for (Holder.Reference<Strain> strain : Strain.all(registries)) {
+                strain.value().seedItem().filter(from(ModCrops.Home.BURIED))
+                        .ifPresent(seeds -> table.addToEveryPool(LootItem.lootTableItem(seeds)
+                                .setWeight(TRAIL_RUINS_SEED_WEIGHT)));
+            }
+        } else if (key.equals(BuiltInLootTables.SNIFFER_DIGGING) && loot.archaeologySeeds()) {
+            // A second pool, never a third entry in vanilla's -- see SNIFFER_SEED_CHANCE.
+            LootPool.Builder pool = LootPool.lootPool()
+                    .setRolls(ContextIntProviders.exactly(1))
+                    .when(LootItemRandomChanceCondition.randomChance(chance(SNIFFER_SEED_CHANCE)));
+            for (Holder.Reference<Strain> strain : Strain.all(registries)) {
+                strain.value().seedItem().filter(from(ModCrops.Home.BURIED))
+                        .ifPresent(seeds -> pool.add(LootItem.lootTableItem(seeds)));
+            }
+            table.addPool(pool);
+        } else if (key.equals(BuiltInLootTables.BASTION_HOGLIN_STABLE) && loot.chestSeeds()) {
+            table.addPool(seedStash(registries, HOGLIN_STABLE_SEED_CHANCE, from(ModCrops.Home.STABLE)));
+        } else if (key.equals(BuiltInLootTables.END_CITY_TREASURE) && loot.chestSeeds()) {
+            table.addPool(seedStash(registries, END_CITY_SEED_CHANCE, from(ModCrops.Home.END)));
+        } else if (key.equals(BuiltInLootTables.ANCIENT_CITY) && loot.chestBuds()) {
+            // Buds, never seeds: a city's chests hold its smoke, its ice box its seed.
+            LootPool.Builder pool = LootPool.lootPool()
+                    .setRolls(ContextIntProviders.exactly(1))
+                    .when(LootItemRandomChanceCondition.randomChance(chance(ANCIENT_CITY_BUD_CHANCE)));
+            for (Holder.Reference<Strain> strain : Strain.all(registries)) {
+                Strain value = strain.value();
+                if (value.seedItem().filter(from(ModCrops.Home.CITY)).isPresent()) {
+                    pool.add(LootItem.lootTableItem(value.buds())
+                            .apply(SetItemCountFunction.setCount(ContextIntProviders.between(1, 3)))
+                            .apply(RollGeneticsFunction.rollGenetics()));
+                }
+            }
+            table.addPool(pool);
+        } else if (key.equals(BuiltInLootTables.ANCIENT_CITY_ICE_BOX) && loot.chestSeeds()) {
+            LootPool.Builder pool = LootPool.lootPool()
+                    .setRolls(ContextIntProviders.exactly(1))
+                    .when(LootItemRandomChanceCondition.randomChance(chance(ICE_BOX_SEED_CHANCE)));
+            for (Holder.Reference<Strain> strain : Strain.all(registries)) {
+                strain.value().seedItem().filter(from(ModCrops.Home.CITY))
+                        .ifPresent(seeds -> pool.add(LootItem.lootTableItem(seeds)
+                                .apply(SetItemCountFunction.setCount(ContextIntProviders.between(2, 4)))));
+            }
+            table.addPool(pool);
+        } else if (OCEAN_RUIN_SOURCES.contains(key) && loot.chestSeeds()) {
+            table.addPool(seedStash(registries, OCEAN_RUIN_SEED_CHANCE, from(ModCrops.Home.OCEAN))
+                    .when(LocationCheck.checkLocation(LocationPredicate.Builder.location().setBiomes(
+                            registries.lookupOrThrow(Registries.BIOME).getOrThrow(ModTags.Biomes.MAUI_WOWIE_GEN)))));
+        } else if (key.equals(BuiltInLootTables.OCEAN_RUIN_WARM_ARCHAEOLOGY) && loot.archaeologySeeds()) {
+            // Into vanilla's one brushing pool, beside its wheat.
+            for (Holder.Reference<Strain> strain : Strain.all(registries)) {
+                strain.value().seedItem().filter(from(ModCrops.Home.OCEAN))
+                        .ifPresent(seeds -> table.addToEveryPool(LootItem.lootTableItem(seeds)
+                                .setWeight(WARM_RUIN_ARCHAEOLOGY_SEED_WEIGHT)));
+            }
+        } else if (key.equals(BuiltInLootTables.BURIED_TREASURE) && loot.chestBuds()) {
+            // Buds, never seeds: the ruins keep the seed, the treasure the smoke.
+            LootPool.Builder pool = LootPool.lootPool()
+                    .setRolls(ContextIntProviders.exactly(1))
+                    .when(LootItemRandomChanceCondition.randomChance(chance(BURIED_TREASURE_BUD_CHANCE)));
+            for (Holder.Reference<Strain> strain : Strain.all(registries)) {
+                Strain value = strain.value();
+                if (value.seedItem().filter(from(ModCrops.Home.OCEAN)).isPresent()) {
+                    pool.add(LootItem.lootTableItem(value.buds())
+                            .apply(SetItemCountFunction.setCount(ContextIntProviders.between(1, 3)))
+                            .apply(RollGeneticsFunction.rollGenetics()));
+                }
+            }
+            table.addPool(pool);
+        } else if (key.equals(BuiltInLootTables.BASTION_TREASURE) && loot.chestBuds()) {
+            LootPool.Builder pool = LootPool.lootPool()
+                    .setRolls(ContextIntProviders.exactly(1))
+                    .when(LootItemRandomChanceCondition.randomChance(chance(BASTION_TREASURE_BUD_CHANCE)));
+            for (Holder.Reference<Strain> strain : Strain.all(registries)) {
+                Strain value = strain.value();
+                if (value.seedItem().filter(from(ModCrops.Home.NETHER)).isPresent()) {
+                    pool.add(LootItem.lootTableItem(value.buds())
+                            .apply(SetItemCountFunction.setCount(ContextIntProviders.between(1, 3)))
+                            .apply(RollGeneticsFunction.rollGenetics()));
+                }
+            }
+            table.addPool(pool);
+        } else if (key.equals(BuiltInLootTables.PIGLIN_BARTERING) && loot.barterSeeds()) {
+            // Into vanilla's one bartering pool, as a weighted entry beside soul sand and the rest,
+            // rather than a second pool -- which would hand one over on top of every barter.
+            for (Holder.Reference<Strain> strain : Strain.all(registries)) {
+                strain.value().seedItem().filter(from(ModCrops.Home.NETHER))
+                        .ifPresent(seeds -> table.addToEveryPool(LootItem.lootTableItem(seeds)
+                                .setWeight(BARTER_SEED_WEIGHT)
+                                .apply(SetItemCountFunction.setCount(ContextIntProviders.between(1, 3)))));
+            }
+        }
+
+        // Independent of the seed branch above — a shipwreck's supply chest is also a seed chest,
+        // and a wreck holding both rope and a few seeds is exactly what a wreck should hold.
+        if (FIBER_CHEST_SOURCES.contains(key)) {
+            // Three switches over one chest: the stores (shipwreckFiber), the smuggled schwag (chestBuds) and the
+            // fibre crop's seeds (chestSeeds). One switched off takes its own pools away and leaves the others in.
+            if (loot.shipwreckFiber()) {
                 table.addPool(LootPool.lootPool()
                         .setRolls(ContextIntProviders.exactly(1))
                         .when(LootItemRandomChanceCondition.randomChance(chance(SHIPWRECK_FIBER_CHANCE)))
@@ -587,11 +611,15 @@ public class ModLootTableModifiers {
                         .add(LootItem.lootTableItem(ModItems.HEMP_CANVAS)
                                 .setWeight(SHIPWRECK_CANVAS_WEIGHT)
                                 .apply(SetItemCountFunction.setCount(ContextIntProviders.between(1, 3)))));
+            }
+            if (loot.chestBuds()) {
                 table.addPool(LootPool.lootPool()
                         .setRolls(ContextIntProviders.exactly(1))
                         .when(LootItemRandomChanceCondition.randomChance(chance(SHIPWRECK_SCHWAG_CHANCE)))
                         .add(LootItem.lootTableItem(ModItems.SCHWAG)
                                 .apply(SetItemCountFunction.setCount(ContextIntProviders.between(1, 4)))));
+            }
+            if (loot.chestSeeds()) {
                 table.addPool(LootPool.lootPool()
                         .setRolls(ContextIntProviders.exactly(1))
                         .when(LootItemRandomChanceCondition.randomChance(chance(SHIPWRECK_INDUSTRIAL_SEED_CHANCE)))
@@ -606,31 +634,31 @@ public class ModLootTableModifiers {
                                             .apply(SetItemCountFunction.setCount(ContextIntProviders.between(1, 2))))));
                 }
             }
+        }
 
-            // Both of these have exactly one pool, so the hemp goes in beside vanilla's own entries
-            // as a weight, the way the desert brushing tables take Beldía.
-            if (key.equals(BuiltInLootTables.VILLAGE_FISHER)) {
-                table.addToEveryPool(LootItem.lootTableItem(ModItems.TOASTED_HEMP_SEEDS)
-                        .setWeight(FISHER_BAIT_WEIGHT)
-                        .apply(SetItemCountFunction.setCount(ContextIntProviders.between(1, 3))));
+        // Both of these have exactly one pool, so the hemp goes in beside vanilla's own entries
+        // as a weight, the way the desert brushing tables take Beldía.
+        if (key.equals(BuiltInLootTables.VILLAGE_FISHER) && loot.fisherBait()) {
+            table.addToEveryPool(LootItem.lootTableItem(ModItems.TOASTED_HEMP_SEEDS)
+                    .setWeight(FISHER_BAIT_WEIGHT)
+                    .apply(SetItemCountFunction.setCount(ContextIntProviders.between(1, 3))));
+        }
+        if (key.equals(BuiltInLootTables.FISHING_JUNK) && loot.fishingJunk()) {
+            table.addToEveryPool(LootItem.lootTableItem(ModItems.HEMP_FIBER)
+                    .setWeight(FISHING_JUNK_FIBER_WEIGHT));
+        }
+        // Independent of the seed branch above — the two disc chests are also seed chests.
+        // One entry per disc at equal weight inside a single roll, the same shape as the seed
+        // pool above: the *chance* of finding one of our discs stays CHEST_DISC_CHANCE however
+        // many we ship, and which one you get is a coin flip.
+        if (DISC_CHEST_SOURCES.contains(key) && loot.discs()) {
+            LootPool.Builder pool = LootPool.lootPool()
+                    .setRolls(ContextIntProviders.exactly(1))
+                    .when(LootItemRandomChanceCondition.randomChance(chance(CHEST_DISC_CHANCE)));
+            for (Item disc : ModItems.MUSIC_DISCS) {
+                pool.add(LootItem.lootTableItem(disc));
             }
-            if (key.equals(BuiltInLootTables.FISHING_JUNK)) {
-                table.addToEveryPool(LootItem.lootTableItem(ModItems.HEMP_FIBER)
-                        .setWeight(FISHING_JUNK_FIBER_WEIGHT));
-            }
-            // Independent of the seed branch above — the two disc chests are also seed chests.
-            // One entry per disc at equal weight inside a single roll, the same shape as the seed
-            // pool above: the *chance* of finding one of our discs stays CHEST_DISC_CHANCE however
-            // many we ship, and which one you get is a coin flip.
-            if (DISC_CHEST_SOURCES.contains(key)) {
-                LootPool.Builder pool = LootPool.lootPool()
-                        .setRolls(ContextIntProviders.exactly(1))
-                        .when(LootItemRandomChanceCondition.randomChance(chance(CHEST_DISC_CHANCE)));
-                for (Item disc : ModItems.MUSIC_DISCS) {
-                    pool.add(LootItem.lootTableItem(disc));
-                }
-                table.addPool(pool);
-            }
-        });
+            table.addPool(pool);
+        }
     }
 }

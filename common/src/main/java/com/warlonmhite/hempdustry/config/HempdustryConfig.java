@@ -232,10 +232,26 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
                     + "earliest a batch can be pulled, 5 minutes; fullTimeTicks (default 18000, 40-32000, and at "
                     + "least minTimeTicks + 20) a full simmer, 15 minutes. The ceiling, 32000 (about 26 minutes), "
                     + "is as long a simmer as the screen can be told about.");
-            comment(root, "loot", "The mod's additions to vanilla loot tables: hemp seeds in grass and chests, "
-                    + "music discs in chests, shipwreck fibre. enabled (default true): false removes all of them. "
+            comment(root, "loot", "The mod's additions to vanilla loot tables, each with a switch of its own. "
+                    + "grassSeeds (default true): hemp seeds from broken tall grass and large ferns. "
+                    + "chestSeeds (default true): seed stashes in chests: dungeons, mineshafts, mansions, outposts, "
+                    + "shipwrecks, plains, taiga and desert village houses, the desert temple, the Nether's fortresses "
+                    + "and bastions, end cities, abandoned camps, the Ancient City's ice box and ocean ruins; most "
+                    + "strains that grow wild in one place only are found this way too. "
+                    + "chestBuds (default true): buds in Ancient City chests, buried treasure and bastion treasure, and "
+                    + "schwag in shipwreck supply chests. "
+                    + "archaeologySeeds (default true): seeds in brushed suspicious sand and gravel (desert well and "
+                    + "temple, trail ruins, warm ocean ruins) and in a sniffer's dig. "
+                    + "barterSeeds (default true): Nether seeds among a piglin's barters. "
+                    + "shipwreckFiber (default true): hemp fibre and canvas in shipwreck supply chests. "
+                    + "fisherBait (default true): toasted hemp seeds in a village fisher's chest. "
+                    + "fishingJunk (default true): hemp fibre among fishing junk. "
+                    + "discs (default true): the mod's music discs in dungeon and mansion chests. "
+                    + "enabled (default true): false removes all of them, whatever the switches say. "
                     + "chanceMultiplier (default 1.0, 0.0-10.0) scales every chance they are added with; each "
-                    + "chance stays between 0 and 1. Creepers dropping the two discs is the "
+                    + "chance stays between 0 and 1. Loot tables are built when the server starts and on /reload, so "
+                    + "a change to this section takes effect on the next /reload or restart; /hempdustry reload "
+                    + "alone does not rebuild them. Creepers dropping the two discs is the "
                     + "#minecraft:creeper_drop_music_discs tag, not a setting here.");
             Files.createDirectories(path.getParent());
             // disableHtmlEscaping, or every "=" and "'" in the comments is written as \u003d and
@@ -509,20 +525,45 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
     }
 
     /**
+     * The additions to vanilla's loot tables. All read as the tables load ({@code ModLootTableModifiers#modify}), so a
+     * change waits for the next {@code /reload} or a restart; {@code /hempdustry reload} rebuilds no table.
+     *
      * @param enabled          whether the mod adds anything to vanilla loot tables at all
      * @param chanceMultiplier scales every injected chance; the results are still clamped to 0–1
+     * @param grassSeeds       hemp seeds from tall grass and large ferns
+     * @param chestSeeds       every seed stash the mod puts in a chest, the shipwreck's fibre-crop seeds included
+     * @param chestBuds        buds in the Ancient City's, buried treasure's and a bastion's treasure chests, and
+     *                         schwag in a shipwreck's supply chest
+     * @param archaeologySeeds seeds among what a brushed suspicious block and a sniffer's dig give
+     * @param barterSeeds      Nether seeds among a piglin's barters
+     * @param shipwreckFiber   hemp fibre and canvas in a shipwreck's supply chest
+     * @param fisherBait       toasted hemp seeds in a village fisher's chest
+     * @param fishingJunk      hemp fibre among fishing junk
+     * @param discs            the mod's music discs in dungeon and mansion chests
      */
-    public record Loot(boolean enabled, double chanceMultiplier) {
+    public record Loot(boolean enabled, double chanceMultiplier, boolean grassSeeds, boolean chestSeeds,
+                       boolean chestBuds, boolean archaeologySeeds, boolean barterSeeds, boolean shipwreckFiber,
+                       boolean fisherBait, boolean fishingJunk, boolean discs) {
 
-        public static final Loot DEFAULT = new Loot(true, 1.0);
+        public static final Loot DEFAULT = new Loot(true, 1.0, true, true, true, true, true, true, true, true, true);
 
         public static final Codec<Loot> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.BOOL.fieldOf("enabled").forGetter(Loot::enabled),
-                Codec.DOUBLE.fieldOf("chanceMultiplier").forGetter(Loot::chanceMultiplier)
+                Codec.DOUBLE.fieldOf("chanceMultiplier").forGetter(Loot::chanceMultiplier),
+                Codec.BOOL.fieldOf("grassSeeds").forGetter(Loot::grassSeeds),
+                Codec.BOOL.fieldOf("chestSeeds").forGetter(Loot::chestSeeds),
+                Codec.BOOL.fieldOf("chestBuds").forGetter(Loot::chestBuds),
+                Codec.BOOL.fieldOf("archaeologySeeds").forGetter(Loot::archaeologySeeds),
+                Codec.BOOL.fieldOf("barterSeeds").forGetter(Loot::barterSeeds),
+                Codec.BOOL.fieldOf("shipwreckFiber").forGetter(Loot::shipwreckFiber),
+                Codec.BOOL.fieldOf("fisherBait").forGetter(Loot::fisherBait),
+                Codec.BOOL.fieldOf("fishingJunk").forGetter(Loot::fishingJunk),
+                Codec.BOOL.fieldOf("discs").forGetter(Loot::discs)
         ).apply(instance, Loot::new));
 
         Loot clamped() {
-            return new Loot(enabled, clampDouble("loot.chanceMultiplier", chanceMultiplier, 0.0, 10.0));
+            return new Loot(enabled, clampDouble("loot.chanceMultiplier", chanceMultiplier, 0.0, 10.0), grassSeeds,
+                    chestSeeds, chestBuds, archaeologySeeds, barterSeeds, shipwreckFiber, fisherBait, fishingJunk, discs);
         }
     }
 }

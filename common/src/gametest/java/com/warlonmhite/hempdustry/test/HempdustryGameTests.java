@@ -216,6 +216,7 @@ public final class HempdustryGameTests {
         register("a_client_section_without_the_puff_switches_loads",
                 ConfigGameTest::aClientSectionWithoutThePuffSwitchesLoads);
         register("a_world_section_without_plant_stress_loads", ConfigGameTest::aWorldSectionWithoutPlantStressLoads);
+        register("a_loot_section_without_its_switches_loads", ConfigGameTest::aLootSectionWithoutItsSwitchesLoads);
         register("a_hemp_boat_does_not_stop_the_data_fixer", DataFixerGameTest::aHempBoatDoesNotStopTheDataFixer);
         register("one_bud_per_slot_is_the_dose", PackingGameTest::oneBudPerSlotIsTheDose);
         register("a_strain_reusing_items_keeps_the_tab_whole",
@@ -239,6 +240,7 @@ public final class HempdustryGameTests {
         register("a_hemp_shelf_is_a_vanilla_shelf", FurnitureGameTest::aHempShelfIsAVanillaShelf);
         register("a_hemp_harness_fits_a_happy_ghast", FurnitureGameTest::aHempHarnessFitsAHappyGhast);
         register("hemp_turns_up_where_it_was_kept", LootGameTest::hempTurnsUpWhereItWasKept);
+        register("each_loot_switch_takes_only_its_own", LootGameTest::eachLootSwitchTakesOnlyItsOwn);
         register("the_experiments_chests_hold_hemp_too", LootGameTest::theExperimentsChestsHoldHempToo);
         register("a_datapacks_chest_is_left_alone", LootGameTest::aDatapacksChestIsLeftAlone);
         register("a_ready_box_gives_its_batch", LootGameTest::aReadyBoxGivesItsBatch);

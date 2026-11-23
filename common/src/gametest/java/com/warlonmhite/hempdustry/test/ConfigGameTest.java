@@ -125,6 +125,27 @@ public final class ConfigGameTest {
     }
 
     /**
+     * A loot section written before its nine switches existed still loads: what it sets is applied, every switch it has
+     * never heard of comes in on, and the file is written back with them in it.
+     */
+    public static void aLootSectionWithoutItsSwitchesLoads(GameTestHelper context) {
+        withConfig("{ \"loot\": { \"_comment\": \"an older build's comment\", \"enabled\": true, \"chanceMultiplier\": 0.5 } }", () -> {
+            HempdustryConfig.Loot loot = HempdustryConfig.get().loot();
+            context.assertTrue(loot.enabled() && loot.chanceMultiplier() == 0.5, "an older loot section was not applied: " + loot);
+            context.assertTrue(loot.grassSeeds() && loot.chestSeeds() && loot.chestBuds() && loot.archaeologySeeds()
+                            && loot.barterSeeds() && loot.shipwreckFiber() && loot.fisherBait() && loot.fishingJunk() && loot.discs(),
+                    "switches an older file never named are not on: " + loot);
+            String rewritten = new String(read(Services.PLATFORM.configDir().resolve(Hempdustry.MOD_ID + ".json")),
+                    StandardCharsets.UTF_8);
+            for (String key : new String[]{"grassSeeds", "chestSeeds", "chestBuds", "archaeologySeeds", "barterSeeds",
+                    "shipwreckFiber", "fisherBait", "fishingJunk", "discs"}) {
+                context.assertTrue(rewritten.contains("\"" + key + "\": true"), "the file was not written back with " + key + " in it");
+            }
+        });
+        context.succeed();
+    }
+
+    /**
      * Every key the config file holds is named in its section's {@code _comment} with its default, and a number with
      * the range it is clamped to: {@code key (default 4, 1-10)}. A pack maker reads the file, not the source, and a
      * comment written by hand drifts the day a default or a bound moves.
@@ -179,7 +200,7 @@ public final class ConfigGameTest {
             write(path, original);
             HempdustryConfig.load();
         }
-        Sweep.atLeast(context, "config keys described", keys, 26);
+        Sweep.atLeast(context, "config keys described", keys, 35);
         Sweep.report(context, "Every config key is described in its comment", findings, Map.of());
         context.succeed();
     }

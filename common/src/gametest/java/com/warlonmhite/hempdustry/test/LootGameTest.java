@@ -5,6 +5,8 @@ import com.warlonmhite.hempdustry.block.custom.SiftingBoxBlock;
 import com.warlonmhite.hempdustry.block.entity.custom.DecarboxylatorBlockEntity;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.loot.LootTableOrigin;
+import com.warlonmhite.hempdustry.loot.ModLootTableModifiers;
+import com.warlonmhite.hempdustry.platform.Events;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -18,6 +20,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -34,13 +37,18 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.DoublePlantBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.entries.LootPoolEntryContainer;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -213,6 +221,99 @@ public final class LootGameTest {
         context.assertTrue(drops.size() == 1 && Component.literal("The Oven").equals(drops.getFirst().get(DataComponents.CUSTOM_NAME)),
                 "a broken renamed Decarboxylator dropped " + drops + " without its name");
         context.succeed();
+    }
+
+    /** One place a switch under {@code loot} puts something, and what it puts there. */
+    private record Probe(String key, ResourceKey<LootTable> table, Predicate<ItemStack> what, String description) {
+    }
+
+    /**
+     * Each switch under {@code loot} takes away its own additions and nobody else's, and {@code enabled=false} takes
+     * them all. The additions are built as the tables load, so each config is run through the injection itself, onto a
+     * table of nothing but what it adds, rolled 200 times from a seeded {@link Random} with every chance raised to a
+     * sure thing (tall grass at one in ten): with its switch on a probe's item turns up, with it off never.
+     */
+    public static void eachLootSwitchTakesOnlyItsOwn(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        Predicate<ItemStack> buds = s -> BuiltInRegistries.ITEM.getKey(s.getItem()).getPath().endsWith("_buds");
+        List<Probe> probes = List.of(
+                new Probe("grassSeeds", Blocks.TALL_GRASS.getLootTable().orElseThrow(),
+                        s -> s.is(ModItems.INDICA_SEEDS) || s.is(ModItems.SATIVA_SEEDS), "tall grass's hemp seeds"),
+                new Probe("chestSeeds", BuiltInLootTables.SIMPLE_DUNGEON, PLAIN_SEEDS, "a dungeon chest's seed stash"),
+                new Probe("chestSeeds", BuiltInLootTables.SHIPWRECK_SUPPLY, s -> s.is(ModItems.INDUSTRIAL_HEMP_SEEDS),
+                        "a shipwreck's Industrial Hemp seeds"),
+                new Probe("chestSeeds", BuiltInLootTables.BASTION_HOGLIN_STABLE, s -> s.is(ModItems.CRIMSON_SEEDS),
+                        "a hoglin stable's Crimson Weed seeds"),
+                new Probe("chestBuds", BuiltInLootTables.BASTION_TREASURE, buds, "a bastion treasure's buds"),
+                new Probe("chestBuds", BuiltInLootTables.SHIPWRECK_SUPPLY, s -> s.is(ModItems.SCHWAG), "a shipwreck's schwag"),
+                new Probe("archaeologySeeds", BuiltInLootTables.TRAIL_RUINS_ARCHAEOLOGY_COMMON,
+                        s -> s.is(ModItems.RUDERALIS_SEEDS), "a brushed trail ruin's Ruderalis seeds"),
+                new Probe("archaeologySeeds", BuiltInLootTables.SNIFFER_DIGGING, s -> s.is(ModItems.RUDERALIS_SEEDS),
+                        "a sniffer's Ruderalis seeds"),
+                new Probe("barterSeeds", BuiltInLootTables.PIGLIN_BARTERING,
+                        s -> s.is(ModItems.WARPED_KUSH_SEEDS) || s.is(ModItems.CRIMSON_SEEDS), "a piglin's Nether seeds"),
+                new Probe("shipwreckFiber", BuiltInLootTables.SHIPWRECK_SUPPLY,
+                        s -> s.is(ModItems.HEMP_FIBER) || s.is(ModItems.HEMP_CANVAS), "a shipwreck's fibre and canvas"),
+                new Probe("fisherBait", BuiltInLootTables.VILLAGE_FISHER, s -> s.is(ModItems.TOASTED_HEMP_SEEDS),
+                        "a fisher's toasted hemp seeds"),
+                new Probe("fishingJunk", BuiltInLootTables.FISHING_JUNK, s -> s.is(ModItems.HEMP_FIBER), "fishing junk's fibre"),
+                new Probe("discs", BuiltInLootTables.SIMPLE_DUNGEON, s -> ModItems.MUSIC_DISCS.contains(s.getItem()),
+                        "a dungeon chest's music discs"));
+        // Tall grass checks that it is the half broken with the other half standing, as vanilla's own pools do.
+        BlockPos grass = context.absolutePos(AT);
+        world.setBlock(grass.below(), Blocks.GRASS_BLOCK.defaultBlockState(), Block.UPDATE_CLIENTS);
+        DoublePlantBlock.placeAt(world, Blocks.TALL_GRASS.defaultBlockState(), grass, Block.UPDATE_CLIENTS);
+        LootParams broken = new LootParams.Builder(world)
+                .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(grass))
+                .withParameter(LootContextParams.BLOCK_STATE, world.getBlockState(grass))
+                .withParameter(LootContextParams.TOOL, ItemStack.EMPTY)
+                .create(LootContextParamSets.BLOCK);
+        LootParams chest = new LootParams.Builder(world)
+                .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(grass))
+                .create(LootContextParamSets.CHEST);
+
+        List<String> offs = new ArrayList<>();
+        offs.add(null);
+        probes.stream().map(Probe::key).distinct().forEach(offs::add);
+        offs.add("enabled");
+        context.assertTrue(offs.size() == 11, "the probes reach " + (offs.size() - 2) + " switches, not all nine");
+        for (String off : offs) {
+            String json = "{ \"loot\": { \"chanceMultiplier\": 10.0" + (off == null ? "" : ", \"" + off + "\": false") + " } }";
+            ConfigGameTest.withConfig(json, () -> {
+                for (Probe probe : probes) {
+                    LootTable added = injected(world, probe.table());
+                    int found = count(added, probe.table().equals(Blocks.TALL_GRASS.getLootTable().orElseThrow()) ? broken : chest,
+                            probe.what(), 200);
+                    boolean on = off == null || !off.equals("enabled") && !off.equals(probe.key());
+                    context.assertTrue(on == (found > 0), probe.description() + " turned up " + found + " times in 200 with "
+                            + (off == null ? "every switch on" : "loot." + off + " off") + (on ? ", expected some" : ", expected none"));
+                }
+            });
+        }
+        context.succeed();
+    }
+
+    /** A table of only what the mod adds to {@code key} under the running config: its own pools, and one more for entries. */
+    private static LootTable injected(ServerLevel world, ResourceKey<LootTable> key) {
+        LootTable.Builder table = LootTable.lootTable();
+        LootPool.Builder entries = LootPool.lootPool().setRolls(ContextIntProviders.exactly(1));
+        boolean[] anyEntry = {false};
+        ModLootTableModifiers.modify(key, true, world.registryAccess(), new Events.LootTableEditor() {
+            @Override
+            public void addPool(LootPool.Builder pool) {
+                table.withPool(pool);
+            }
+
+            @Override
+            public void addToEveryPool(LootPoolEntryContainer.Builder<?> entry) {
+                entries.add(entry);
+                anyEntry[0] = true;
+            }
+        });
+        if (anyEntry[0]) {
+            table.withPool(entries);
+        }
+        return table.build();
     }
 
     // ----- helpers -----
