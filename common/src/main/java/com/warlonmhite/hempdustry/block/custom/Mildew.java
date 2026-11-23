@@ -171,8 +171,13 @@ public enum Mildew implements StringRepresentable {
      * climate's onset times the plant's {@link Climate#factor climate}, scaled by its resistance.
      */
     public static float onsetFor(Level world, BlockPos lower, BlockState plant) {
+        return onsetFor(world, lower, plant, mildewStep(world, lower));
+    }
+
+    /** {@link #onsetFor(Level, BlockPos, BlockState)} for a plant of mildew resistance {@code step}, read elsewhere. */
+    public static float onsetFor(Level world, BlockPos lower, BlockState plant, Resistance step) {
         float odds = GrowClimate.of(world.registryAccess()).onset() * Climate.factor(world, lower, plant);
-        return Hardiness.apply(Genetics.of(world.registryAccess()), mildewStep(world, lower), Math.min(1.0F, odds));
+        return Hardiness.apply(Genetics.of(world.registryAccess()), step, Math.min(1.0F, odds));
     }
 
     /** The odds a mildewed neighbour's random tick reaches the plant at {@code lower}, standing as {@code plant}. */

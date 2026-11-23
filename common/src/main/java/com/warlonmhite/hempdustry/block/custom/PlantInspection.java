@@ -70,11 +70,41 @@ public final class PlantInspection {
         } else {
             genes(lines, record, plant);
         }
+        // What stands around the plant is read as far as a fan's lane or a Dehumidifier's reach: never a chunk the game
+        // has not loaded, which reading it would load (or generate) to answer a command.
+        if (!loadedAround(world, root, reach(GrowClimate.of(world.registryAccess())))) {
+            lines.add(Component.translatable(KEY + "unloaded"));
+            return Optional.of(lines);
+        }
         light(lines, world, root, plant, record);
-        stress(lines, world, root, plant, record, age, maxAge);
-        mildew(lines, world, root, plant, age, maxAge);
+        // The genes as rolled, never rolled here: an inspection changes nothing. A plant yet to roll reads neutral.
+        ResistanceGenes genes = record == null ? ResistanceGenes.NEUTRAL
+                : record.rolledResistances().orElse(ResistanceGenes.NEUTRAL);
+        stress(lines, world, root, plant, genes, age, maxAge);
+        mildew(lines, world, root, plant, genes, age, maxAge);
         growth(lines, world, root, plant, age, maxAge);
         return Optional.of(lines);
+    }
+
+    /**
+     * How far from a plant, across, its rules read what stands around it: a Grow Fan's lane, a Dehumidifier's reach,
+     * the water a room is wet from, the light and the ground beside it.
+     */
+    public static int reach(GrowClimate climate) {
+        return Math.max(Math.max(2, climate.wetReach()),
+                Math.max(Math.max(climate.fan().ahead(), climate.fan().side()), climate.dehumidifier().area().reach()));
+    }
+
+    /** Whether every chunk within {@code reach} blocks of {@code root}, across, is loaded; asked without loading one. */
+    public static boolean loadedAround(Level world, BlockPos root, int reach) {
+        for (int x = (root.getX() - reach) >> 4; x <= (root.getX() + reach) >> 4; x++) {
+            for (int z = (root.getZ() - reach) >> 4; z <= (root.getZ() + reach) >> 4; z++) {
+                if (!world.hasChunk(x, z)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /** A plant whose block is one of the mod's crops, the ones that keep its rules. */
@@ -140,7 +170,7 @@ public final class PlantInspection {
     }
 
     private static void stress(List<Component> lines, Level world, BlockPos root, BlockState plant,
-                               PlantRecordBlockEntity record, int age, int maxAge) {
+                               ResistanceGenes genes, int age, int maxAge) {
         if (!plant.hasProperty(GrowLight.PROPERTY)) {
             return;
         }
@@ -164,7 +194,6 @@ public final class PlantInspection {
             lines.add(Component.translatable(KEY + "stress.ripe"));
             return;
         }
-        ResistanceGenes genes = PlantRecordBlockEntity.resistancesAt(world, root);
         Resistance lightStep = genes.get(StressPhenomenon.LIGHT);
         Genetics genetics = Genetics.of(world.registryAccess());
         int height = height(plant);
@@ -174,7 +203,12 @@ public final class PlantInspection {
         if (indica != null && indica.shunsLight()) {
             int light = EchoOgCropBlock.lightAtTop(world, root);
             if (next >= Hardiness.lightLossAge(genetics, lightStep) && light > EchoOgCropBlock.MAX_LIGHT) {
-                lines.add(Component.translatable(KEY + "stress.bright", value(light), value(EchoOgCropBlock.MAX_LIGHT))
+                // A resistant plant shrugs the light off as it shrugs off a lost lamp: say "may", and how often not.
+                float shrugs = Hardiness.ignoresLostLightChance(genetics, lightStep);
+                lines.add((shrugs > 0.0F
+                        ? Component.translatable(KEY + "stress.bright.may", value(light), value(EchoOgCropBlock.MAX_LIGHT),
+                                value(Math.round(100.0F * shrugs)))
+                        : Component.translatable(KEY + "stress.bright", value(light), value(EchoOgCropBlock.MAX_LIGHT)))
                         .withStyle(ChatFormatting.GOLD));
                 return;
             }
@@ -185,7 +219,12 @@ public final class PlantInspection {
         } else if (indica == null || !indica.leaksAtNight() || PlantStress.hours(world, root) == PlantStress.Hours.DAY) {
             GrowLight over = GrowLight.over(world, root, height);
             if (kept.afterStep(age, over, Hardiness.lightLossAge(genetics, lightStep)) == GrowLight.STRESSED) {
-                lines.add(Component.translatable(KEY + "stress.light", value(kept), value(over))
+                // A resistant plant shrugs a lost light off some of the time: say "may", and how often it does not.
+                float shrugs = Hardiness.ignoresLostLightChance(genetics, lightStep);
+                lines.add((shrugs > 0.0F
+                        ? Component.translatable(KEY + "stress.light.may", value(kept), value(over),
+                                value(Math.round(100.0F * shrugs)))
+                        : Component.translatable(KEY + "stress.light", value(kept), value(over)))
                         .withStyle(ChatFormatting.GOLD));
                 return;
             }
@@ -214,7 +253,8 @@ public final class PlantInspection {
         return !(block instanceof SativaCropBlock sativa) || sativa.canBeStressed();
     }
 
-    private static void mildew(List<Component> lines, Level world, BlockPos root, BlockState plant, int age, int maxAge) {
+    private static void mildew(List<Component> lines, Level world, BlockPos root, BlockState plant, ResistanceGenes genes,
+                               int age, int maxAge) {
         if (!plant.hasProperty(Mildew.PROPERTY)) {
             return;
         }
@@ -228,7 +268,7 @@ public final class PlantInspection {
                 || plant.is(ModTags.Blocks.MILDEW_RESISTANT)) {
             lines.add(Component.translatable(KEY + "mildew.never"));
         } else if (plant.getValue(Mildew.PROPERTY) != Mildew.MILDEWED && age < maxAge) {
-            float chance = Mildew.onsetFor(world, root, plant);
+            float chance = Mildew.onsetFor(world, root, plant, genes.get(StressPhenomenon.MILDEW));
             lines.add(chance > 0.0F
                     ? Component.translatable(KEY + "mildew.risk", oneIn(chance))
                     : Component.translatable(KEY + "mildew.none"));

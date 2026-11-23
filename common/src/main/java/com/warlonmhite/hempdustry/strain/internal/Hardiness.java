@@ -63,12 +63,17 @@ public final class Hardiness {
      * always did.
      */
     public static boolean ignoresLostLight(Genetics genetics, Resistance step, RandomSource random) {
+        float ignores = ignoresLostLightChance(genetics, step);
+        return ignores > 0.0F && random.nextFloat() < ignores;
+    }
+
+    /** How often a plant of {@code step} shrugs off a lost light, 0 to 1: never below resistant. */
+    public static float ignoresLostLightChance(Genetics genetics, Resistance step) {
         Genetics.Ignores odds = genetics.resistance().ignoresLostLight();
-        float ignores = switch (step) {
+        return switch (step) {
             case VERY_WEAK, WEAK, NEUTRAL -> 0.0F;
             case RESISTANT -> odds.resistant();
             case VERY_RESISTANT -> odds.veryResistant();
         };
-        return ignores > 0.0F && random.nextFloat() < ignores;
     }
 }

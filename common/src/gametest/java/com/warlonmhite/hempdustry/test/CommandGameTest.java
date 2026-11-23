@@ -1,5 +1,9 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.block.custom.PlantInspection;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Block;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.block.ModBlocks;
@@ -114,6 +118,30 @@ public final class CommandGameTest {
             context.assertFalse(off.stream().anyMatch(line -> line.startsWith("commands.hempdustry.inspect.stress.risk")),
                     "a stress risk was told with the plant_stress game rule off: " + off);
         });
+
+        // A lost light: a plain plant's next step stresses it; a resistant one's may, and the line says how often not.
+        world.setBlock(root, world.getBlockState(root).setValue(GrowLight.PROPERTY, GrowLight.LAMP), Block.UPDATE_CLIENTS);
+        record.setResistances(ResistanceGenes.NEUTRAL);
+        expectLine(context, run(context, "hempdustry inspect" + at, LevelBasedPermissionSet.GAMEMASTER),
+                "commands.hempdustry.inspect.stress.light(lamp,natural)");
+        record.setResistances(ResistanceGenes.NEUTRAL.with(StressPhenomenon.LIGHT, Resistance.RESISTANT));
+        expectLine(context, run(context, "hempdustry inspect" + at, LevelBasedPermissionSet.GAMEMASTER),
+                "commands.hempdustry.inspect.stress.light.may(lamp,natural,50)");
+        world.setBlock(root, world.getBlockState(root).setValue(GrowLight.PROPERTY, GrowLight.NATURAL), Block.UPDATE_CLIENTS);
+
+        // A plant yet to roll its resistances is told them as unrolled and read as neutral, and is left unrolled: an
+        // inspection changes nothing.
+        try {
+            var field = PlantRecordBlockEntity.class.getDeclaredField("resistances");
+            field.setAccessible(true);
+            field.set(record, null);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
+        List<String> unrolled = run(context, "hempdustry inspect" + at, LevelBasedPermissionSet.GAMEMASTER);
+        expectLine(context, unrolled, "commands.hempdustry.inspect.stress.risk(commands.hempdustry.inspect.one_in(3),dry_ground)");
+        context.assertTrue(record.rolledResistances().isEmpty(), "inspecting a plant rolled its resistances: "
+                + record.rolledResistances());
 
         context.setBlock(JAR, ModBlocks.STASH_JAR);
         BlockPos jarPos = context.absolutePos(JAR);
@@ -323,8 +351,42 @@ public final class CommandGameTest {
         context.succeed();
     }
 
+    /**
+     * An inspection reads what stands around a plant as far as a fan's lane, and never loads a chunk to do it: a plant
+     * at the edge of the loaded world, with the chunk beyond it unloaded, is told as such, and the chunk stays
+     * unloaded.
+     */
+    public static void inspectLoadsNoChunk(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        BlockPos origin = context.absolutePos(BlockPos.ZERO);
+        int chunkZ = origin.getZ() >> 4;
+        int edge = origin.getX() >> 4;
+        while (world.hasChunk(edge + 1, chunkZ) && edge - (origin.getX() >> 4) < 256) {
+            edge++;
+        }
+        context.assertFalse(world.hasChunk(edge + 1, chunkZ), "no unloaded chunk east of the test");
+        // Two blocks in from the edge: placing it reads its neighbours, and a fan's lane reaches well past that.
+        BlockPos root = new BlockPos((edge << 4) + 13, origin.getY() + 2, (chunkZ << 4) + 8);
+        BlockState below = world.getBlockState(root.below());
+        BlockState was = world.getBlockState(root);
+        try {
+            world.setBlock(root.below(), Blocks.FARMLAND.defaultBlockState(), Block.UPDATE_CLIENTS);
+            world.setBlock(root, ModBlocks.RUDERALIS_CROP.defaultBlockState(), Block.UPDATE_CLIENTS);
+            context.assertFalse(world.hasChunk(edge + 1, chunkZ), "placing the test plant at the edge loaded the chunk beyond");
+            List<String> said = run(context, "hempdustry inspect " + root.getX() + " " + root.getY() + " " + root.getZ(),
+                    LevelBasedPermissionSet.GAMEMASTER);
+            expectLine(context, said, "commands.hempdustry.inspect.unloaded()");
+            context.assertFalse(world.hasChunk(edge + 1, chunkZ), "inspecting a plant at the edge loaded the chunk beyond");
+            context.assertTrue(PlantInspection.loadedAround(world, origin, 2), "the test's own chunks read as unloaded");
+        } finally {
+            world.setBlock(root, was, Block.UPDATE_CLIENTS);
+            world.setBlock(root.below(), below, Block.UPDATE_CLIENTS);
+        }
+        context.succeed();
+    }
+
     /** Runs {@code command} from a source of {@code permissions}, and answers each line it was told, flattened. */
-    private static List<String> run(GameTestHelper context, String command, PermissionSet permissions) {
+    static List<String> run(GameTestHelper context, String command, PermissionSet permissions) {
         List<String> said = new ArrayList<>();
         try {
             context.getLevel().getServer().getCommands().getDispatcher().execute(command, source(context, said, permissions));

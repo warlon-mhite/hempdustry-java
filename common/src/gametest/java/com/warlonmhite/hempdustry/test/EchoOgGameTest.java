@@ -21,6 +21,8 @@ import com.warlonmhite.hempdustry.mixin.ExperienceOrbAccessor;
 import com.warlonmhite.hempdustry.strain.Chemotype;
 import com.warlonmhite.hempdustry.strain.ModStrains;
 import com.warlonmhite.hempdustry.strain.Resistance;
+import com.warlonmhite.hempdustry.strain.internal.Hardiness;
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.strain.ResistanceGenes;
 import com.warlonmhite.hempdustry.strain.Strain;
 import com.warlonmhite.hempdustry.strain.Terpene;
@@ -29,6 +31,7 @@ import com.warlonmhite.hempdustry.world.ModConfiguredFeatures;
 import com.warlonmhite.hempdustry.world.ModPlacedFeatures;
 import com.warlonmhite.hempdustry.world.ModPlacementModifiers;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Predicate;
@@ -45,6 +48,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.WorldGenRegion;
+import net.minecraft.server.permissions.LevelBasedPermissionSet;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -231,6 +235,27 @@ public final class EchoOgGameTest {
                 "a very resistant Echo OG shrugged off the light on an unlucky roll");
         context.assertTrue(feed(context, new BlockPos(5, 2, 4), 1, Resistance.VERY_WEAK, HIT) == GrowLight.NATURAL,
                 "a very weak Echo OG fed from 1 to 2 in the light was stressed before age 3");
+
+        // /hempdustry inspect says so before the step: a neutral plant's next step in the light stresses it; a resistant
+        // one's may, and the line says how often it does not.
+        BlockPos told = new BlockPos(6, 2, 6);
+        context.setBlock(told.below(), Blocks.SCULK);
+        context.setBlock(told, ModBlocks.ECHO_OG_CROP.defaultBlockState().setValue(IndicaCropBlock.AGE, 3));
+        BlockPos toldAt = context.absolutePos(told);
+        String inspect = "hempdustry inspect " + toldAt.getX() + " " + toldAt.getY() + " " + toldAt.getZ();
+        int shrugs = Math.round(100.0F * Hardiness.ignoresLostLightChance(
+                Genetics.of(world.registryAccess()), Resistance.RESISTANT));
+        for (Map.Entry<Resistance, String> want : Map.of(
+                Resistance.NEUTRAL, "commands.hempdustry.inspect.stress.bright(15," + EchoOgCropBlock.MAX_LIGHT + ")",
+                Resistance.RESISTANT, "commands.hempdustry.inspect.stress.bright.may(15," + EchoOgCropBlock.MAX_LIGHT + ","
+                        + shrugs + ")").entrySet()) {
+            Genes.set(context, told, ResistanceGenes.NEUTRAL.with(com.warlonmhite.hempdustry.strain.StressPhenomenon.LIGHT,
+                    want.getKey()));
+            List<String> said = CommandGameTest.run(context, inspect, LevelBasedPermissionSet.GAMEMASTER);
+            context.assertTrue(said.contains(want.getValue()), "a " + want.getKey().getSerializedName()
+                    + " Echo OG in the light was told " + said + ", not " + want.getValue());
+        }
+        context.assertTrue(shrugs > 0, "a resistant plant never shrugs a lost light off, so the may line proves nothing");
 
         // A sealed box with a dark Grow Lamp in it: no light, no stress, and the lamp counts for nothing.
         BlockPos dark = new BlockPos(3, 2, 6);
