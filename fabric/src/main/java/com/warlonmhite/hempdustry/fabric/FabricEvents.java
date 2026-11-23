@@ -66,7 +66,7 @@ public final class FabricEvents implements Events {
 
     private record Editor(LootTable.Builder table) implements LootTableEditor {
         @Override
-        public void addPool(LootPool.Builder pool) {
+        public void addPool(String name, LootPool.Builder pool) {
             table.withPool(pool);
         }
 

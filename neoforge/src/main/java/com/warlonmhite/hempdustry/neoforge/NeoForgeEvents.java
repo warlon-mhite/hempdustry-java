@@ -60,18 +60,20 @@ public final class NeoForgeEvents implements Events {
                 new Editor(event.getTable())));
     }
 
-    /** NeoForge hands over a table already built; a pool it adds needs a name of its own. */
+    /**
+     * NeoForge hands over a table already built; a pool it adds needs a name of its own, {@code hempdustry:<kind>}. A
+     * name by kind rather than by count keeps a pool's name when a loot switch takes another pool out.
+     */
     private static final class Editor implements LootTableEditor {
         private final LootTable table;
-        private int added;
 
         Editor(LootTable table) {
             this.table = table;
         }
 
         @Override
-        public void addPool(LootPool.Builder pool) {
-            table.addPool(pool.name(Hempdustry.MOD_ID + ":added_" + added++).build());
+        public void addPool(String name, LootPool.Builder pool) {
+            table.addPool(pool.name(Hempdustry.MOD_ID + ":" + name).build());
         }
 
         @Override

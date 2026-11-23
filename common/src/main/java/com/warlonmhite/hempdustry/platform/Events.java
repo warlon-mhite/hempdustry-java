@@ -51,8 +51,12 @@ public interface Events {
     /** The two things the mod does to a table it did not write. */
     interface LootTableEditor {
 
-        /** Adds a pool of its own, rolled after the table's own. */
-        void addPool(LootPool.Builder pool);
+        /**
+         * Adds a pool of its own, rolled after the table's own. {@code name} says what kind of pool it is, the same
+         * whichever other pools are added: NeoForge names the pool {@code hempdustry:<name>}, which pack scripts find
+         * it by; Fabric's pools have no names.
+         */
+        void addPool(String name, LootPool.Builder pool);
 
         /** Adds {@code entry} to every pool the table already has, as one more choice inside each roll. */
         void addToEveryPool(LootPoolEntryContainer.Builder<?> entry);

@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Predicate;
@@ -277,9 +278,23 @@ public final class LootGameTest {
         probes.stream().map(Probe::key).distinct().forEach(offs::add);
         offs.add("enabled");
         context.assertTrue(offs.size() == 11, "the probes reach " + (offs.size() - 2) + " switches, not all nine");
+        // Each pool the mod adds is named by its kind, so a switch taking one out leaves every other's name as it was
+        // (NeoForge names them hempdustry:<kind>, and a pack script finds a pool by its name); no table gets one name twice.
+        Map<ResourceKey<LootTable>, List<String>> allOn = new java.util.HashMap<>();
+        for (Probe probe : probes) {
+            allOn.computeIfAbsent(probe.table(), key -> poolNames(world, key));
+        }
         for (String off : offs) {
             String json = "{ \"loot\": { \"chanceMultiplier\": 10.0" + (off == null ? "" : ", \"" + off + "\": false") + " } }";
             ConfigGameTest.withConfig(json, () -> {
+                for (Map.Entry<ResourceKey<LootTable>, List<String>> table : allOn.entrySet()) {
+                    List<String> names = poolNames(world, table.getKey());
+                    context.assertTrue(table.getValue().containsAll(names) && names.size() == new java.util.HashSet<>(names).size()
+                                    && table.getValue().size() == new java.util.HashSet<>(table.getValue()).size(),
+                            table.getKey().identifier() + "'s added pools are " + names + " with " + (off == null
+                                    ? "every switch on" : "loot." + off + " off") + ", where every switch on names them "
+                                    + table.getValue());
+                }
                 for (Probe probe : probes) {
                     LootTable added = injected(world, probe.table());
                     int found = count(added, probe.table().equals(Blocks.TALL_GRASS.getLootTable().orElseThrow()) ? broken : chest,
@@ -293,6 +308,22 @@ public final class LootGameTest {
         context.succeed();
     }
 
+    /** The names of the pools the mod adds to {@code key} under the running config, in the order it adds them. */
+    private static List<String> poolNames(ServerLevel world, ResourceKey<LootTable> key) {
+        List<String> names = new java.util.ArrayList<>();
+        ModLootTableModifiers.modify(key, true, world.registryAccess(), new Events.LootTableEditor() {
+            @Override
+            public void addPool(String name, LootPool.Builder pool) {
+                names.add(name);
+            }
+
+            @Override
+            public void addToEveryPool(LootPoolEntryContainer.Builder<?> entry) {
+            }
+        });
+        return names;
+    }
+
     /** A table of only what the mod adds to {@code key} under the running config: its own pools, and one more for entries. */
     private static LootTable injected(ServerLevel world, ResourceKey<LootTable> key) {
         LootTable.Builder table = LootTable.lootTable();
@@ -300,7 +331,7 @@ public final class LootGameTest {
         boolean[] anyEntry = {false};
         ModLootTableModifiers.modify(key, true, world.registryAccess(), new Events.LootTableEditor() {
             @Override
-            public void addPool(LootPool.Builder pool) {
+            public void addPool(String name, LootPool.Builder pool) {
                 table.withPool(pool);
             }
 
