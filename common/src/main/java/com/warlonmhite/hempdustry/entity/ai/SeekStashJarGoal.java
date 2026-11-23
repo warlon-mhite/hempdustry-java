@@ -35,7 +35,8 @@ import org.jetbrains.annotations.Nullable;
  * Priority 5, beside vanilla's wandering, so a creeper with a target always attacks it first: the attack
  * goal at 4 takes the movement from this one. It attacks only a player it sees, as ever. It walks at its
  * wandering pace and does not turn to stare at the jar. Under {@code world.creepersSeekHemp}, read at each
- * check.
+ * check, and only for a mob of {@code #hempdustry:drawn_to_stash} (vanilla's creeper by default), asked at each
+ * check too.
  *
  * <p>Nothing is saved: the smell is the jar's, in memory, and a chunk reloaded is a jar shut again.
  */
@@ -66,7 +67,8 @@ public class SeekStashJarGoal extends Goal {
      */
     @Override
     public boolean canUse() {
-        if (!HempdustryConfig.get().world().creepersSeekHemp() || mob.hasControllingPassenger() || mob.getTarget() != null) {
+        if (!HempdustryConfig.get().world().creepersSeekHemp() || !StashSmell.drawnToStash(mob) || mob.hasControllingPassenger()
+                || mob.getTarget() != null) {
             return false;
         }
         long now = mob.level().getGameTime();
@@ -81,8 +83,8 @@ public class SeekStashJarGoal extends Goal {
     /** While the jar still smells, and only while. */
     @Override
     public boolean canContinueToUse() {
-        return jar != null && HempdustryConfig.get().world().creepersSeekHemp() && !mob.hasControllingPassenger()
-                && StashSmell.smellsOpen(mob.level(), jar);
+        return jar != null && HempdustryConfig.get().world().creepersSeekHemp() && StashSmell.drawnToStash(mob)
+                && !mob.hasControllingPassenger() && StashSmell.smellsOpen(mob.level(), jar);
     }
 
     @Override

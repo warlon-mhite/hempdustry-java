@@ -5,12 +5,12 @@
 	"mixins": [
 		"AbstractContainerMenuMixin",
 		"BeeGrowCropsGoalMixin",
-		"CreeperEntityMixin",
 		"DataFixersMixin",
 		"DrownedMixin",
 		"ItemComponentsSchemaMixin",
 		"ItemStackComponentizationFixMixin",
 		"LivingEntityVisibilityMixin",
+		"MobGoalsMixin",
 		"EnderManMixin",
 		"ExperienceOrbAccessor",
 		"PlayerAttackMixin",

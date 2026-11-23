@@ -111,6 +111,13 @@ public final class LangGameTest {
                 read.add("tag.item." + id.getNamespace() + "." + id.getPath().replace('/', '.'));
             }
         });
+        // A tag's name reads the same way for mobs, in a tool that shows entity tags (the loaders' convention).
+        BuiltInRegistries.ENTITY_TYPE.getTags().forEach(tag -> {
+            Identifier id = tag.key().location();
+            if (Sweep.ours(id)) {
+                read.add("tag.entity_type." + id.getNamespace() + "." + id.getPath().replace('/', '.'));
+            }
+        });
 
         Set<String> literals = new HashSet<>();
         Set<String> langKeys = new TreeSet<>();

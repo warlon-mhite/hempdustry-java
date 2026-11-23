@@ -165,15 +165,20 @@ public class SeekHempCropGoal extends RandomStrollGoal {
     private final int strongestPull;
     /** Whether the plant is looked for on the sea floor rather than at the open-sky top of its column. */
     private final boolean seaFloor;
+    /** Whether the mob must stay in {@code #hempdustry:drawn_to_hemp} to start: the creepers' walk, not the others'. */
+    private final boolean tagged;
 
     private int prowlsLeft;
     private long restingUntil;
     /** When the current lurk ends; 0 while still walking. */
     private long lurkingUntil;
 
-    /** A creeper's: any hemp plant, at its wandering pace. */
+    /**
+     * A creeper's, and any mob's in {@code #hempdustry:drawn_to_hemp}: any hemp plant, at a creeper's wandering pace.
+     * It starts only while the mob is in the tag ({@link #drawnToHemp}).
+     */
     public SeekHempCropGoal(PathfinderMob creeper) {
-        this(creeper, CREEPER_SPEED, SeekHempCropGoal::hempPull, RIPE, false);
+        this(creeper, CREEPER_SPEED, SeekHempCropGoal::hempPull, RIPE, false, true);
     }
 
     /**
@@ -181,20 +186,26 @@ public class SeekHempCropGoal extends RandomStrollGoal {
      * so nothing gives the walk away.
      */
     public SeekHempCropGoal(PathfinderMob mob, double speed, Predicate<BlockState> cover) {
-        this(mob, speed, flat(cover), GROWN, false);
+        this(mob, speed, flat(cover), GROWN, false, false);
     }
 
     private SeekHempCropGoal(PathfinderMob mob, double speed, ToIntFunction<BlockState> pull, int strongestPull,
-                             boolean seaFloor) {
+                             boolean seaFloor, boolean tagged) {
         super(mob, speed, NOTICE_CHANCE);
         this.pull = pull;
         this.strongestPull = strongestPull;
         this.seaFloor = seaFloor;
+        this.tagged = tagged;
     }
 
     /** A drowned's: a ripe Maui Wowie on the sea floor, at its wandering pace. */
     public static SeekHempCropGoal drowned(PathfinderMob drowned) {
-        return new SeekHempCropGoal(drowned, DROWNED_SPEED, flat(SeekHempCropGoal::ripeMauiWowie), GROWN, true);
+        return new SeekHempCropGoal(drowned, DROWNED_SPEED, flat(SeekHempCropGoal::ripeMauiWowie), GROWN, true, false);
+    }
+
+    /** Whether {@code mob} is one that hemp draws: {@code #hempdustry:drawn_to_hemp}, vanilla's creeper by default. */
+    public static boolean drawnToHemp(Entity mob) {
+        return mob.is(ModTags.EntityTypes.DRAWN_TO_HEMP);
     }
 
     /** Cover that pulls as a grown plant whatever its stage: the endermen's and the drowned's. */
@@ -248,12 +259,13 @@ public class SeekHempCropGoal extends RandomStrollGoal {
     /**
      * The config's off switch lives here rather than at the mixin, so
      * {@code /hempdustry reload} takes effect on creepers that already exist. Goals are built in
-     * the entity's constructor; a check at the mixin would freeze the setting at spawn time.
+     * the entity's constructor; a check at the mixin would freeze the setting at spawn time. The tag
+     * is asked here too, so a mob a {@code /reload} takes out of it stops at once.
      */
     @Override
     public boolean canUse() {
-        if (!HempdustryConfig.get().world().creepersSeekHemp() || pullNeeded(mob) > strongestPull
-                || mob.level().getGameTime() < restingUntil) {
+        if (!HempdustryConfig.get().world().creepersSeekHemp() || tagged && !drawnToHemp(mob)
+                || pullNeeded(mob) > strongestPull || mob.level().getGameTime() < restingUntil) {
             return false;
         }
         setInterval(prowlsLeft > 0 ? PROWL_CHANCE : NOTICE_CHANCE);

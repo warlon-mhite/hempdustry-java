@@ -329,6 +329,8 @@
   "hempdustry.info.grow_fan": "Power it with redstone and it blows on the plants in front of it: %1$s blocks ahead, %2$s wide, down to %3$s below. Still air under a roof breeds mildew; a running fan stirs it. One is enough. A plant grown in its wind drops one more stem.",
   "hempdustry.info.dehumidifier": "Powered under a roof, it dries the plants around it, %1$s×%1$s and %2$s blocks up and down: mildew hates dry air. Their water fills its tank: empty it with a bottle or a bucket, or let it drip into a cauldron below. Full, it stops.",
   "hempdustry.info.hygrometer": "Hang it on a wall: its needle shows the air of the dampest plant near it, dry, normal, damp or soaked. A comparator reads it before any Dehumidifier: 0 dry or normal, 8 damp, 15 soaked. Wired to a Dehumidifier, it runs it only when needed.",
+  "tag.entity_type.hempdustry.drawn_to_hemp": "Drawn to Hemp",
+  "tag.entity_type.hempdustry.drawn_to_stash": "Drawn to a Stash",
   "tag.item.c.crops.hemp": "Hemp Crops",
   "tag.item.c.bricks.hemp": "Hemp Bricks",
   "tag.item.c.storage_blocks.hemp": "Hemp Storage Blocks",

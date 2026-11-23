@@ -3,6 +3,7 @@ package com.warlonmhite.hempdustry.test;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.IndicaCropBlock;
 import com.warlonmhite.hempdustry.entity.ai.SeekHempCropGoal;
+import com.warlonmhite.hempdustry.util.ModTags;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -10,6 +11,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.GoalSelector;
+import net.minecraft.world.entity.animal.pig.Pig;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
@@ -21,6 +23,8 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
  * skips the per-tick roll (and the despawn-counter rule, which a test world with no player would
  * otherwise trip), and {@link SeekHempCropGoal#findCover} is asked with a sample count that cannot
  * miss a 7×7 field inside a range-3 square. What is left is the rules, which is what can break.
+ *
+ * <p>Which mobs take the walk at all is {@code #hempdustry:drawn_to_hemp} ({@link #onlyAMobDrawnToHempSeeksIt}).
  *
  * <p>Every rule here fails the same way when it breaks: a creeper that goes to a field it should not,
  * or one that never leaves. Neither is an error in a log, and both were the old goal's behaviour.
@@ -41,7 +45,7 @@ public final class CreeperSeeksHempGameTest {
         Creeper creeper = interested(context, CENTRE);
 
         context.assertTrue(goalOf(creeper) != null,
-                "CreeperEntityMixin did not add SeekHempCropGoal to a creeper");
+                "MobGoalsMixin did not add SeekHempCropGoal to a creeper");
 
         context.assertTrue(SeekHempCropGoal.findCover(creeper, 3, ALWAYS) == null,
                 "a creeper found cover in bare ground");
@@ -185,6 +189,63 @@ public final class CreeperSeeksHempGameTest {
         third.discard();
         ripeOnly.discard();
         context.succeed();
+    }
+
+    /**
+     * Which mobs take the walk is {@code #hempdustry:drawn_to_hemp}, vanilla's creeper alone by default. A creeper out
+     * of it never notices a grown field however often it looks, and one made while it is out is given no walk; back
+     * in, it notices. A pig the tag lists is made with the walk and takes it; out of the tag again, the walk it was
+     * given never starts, and a pig no tag lists is given none.
+     */
+    public static void onlyAMobDrawnToHempSeeksIt(GameTestHelper context) {
+        floor(context);
+        openSky(context);
+        field(context, IndicaCropBlock.MAX_AGE);
+        Creeper creeper = interested(context, CENTRE);
+        SeekHempCropGoal goal = goalOf(creeper);
+        context.assertTrue(goal != null, "a creeper, which the tag lists by default, was made without the walk");
+        Tagged.without(EntityTypes.CREEPER, ModTags.EntityTypes.DRAWN_TO_HEMP, () -> {
+            context.assertFalse(noticed(goal, 2000),
+                    "a creeper out of #hempdustry:drawn_to_hemp noticed a grown field under open sky");
+            Creeper untagged = interested(context, CENTRE.offset(-2, 0, -2));
+            context.assertTrue(goalOf(untagged) == null, "a creeper made while out of the tag was given the walk");
+            untagged.discard();
+        });
+        context.assertTrue(noticed(goal, 2000), "a creeper back in the tag never noticed a grown field in 2000 glances");
+        creeper.discard();
+
+        Pig[] listed = new Pig[1];
+        Tagged.within(EntityTypes.PIG, ModTags.EntityTypes.DRAWN_TO_HEMP, () -> {
+            listed[0] = pig(context, CENTRE);
+            SeekHempCropGoal pigGoal = goalOf(listed[0]);
+            context.assertTrue(pigGoal != null, "a pig the tag lists was made without the walk");
+            context.assertTrue(noticed(pigGoal, 2000), "a pig the tag lists never noticed a grown field in 2000 glances");
+        });
+        context.assertFalse(noticed(goalOf(listed[0]), 2000), "a pig the tag no longer lists still noticed a field");
+        Pig plain = pig(context, CENTRE.offset(1, 0, 1));
+        context.assertTrue(goalOf(plain) == null, "a pig no tag lists was given the walk");
+        listed[0].discard();
+        plain.discard();
+        context.succeed();
+    }
+
+    /** Whether {@code goal} notices a field within {@code glances} glances. A miss has no side effects. */
+    private static boolean noticed(SeekHempCropGoal goal, int glances) {
+        for (int glance = 0; glance < glances; glance++) {
+            goal.trigger();
+            if (goal.canUse()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** A pig whose UUID puts it in the half that notices hemp, held still. */
+    private static Pig pig(GameTestHelper context, BlockPos at) {
+        Pig pig = context.spawn(EntityTypes.PIG, at);
+        pig.setUUID(new UUID(pig.getUUID().getMostSignificantBits(), 2L));
+        pig.setNoAi(true);
+        return pig;
     }
 
     private static Creeper creeper(GameTestHelper context, BlockPos at, long bits) {

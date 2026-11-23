@@ -5,6 +5,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
@@ -375,6 +376,27 @@ public class ModTags {
 
         private static TagKey<GameEvent> createTag(String name) {
             return TagKey.create(Registries.GAME_EVENT, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name));
+        }
+    }
+
+    public static class EntityTypes {
+
+        /**
+         * The mobs that now and then wander into a grown, open-sky hemp field and lurk in it ({@code SeekHempCropGoal}):
+         * vanilla's creeper. A mob joins by being listed; a pack takes one out by writing the tag with
+         * {@code "replace": true}. Only a mob that walks by paths can take the walk; any other listed is passed over.
+         * The endermen's Ender Haze and the drowned's Maui Wowie are walks of their own, not in it.
+         */
+        public static final TagKey<EntityType<?>> DRAWN_TO_HEMP = createTag("drawn_to_hemp");
+
+        /**
+         * The mobs a stash draws ({@code StashSmell}): an opened Stash Jar brings them to it, and loose buds let them
+         * notice a player from further away and keep after them as far. Vanilla's creeper, as the tag above.
+         */
+        public static final TagKey<EntityType<?>> DRAWN_TO_STASH = createTag("drawn_to_stash");
+
+        private static TagKey<EntityType<?>> createTag(String name) {
+            return TagKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name));
         }
     }
 

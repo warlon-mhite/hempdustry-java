@@ -329,6 +329,8 @@
   "hempdustry.info.grow_fan": "Alimentez-le en redstone et il souffle devant lui sur %1$s blocs, %2$s de large, jusqu'à %3$s plus bas. L'air qui stagne sous un toit nourrit l'oïdium ; un ventilateur le brasse. Un seul suffit. Un plant poussé dans son souffle donne une tige de plus.",
   "hempdustry.info.dehumidifier": "Alimenté sous un toit, il assèche les plants sur %1$s×%1$s, %2$s blocs en haut comme en bas : l'oïdium déteste l'air sec. Leur eau remplit son réservoir : videz-le à la fiole ou au seau, ou laissez-le goutter dans un chaudron. Plein, il s'arrête.",
   "hempdustry.info.hygrometer": "Fixez-le à un mur : l'aiguille montre l'air du plant le plus humide autour : sec, normal, humide, détrempé. Un comparateur le lit avant tout déshumidificateur : 0 sec ou normal, 8 humide, 15 détrempé. Relié à l'un d'eux, il ne l'allume qu'au besoin.",
+  "tag.entity_type.hempdustry.drawn_to_hemp": "Attirés par le chanvre",
+  "tag.entity_type.hempdustry.drawn_to_stash": "Attirés par l'odeur de la beuh",
   "tag.item.c.crops.hemp": "Récoltes de Chanvre",
   "tag.item.c.bricks.hemp": "Briques de Chanvre",
   "tag.item.c.storage_blocks.hemp": "Blocs de Stockage de Chanvre",

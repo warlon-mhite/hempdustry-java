@@ -4,6 +4,7 @@ import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
 import com.warlonmhite.hempdustry.component.StashContents;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.item.custom.StashJarItem;
+import com.warlonmhite.hempdustry.util.ModTags;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -14,6 +15,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -25,8 +27,9 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Creepers smell a stash: a Stash Jar a hand has just opened draws them ({@link SeekStashJarGoal}), and buds
- * carried loose let a creeper notice their carrier from further away.
+ * Creepers (the mobs of {@code #hempdustry:drawn_to_stash}) smell a stash: a Stash Jar a hand has just opened
+ * draws them ({@link SeekStashJarGoal}), and buds carried loose let a creeper notice their carrier from further
+ * away.
  *
  * <h2>An opened jar</h2>
  *
@@ -106,6 +109,14 @@ public final class StashSmell {
         int hempdustry$budsCounted();
 
         void hempdustry$setBudsCounted(long gameTime, int count);
+    }
+
+    /**
+     * Whether {@code mob} is one a stash draws: {@code #hempdustry:drawn_to_stash}, vanilla's creeper by default. It
+     * decides who comes to an opened jar ({@link SeekStashJarGoal}) and who notices loose buds from further away.
+     */
+    public static boolean drawnToStash(Entity mob) {
+        return mob.is(ModTags.EntityTypes.DRAWN_TO_STASH);
     }
 
     /**

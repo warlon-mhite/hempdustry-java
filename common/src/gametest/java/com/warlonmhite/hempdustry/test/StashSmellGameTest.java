@@ -7,6 +7,7 @@ import com.warlonmhite.hempdustry.entity.ai.SeekStashJarGoal;
 import com.warlonmhite.hempdustry.entity.ai.StashSmell;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.item.custom.StashJarItem;
+import com.warlonmhite.hempdustry.util.ModTags;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
@@ -210,7 +211,7 @@ public final class StashSmellGameTest {
         Creeper far = creeper(context, new BlockPos(7, 1, 7));
         SeekStashJarGoal nearGoal = jarGoalOf(near);
         SeekStashJarGoal farGoal = jarGoalOf(far);
-        context.assertTrue(nearGoal != null, "CreeperEntityMixin did not add SeekStashJarGoal to a creeper");
+        context.assertTrue(nearGoal != null, "MobGoalsMixin did not add SeekStashJarGoal to a creeper");
 
         // Other tests' jars share this level, so each check asks whether this jar is the one noticed.
         context.assertFalse(notices(nearGoal, at, 500), "a creeper noticed a shut jar");
@@ -292,6 +293,72 @@ public final class StashSmellGameTest {
                     + " blocks from an opened jar of 64 buds");
             jar.letSmellOut(context.getLevel().getGameTime());
         });
+    }
+
+    /**
+     * Which mobs a stash draws is {@code #hempdustry:drawn_to_stash}, vanilla's creeper alone by default. A creeper out
+     * of it never goes for an opened jar, notices a player carrying a stack no further than one carrying nothing, and
+     * one made while it is out is given no jar goal; back in, it smells both again. A pig the tag lists is made with
+     * the jar goal, goes for the jar and smells the stack; out of the tag again, it smells neither.
+     */
+    public static void onlyAMobDrawnToAStashSmellsIt(GameTestHelper context) {
+        for (int x = 0; x < 8; x++) {
+            for (int z = 0; z < 8; z++) {
+                context.setBlock(new BlockPos(x, 0, z), Blocks.STONE);
+            }
+        }
+        BlockPos jarPos = new BlockPos(1, 1, 1);
+        context.setBlock(jarPos, ModBlocks.STASH_JAR.defaultBlockState());
+        BlockPos at = context.absolutePos(jarPos);
+        StashJarBlockEntity jar = (StashJarBlockEntity) context.getLevel().getBlockEntity(at);
+        StashContents.Mutable inside = StashContents.EMPTY.mutable();
+        inside.insert(new ItemStack(ModItems.INDICA_BUDS, 64), 128);
+        inside.insert(new ItemStack(ModItems.SATIVA_BUDS, 64), 128);
+        jar.setContents(inside.toImmutable());
+        ServerPlayer opener = Players.survival(context);
+        opener.setPos(Vec3.atCenterOf(at).add(1.5, 0.0, 0.0));
+        Players.click(context, opener, jarPos, ItemStack.EMPTY);
+        opener.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
+        context.assertTrue(StashSmell.smellsOpen(context.getLevel(), at), "the take-out did not open the jar");
+
+        // A creeper with a 4-block reach notices a player 5.5 off only by a stack's smell (×1.5).
+        TargetingConditions reach4 = TargetingConditions.forCombat().range(4.0);
+        ServerPlayer carrier = Players.survival(context);
+        give(carrier, new ItemStack(ModItems.INDICA_BUDS, 64));
+        Creeper near = creeper(context, new BlockPos(1, 1, 6));
+        SeekStashJarGoal goal = jarGoalOf(near);
+        context.assertTrue(goal != null, "a creeper, which the tag lists by default, was made without the jar goal");
+        carrier.setPos(near.position().add(5.5, 0.0, 0.0));
+        context.assertTrue(reach4.test(context.getLevel(), near, carrier),
+                "a creeper in the tag missed a player 5.5 off carrying a stack");
+        Tagged.without(EntityTypes.CREEPER, ModTags.EntityTypes.DRAWN_TO_STASH, () -> {
+            context.assertFalse(reach4.test(context.getLevel(), near, carrier),
+                    "a creeper out of #hempdustry:drawn_to_stash noticed a player 5.5 off by the smell of a stack");
+            context.assertFalse(notices(goal, at, 500), "a creeper out of #hempdustry:drawn_to_stash went for an opened jar");
+            Creeper untagged = creeper(context, new BlockPos(3, 1, 3));
+            context.assertTrue(jarGoalOf(untagged) == null, "a creeper made while out of the tag was given the jar goal");
+            untagged.discard();
+        });
+        context.assertTrue(notices(goal, at, 500), "a creeper back in the tag never went for the opened jar in 500 checks");
+        near.discard();
+
+        Mob[] listed = new Mob[1];
+        Tagged.within(EntityTypes.PIG, ModTags.EntityTypes.DRAWN_TO_STASH, () -> {
+            listed[0] = context.spawn(EntityTypes.PIG, new BlockPos(1, 1, 4));
+            listed[0].setNoAi(true);
+            SeekStashJarGoal pigGoal = jarGoalOf(listed[0]);
+            context.assertTrue(pigGoal != null, "a pig the tag lists was made without the jar goal");
+            context.assertTrue(notices(pigGoal, at, 500), "a pig the tag lists never went for the opened jar in 500 checks");
+            carrier.setPos(listed[0].position().add(5.5, 0.0, 0.0));
+            context.assertTrue(reach4.test(context.getLevel(), listed[0], carrier),
+                    "a pig the tag lists missed a player 5.5 off carrying a stack");
+        });
+        context.assertFalse(reach4.test(context.getLevel(), listed[0], carrier),
+                "a pig the tag no longer lists noticed a player by the smell of a stack");
+        context.assertFalse(notices(jarGoalOf(listed[0]), at, 500), "a pig the tag no longer lists went for an opened jar");
+        listed[0].discard();
+        jar.letSmellOut(context.getLevel().getGameTime());
+        context.succeed();
     }
 
     /** Whether {@code goal} goes for the jar at {@code jar} within {@code checks} checks. */

@@ -44,6 +44,7 @@ public final class HempdustryGameTests {
                 SiftingBoxGameTest::dryScreenFillsAndYieldsKief);
         register("creeper_seeks_hemp_crop", CreeperSeeksHempGameTest::creeperSeeksHempCrop);
         register("ripe_hemp_draws_more_creepers", CreeperSeeksHempGameTest::ripeHempDrawsMoreCreepers);
+        register("only_a_mob_drawn_to_hemp_seeks_it", CreeperSeeksHempGameTest::onlyAMobDrawnToHempSeeksIt);
         register("hemp_leaf_is_a_loom_pattern_item",
                 BannerPatternGameTest::hempLeafIsALoomPatternItem);
         register("bar_cuts_into_nine_pieces", HashishBarGameTest::barCutsIntoNinePieces);
@@ -430,6 +431,7 @@ public final class HempdustryGameTests {
         register("an_opened_jars_pull_is_its_buds", StashSmellGameTest::anOpenedJarsPullIsItsBuds);
         register("only_an_opened_jar_draws_creepers", StashSmellGameTest::onlyAnOpenedJarDrawsCreepers);
         register("a_creeper_walks_to_an_opened_jar", StashSmellGameTest::aCreeperWalksToAnOpenedJar);
+        register("only_a_mob_drawn_to_a_stash_smells_it", StashSmellGameTest::onlyAMobDrawnToAStashSmellsIt);
     }
 
     /** Registers {@code test} as {@code name}, which must have a {@code test_instance} JSON of its own. */
