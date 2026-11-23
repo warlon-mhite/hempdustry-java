@@ -6,9 +6,10 @@ import org.jetbrains.annotations.Nullable;
 /**
  * The config values a client shows a player, as the server it plays on runs them: the machine timings on the recipe
  * viewers' pages and the Hemp Press's platen. The server sends them ({@link ServerSettings}); they are held here, apart
- * from the client's own {@link HempdustryConfig}, which goes on deciding everything that is the client's (the
- * {@code client} section) and is never written by a server. Until a server has sent anything, and on a server without
- * the mod, the client's own file answers. Forgotten when the player leaves the world, and whenever a connection starts
+ * from the game's own files: its {@link HempdustryConfig}, and its preferences in {@code hempdustry-client.json}
+ * ({@link ClientConfig}), which go on deciding everything that is the game's own and which no server ever writes.
+ * Until a server has sent anything, and on a server without the mod, the game's own {@link HempdustryConfig}
+ * answers. Forgotten when the player leaves the world, and whenever a connection starts
  * being configured or drops while it is, so a join that failed after the values arrived leaves nothing behind for
  * the next server.
  *

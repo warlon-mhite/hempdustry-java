@@ -315,9 +315,10 @@ public final class Smoking {
     /**
      * The load's green-out odds before the server's config: the device's 1-in-N widened by the primary
      * material's {@code green_out_factor} ({@link #smoothed}), then by its tier: Mids as 2.1, Dank three
-     * quarters of the chance, Top Shelf half, Epic a quarter. A good bud is smoother; it never stops a
-     * green-out, which is the price of a big hit. A schwag load keeps 2.1's odds. The tier's factors are
-     * {@code genetics}' (those are the built-in ones).
+     * quarters of the chance, Top Shelf half, Epic a quarter. A good bud is smoother; built in, no tier stops a
+     * green-out, which is the price of a big hit, though a pack that sets a tier's {@code green_out} to 0 makes that
+     * tier's loads never green out. A schwag load keeps 2.1's odds. The tier's factors are {@code genetics}' (those
+     * are the built-in ones).
      */
     public static int greenOutOneIn(Genetics genetics, int greenOutChanceOneIn, SmokeContents contents) {
         return Tiers.scaleOneIn(smoothed(greenOutChanceOneIn, contents),
