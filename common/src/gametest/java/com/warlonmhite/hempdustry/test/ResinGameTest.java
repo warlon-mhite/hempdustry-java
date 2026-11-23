@@ -316,7 +316,7 @@ public final class ResinGameTest {
         expected.put(new ItemStack(ModItems.HEMP_LEAF), SiftingBoxBlock.TRIM_CHANCE);
         expected.put(new ItemStack(ModItems.KIEF), SiftingBoxBlock.KIEF_CHANCE);
         for (Map.Entry<ItemStack, Float> entry : expected.entrySet()) {
-            float chance = SiftingBoxBlock.sieveChance(entry.getKey(), registries);
+            float chance = SiftingBoxBlock.sieveChance(entry.getKey(), world);
             context.assertTrue(Math.abs(chance - entry.getValue()) < 1e-6F, entry.getKey() + " "
                     + Resins.written(entry.getKey()) + " sieves at " + chance + ", not " + entry.getValue());
         }

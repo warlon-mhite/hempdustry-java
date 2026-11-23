@@ -1,0 +1,6 @@
+{
+  "type": "hempdustry:sifting",
+  "ingredient": "#hempdustry:siftable/kief",
+  "levels": 0.25,
+  "screen": "kief"
+}

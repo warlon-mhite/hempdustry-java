@@ -64,6 +64,7 @@ NON_CRAFTING_TYPES = {
     "hempdustry:decarboxylating",     # one tray-load in the Decarboxylator
     "hempdustry:infusing",            # the Infuser's whole conversion, in one recipe
     "hempdustry:pressing",            # one squeeze in the Hemp Press
+    "hempdustry:sifting",             # one input of the Sifting Box, a vessel: no grid at all
     "hempdustry:stamped_smelting",    # a furnace's smelting, keeping what burned's chemotype
     # In the grid, but unscannable: a SpecialCraftingRecipe's JSON carries no ingredient list at
     # all, so there is nothing here to compare. Its matcher requires a hempdustry device plus

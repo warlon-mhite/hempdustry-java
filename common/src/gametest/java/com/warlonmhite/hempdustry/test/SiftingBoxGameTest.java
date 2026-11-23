@@ -1,5 +1,23 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.google.gson.JsonElement;
+import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.JsonOps;
+import com.warlonmhite.hempdustry.compat.ViewerRecipes;
+import com.warlonmhite.hempdustry.recipe.ModRecipes;
+import com.warlonmhite.hempdustry.recipe.SiftingRecipe;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.SiftingBoxBlock;
 import com.warlonmhite.hempdustry.item.ModItems;
@@ -346,5 +364,112 @@ public final class SiftingBoxGameTest {
                     "a box placed full never settled");
             context.succeed();
         });
+    }
+
+    /**
+     * The mod's own {@code hempdustry:sifting} recipes are the four rates the box ran on before they were data,
+     * and the box reads them: buds 1 level (and 1 a resin step), Beldía's resinous buds 2 (1 a step), fan leaf
+     * 0.15, kief 0.25 on the kief screen, each over its {@code #hempdustry:siftable/*} tag; a stick, which no
+     * recipe names, nothing. Two recipes naming one piece give it the one with the most levels, and with no
+     * recipe at all the box takes nothing. The viewers' dry rows are these four, in this order, with today's
+     * counts per batch (7, 4, 47, 28).
+     */
+    public static void theShippedSiftingRecipesAreTodays(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        record Want(String tag, SiftingBoxBlock.Content screen, float levels, Optional<Float> resinLevels, int perBatch) {
+        }
+        Map<String, Want> want = new LinkedHashMap<>();
+        want.put("hempdustry:sifting/flower", new Want("#hempdustry:siftable/flower", SiftingBoxBlock.Content.PLANT, 1.0F, Optional.of(1.0F), 7));
+        want.put("hempdustry:sifting/resinous", new Want("#hempdustry:siftable/resinous", SiftingBoxBlock.Content.PLANT, 2.0F, Optional.of(1.0F), 4));
+        want.put("hempdustry:sifting/trim", new Want("#hempdustry:siftable/trim", SiftingBoxBlock.Content.PLANT, 0.15F, Optional.empty(), 47));
+        want.put("hempdustry:sifting/kief", new Want("#hempdustry:siftable/kief", SiftingBoxBlock.Content.KIEF, 0.25F, Optional.empty(), 28));
+
+        DynamicOps<JsonElement> json = world.registryAccess().createSerializationContext(JsonOps.INSTANCE);
+        Map<String, SiftingRecipe> shipped = new TreeMap<>();
+        for (RecipeHolder<SiftingRecipe> holder : ModRecipes.allOfType(world, ModRecipes.SIFTING_TYPE)) {
+            if (Sweep.ours(holder.id().identifier())) shipped.put(holder.id().identifier().toString(), holder.value());
+        }
+        context.assertValueEqual(shipped.keySet(), new TreeSet<>(want.keySet()), "the mod's sifting recipes");
+        for (Map.Entry<String, Want> entry : want.entrySet()) {
+            SiftingRecipe recipe = shipped.get(entry.getKey());
+            Want expected = entry.getValue();
+            String tag = Ingredient.CODEC.encodeStart(json, recipe.ingredient()).getOrThrow().getAsString();
+            context.assertTrue(tag.equals(expected.tag()) && recipe.screen() == expected.screen()
+                            && recipe.levels() == expected.levels() && recipe.resinLevels().equals(expected.resinLevels()),
+                    entry.getKey() + " is " + tag + " " + recipe + ", not " + expected);
+        }
+        // The constants the recipe provider writes them from are the same numbers.
+        context.assertTrue(SiftingBoxBlock.FLOWER_CHANCE == 1.0F && SiftingBoxBlock.RESINOUS_CHANCE == 2.0F
+                        && SiftingBoxBlock.TRIM_CHANCE == 0.15F && SiftingBoxBlock.KIEF_CHANCE == 0.25F,
+                "the recipe provider's rates moved from the ones the box shipped with");
+
+        Map<ItemStack, Float> sieves = new LinkedHashMap<>();
+        sieves.put(new ItemStack(ModItems.INDICA_BUDS), 1.0F);
+        sieves.put(new ItemStack(ModItems.BELDIA_BUDS), 2.0F);
+        sieves.put(new ItemStack(ModItems.HEMP_LEAF), 0.15F);
+        sieves.put(new ItemStack(ModItems.KIEF), 0.25F);
+        sieves.put(new ItemStack(Items.STICK), 0.0F);
+        for (Map.Entry<ItemStack, Float> entry : sieves.entrySet()) {
+            float chance = SiftingBoxBlock.sieveChance(entry.getKey(), world);
+            context.assertTrue(chance == entry.getValue(), entry.getKey() + " sieves at " + chance + ", not " + entry.getValue());
+        }
+
+        ItemStack beldia = new ItemStack(ModItems.BELDIA_BUDS);
+        RecipeHolder<SiftingRecipe> low = holder("a", new SiftingRecipe(Ingredient.of(ModItems.BELDIA_BUDS),
+                SiftingBoxBlock.Content.PLANT, 1.0F, Optional.empty()));
+        RecipeHolder<SiftingRecipe> high = holder("b", new SiftingRecipe(Ingredient.of(ModItems.BELDIA_BUDS),
+                SiftingBoxBlock.Content.PLANT, 2.0F, Optional.empty()));
+        context.assertValueEqual(SiftingRecipe.pick(List.of(low, high), beldia), Optional.of(high),
+                "a bud two recipes name took the one with fewer levels");
+        context.assertValueEqual(SiftingRecipe.pick(List.of(), beldia), Optional.empty(),
+                "with no sifting recipe the box still sifts something");
+
+        List<ViewerRecipes.Entry> rows = ViewerRecipes.sifting(world).stream()
+                .filter(row -> Sweep.ours(row.id())).toList();
+        context.assertValueEqual(rows.stream().map(row -> row.id().toString()).toList(), List.copyOf(want.keySet()),
+                "the dry sifting rows");
+        for (ViewerRecipes.Entry row : rows) {
+            Object count = ((TranslatableContents) row.notes().getFirst().getContents()).getArgs()[0];
+            context.assertValueEqual(count, want.get(row.id().toString()).perBatch(), row.id() + "'s pieces per batch");
+        }
+        context.succeed();
+    }
+
+    /**
+     * A datapack's {@code hempdustry:sifting} recipe moves the box: the game tests' own pack puts wheat, which
+     * no recipe of the mod names, on the plant screen at seven levels a piece, so one wheat fills a batch that
+     * settles into nine kief, and both viewers' pages show it, dry and in each jacket.
+     */
+    public static void aDatapackSiftingRecipeMovesTheBox(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        context.assertValueEqual(SiftingBoxBlock.sieveChance(new ItemStack(Items.WHEAT), world), 7.0F,
+                "the test pack's wheat recipe");
+        context.setBlock(BOX, ModBlocks.SIFTING_BOX.defaultBlockState());
+        ItemStack wheat = new ItemStack(Items.WHEAT, 3);
+        rightClick(context, wheat);
+        context.assertValueEqual(context.getBlockState(BOX).getValue(SiftingBoxBlock.LEVEL), SiftingBoxBlock.FULL_LEVEL,
+                "one wheat at seven levels did not fill the screen");
+        context.assertValueEqual(wheat.getCount(), 2, "the box did not take exactly one wheat");
+
+        List<String> dry = ViewerRecipes.sifting(world).stream().map(row -> row.id().toString()).toList();
+        List<String> wet = ViewerRecipes.iceOLator(world).stream().map(row -> row.id().toString()).toList();
+        context.assertTrue(dry.contains("hempdustry-gametest:sifting/wheat"), "no dry row for the pack's recipe: " + dry);
+        context.assertTrue(wet.containsAll(List.of("hempdustry-gametest:ice_o_lator/wheat/blue_ice",
+                        "hempdustry-gametest:ice_o_lator/wheat/packed_ice", "hempdustry-gametest:ice_o_lator/wheat/ice")),
+                "no wash rows for the pack's recipe: " + wet);
+        context.assertFalse(wet.stream().anyMatch(id -> id.contains("/kief/")), "a kief recipe has wash rows: " + wet);
+
+        context.runAtTickTime(READY_BY_TICK, () -> {
+            rightClick(context, ItemStack.EMPTY);
+            context.runAfterDelay(2, () -> {
+                context.assertItemEntityCountIs(ModItems.KIEF, BOX, 3.0, SiftingBoxBlock.YIELD);
+                context.succeed();
+            });
+        });
+    }
+
+    private static RecipeHolder<SiftingRecipe> holder(String name, SiftingRecipe recipe) {
+        return new RecipeHolder<>(ResourceKey.create(Registries.RECIPE,
+                Identifier.fromNamespaceAndPath("hempdustry-gametest", name)), recipe);
     }
 }

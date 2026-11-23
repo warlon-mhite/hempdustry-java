@@ -1,0 +1,6 @@
+{
+  "type": "hempdustry:sifting",
+  "ingredient": "minecraft:wheat",
+  "screen": "plant",
+  "levels": 7.0
+}

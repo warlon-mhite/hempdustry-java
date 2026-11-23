@@ -110,6 +110,21 @@ public class ModRecipes {
             new RecipeSerializer<>(PressingRecipe.MAP_CODEC, PressingRecipe.STREAM_CODEC));
 
     /**
+     * What the Sifting Box takes and how far each piece moves its screen. The box is a vessel, not a machine,
+     * and has no screen or slot; its rates are recipes so a datapack or a pack script can set them and a
+     * recipe viewer can read them. See {@link SiftingRecipe}.
+     */
+    public static final RecipeType<SiftingRecipe> SIFTING_TYPE = Registry.register(
+            BuiltInRegistries.RECIPE_TYPE,
+            Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "sifting"),
+            recipeType("sifting"));
+
+    public static final RecipeSerializer<SiftingRecipe> SIFTING = Registry.register(
+            BuiltInRegistries.RECIPE_SERIALIZER,
+            Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "sifting"),
+            new RecipeSerializer<>(SiftingRecipe.MAP_CODEC, SiftingRecipe.STREAM_CODEC));
+
+    /**
      * A bare {@code RecipeType}, ready to be registered.
      *
      * <p><b>{@code RecipeType.register} cannot be used here</b>: it builds its own id with
@@ -149,6 +164,8 @@ public class ModRecipes {
         Services.REGISTRATION.syncRecipes(DECARBOXYLATING_TYPE, DECARBOXYLATING);
         Services.REGISTRATION.syncRecipes(INFUSING_TYPE, INFUSING);
         Services.REGISTRATION.syncRecipes(PRESSING_TYPE, PRESSING);
+        // The Sifting Box asks on both sides: a client predicts what a click takes.
+        Services.REGISTRATION.syncRecipes(SIFTING_TYPE, SIFTING);
         // Scorched hemp is vanilla smelting under a serializer of ours, which Fabric sends a client only
         // when asked: without this a viewer on Fabric shows no furnace row for it at all.
         Services.REGISTRATION.syncRecipes(RecipeType.SMELTING, STAMPED_SMELTING);

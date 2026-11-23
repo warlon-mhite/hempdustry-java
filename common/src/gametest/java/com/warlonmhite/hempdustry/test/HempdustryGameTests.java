@@ -58,6 +58,8 @@ public final class HempdustryGameTests {
         register("screen_refuses_a_mixed_load", SiftingBoxGameTest::screenRefusesAMixedLoad);
         register("a_refused_bucket_is_not_poured", SiftingBoxGameTest::aRefusedBucketIsNotPoured);
         register("a_full_box_settles_however_it_arrived", SiftingBoxGameTest::aFullBoxSettlesHoweverItArrived);
+        register("the_shipped_sifting_recipes_are_todays", SiftingBoxGameTest::theShippedSiftingRecipesAreTodays);
+        register("a_datapack_sifting_recipe_moves_the_box", SiftingBoxGameTest::aDatapackSiftingRecipeMovesTheBox);
         register("vaporizer_bowl_returns_one_avb", VaporizerGameTest::vaporizerBowlReturnsOneAvb);
         register("vaporizer_refuses_two_buds", VaporizerGameTest::vaporizerRefusesTwoBuds);
         register("vaporizer_only_returns_what_grew_on_a_plant",

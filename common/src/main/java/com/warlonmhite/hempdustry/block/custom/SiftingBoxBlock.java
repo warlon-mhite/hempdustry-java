@@ -1,21 +1,16 @@
 package com.warlonmhite.hempdustry.block.custom;
 
-import com.warlonmhite.hempdustry.balance.Genetics;
-import com.warlonmhite.hempdustry.strain.internal.Resins;
 import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.warlonmhite.hempdustry.strain.internal.Tiers;
 import com.warlonmhite.hempdustry.block.entity.custom.SiftingBoxBlockEntity;
 import com.warlonmhite.hempdustry.item.ModItems;
+import com.warlonmhite.hempdustry.recipe.SiftingRecipe;
 import com.warlonmhite.hempdustry.strain.BudTier;
 import com.warlonmhite.hempdustry.strain.Chemotype;
 import com.warlonmhite.hempdustry.strain.ResinStep;
-import com.warlonmhite.hempdustry.strain.ResinTexture;
-import com.warlonmhite.hempdustry.strain.Strain;
 import com.warlonmhite.hempdustry.util.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.Holder;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -51,6 +46,7 @@ import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -61,8 +57,10 @@ import org.jetbrains.annotations.Nullable;
  *
  * <b>Separation is a vessel; transformation is a machine.</b> A vessel needs a <em>condition</em> —
  * a screen, cold, water — and gets a blockstate and nothing else: no inventory, no screen, no
- * recipe type. (What its batch is made of it does keep, in {@link SiftingBoxBlockEntity}: a record of
- * counts, never a slot.) A machine needs <em>fuel or heat</em> and gets a GUI and a recipe type. The Sifting
+ * clock. (What its batch is made of it does keep, in {@link SiftingBoxBlockEntity}: a record of
+ * counts, never a slot. What it takes, and how far each piece moves the screen, is data:
+ * {@link SiftingRecipe}, the {@code hempdustry:sifting} recipes.) A machine needs <em>fuel or heat</em>
+ * and gets a GUI and a timed recipe. The Sifting
  * Box is a vessel and the Hemp Press is a machine, and that split is the whole reason this block no
  * longer hands you a pressed bar.
  *
@@ -173,6 +171,10 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
      * presses one-for-one, so the whole chain still reads: seven buds, nine smokes.
      */
     public static final int YIELD = 9;
+
+    // The four rates below are what the mod's own hempdustry:sifting recipes say (the recipe provider
+    // writes them from here), and nothing else may read them: the box reads the recipes, so a datapack
+    // that moves a rate moves the box. Their reasoning stays here, beside the numbers.
 
     /**
      * Chance that one fan leaf advances the screen one level.
@@ -320,9 +322,12 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
 
         Chemotype chemotype = Chemotype.ofMatter(stack, world.registryAccess());
         // Cannabinoid-free matter carries no resin worth the screen: the box takes nothing from it,
-        // silently, as it takes nothing from a stick.
-        Content content = chemotype == Chemotype.CANNABINOID_FREE ? null : contentOf(stack);
-        float chance = sieveChance(stack, world.registryAccess()) * rate(world, pos, state);
+        // silently, as it takes nothing from a stick -- nor from anything no sifting recipe names.
+        Optional<SiftingRecipe> recipe = chemotype == Chemotype.CANNABINOID_FREE
+                ? Optional.empty() : SiftingRecipe.of(world, stack);
+        Content content = recipe.map(SiftingRecipe::screen).orElse(null);
+        float chance = recipe.map(found -> found.levelsFor(stack, world.registryAccess())).orElse(0.0F)
+                * rate(world, pos, state);
         // THC, balanced and CBD matter mix by dosage; CBG-dominant matter has no share to mix by, so it
         // sifts only with its own kind.
         Chemotype batchChemotype = chemotypeOf(world, pos, state);
@@ -480,7 +485,8 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
         return worst;
     }
 
-    private static float iceRate(BlockState state) {
+    /** The rate one side of {@code state} gives a jacket: blue ice, packed ice, ice (and frosted ice), else 0. */
+    public static float iceRate(BlockState state) {
         if (state.is(Blocks.BLUE_ICE)) {
             return BLUE_ICE_RATE;
         }
@@ -493,65 +499,38 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
     }
 
     /**
-     * How much one of this item is worth on the screen at full rate, or 0 if there is nothing in it
-     * to separate.
+     * How much one of this item is worth on the screen at full rate, or 0 if no sifting recipe names it
+     * ({@link SiftingRecipe}).
      *
-     * <p><b>Both processes take the same two inputs</b>, which is the point: the water changes what
-     * comes out, never what goes in. The two rates live in tags rather than in an item check, so a
-     * third strain's buds are siftable the day the strain exists and a datapack can widen either
-     * side without touching code.
+     * <p><b>Both processes take the same inputs</b>, which is the point: the water changes what comes out,
+     * never what goes in. The mod's recipes name the four {@code #hempdustry:siftable/*} tags, so a third
+     * strain's buds are siftable the day the strain exists, a datapack can widen any side by tag, and a
+     * recipe of its own can add an input or move a rate.
      *
      * <p><b>A bud's resin moves its rate</b>: a bud that carries its plant's step ({@link ResinStep}) moves the
-     * screen {@link #FLOWER_CHANCE} times the step's sieve factor for its strain's texture, ×0.5 for a very low
-     * plant up to ×2 for a very rich dry one. A bud with no step written on it sieves as every bud did before
-     * resin: by the two tags. Leaves and kief carry no step.
+     * screen its recipe's {@code resin_levels} times the step's sieve factor for its strain's texture, ×0.5 for a
+     * very low plant up to ×2 for a very rich dry one. A bud with no step written on it sieves at the recipe's
+     * {@code levels}, as every bud did before resin. Leaves and kief carry no step.
      *
      * <p>There is no third rate for resin any more. <b>The box does not re-sift resin</b>: the ice
      * wash replaced that pass, and it is the honest version of it — what a further sieve buys is
      * cleanliness, which is exactly what the wash buys. Kief is another matter: a dry box re-sifts
      * it into filtered kief at {@link #KIEF_CHANCE}.
      */
-    public static float sieveChance(ItemStack stack, HolderLookup.Provider registries) {
-        if (stack.is(ModTags.Items.SIFTABLE_RESINOUS) || stack.is(ModTags.Items.SIFTABLE_FLOWER)) {
-            ResinStep step = Resins.written(stack).orElse(null);
-            if (step != null) {
-                return FLOWER_CHANCE * Resins.sieveFactor(Genetics.of(registries), step, textureOf(stack, registries));
-            }
-        }
-        if (stack.is(ModTags.Items.SIFTABLE_RESINOUS)) {
-            return RESINOUS_CHANCE;
-        }
-        if (stack.is(ModTags.Items.SIFTABLE_FLOWER)) {
-            return FLOWER_CHANCE;
-        }
-        if (stack.is(ModTags.Items.SIFTABLE_TRIM)) {
-            return TRIM_CHANCE;
-        }
-        return stack.is(ModTags.Items.SIFTABLE_KIEF) ? KIEF_CHANCE : 0.0F;
-    }
-
-    /** The resin texture of the strain whose buds {@code stack} is, even for anything else. */
-    private static ResinTexture textureOf(ItemStack stack, HolderLookup.Provider registries) {
-        return Strain.fromBuds(registries, stack.getItem())
-                .map(Holder::value)
-                .map(strain -> strain.traits().resin().texture())
-                .orElse(ResinTexture.EVEN);
+    public static float sieveChance(ItemStack stack, Level world) {
+        return SiftingRecipe.of(world, stack).map(recipe -> recipe.levelsFor(stack, world.registryAccess())).orElse(0.0F);
     }
 
     /**
-     * Which kind of screen this item belongs on, or {@code null} if the box takes it at all.
-     *
-     * <p>Deliberately a companion to {@link #sieveChance} rather than folded into it: the rate and
-     * the kind are two different questions, and the plant rates <em>are</em> the balance of the block
-     * while the kind is a rule about what may share a screen.
+     * What a ready batch is: a kief screen's is filtered kief (the dry re-sift; a wash never holds powder), a
+     * washed plant screen's bubble hash, a dry one's kief. A hash is named by its process, never its input, so
+     * this is the box's and no recipe's; the loot table of a ready box broken follows the same rule.
      */
-    @Nullable
-    private static Content contentOf(ItemStack stack) {
-        if (stack.is(ModTags.Items.SIFTABLE_FLOWER) || stack.is(ModTags.Items.SIFTABLE_RESINOUS)
-                || stack.is(ModTags.Items.SIFTABLE_TRIM)) {
-            return Content.PLANT;
+    public static Item yieldOf(Content content, boolean filled) {
+        if (content == Content.KIEF) {
+            return ModItems.FILTERED_KIEF;
         }
-        return stack.is(ModTags.Items.SIFTABLE_KIEF) ? Content.KIEF : null;
+        return filled ? ModItems.BUBBLE_HASH : ModItems.KIEF;
     }
 
     /**
@@ -587,12 +566,7 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
      * smokeable until it has been through the press.
      */
     private static void collect(ServerLevel world, BlockPos pos, BlockState state) {
-        Item yield;
-        if (state.getValue(CONTENT) == Content.KIEF) {
-            yield = ModItems.FILTERED_KIEF;   // the dry re-sift; a wash never holds powder
-        } else {
-            yield = state.getValue(FILLED) ? ModItems.BUBBLE_HASH : ModItems.KIEF;
-        }
+        Item yield = yieldOf(state.getValue(CONTENT), state.getValue(FILLED));
         Vec3 spawn = Vec3.atLowerCornerWithOffset(pos, 0.5, 1.01, 0.5).offsetRandom(world.getRandom(), 0.7F);
         ItemEntity dropped = new ItemEntity(world, spawn.x(), spawn.y(), spawn.z(),
                 Tiers.stamp(Chemotypes.stamp(new ItemStack(yield, YIELD), chemotypeOf(world, pos, state)),

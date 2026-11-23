@@ -1,0 +1,7 @@
+{
+  "type": "hempdustry:sifting",
+  "ingredient": "#hempdustry:siftable/flower",
+  "levels": 1.0,
+  "resin_levels": 1.0,
+  "screen": "plant"
+}

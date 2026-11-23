@@ -26,6 +26,7 @@ import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.recipe.DecarboxylatingRecipe;
 import com.warlonmhite.hempdustry.recipe.InfusingRecipe;
 import com.warlonmhite.hempdustry.recipe.PressingRecipe;
+import com.warlonmhite.hempdustry.recipe.SiftingRecipe;
 import com.warlonmhite.hempdustry.recipe.ModRecipes;
 import com.warlonmhite.hempdustry.strain.ModStrains;
 import com.warlonmhite.hempdustry.strain.Strain;
@@ -43,8 +44,10 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import com.warlonmhite.hempdustry.util.ModTags;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -194,60 +197,82 @@ public final class ViewerRecipes {
     }
 
     /**
-     * The Sifting Box's two modes, neither of which has a recipe to read: it is a vessel, so what it
-     * takes and what it makes are constants in a block rather than data anybody can see. Both are
-     * built from those same constants, the way the cauldron's page is, so a page cannot drift from
-     * the code.
+     * The Sifting Box's dry screens, one row per {@code hempdustry:sifting} recipe: what it takes, what the
+     * screen makes of it and about how many fill a batch. Read from the recipes the server sent, so a datapack's
+     * rate or input is on the page; plant screens first, then by id. A recipe at no levels sifts nothing and has
+     * no row.
      *
      * <p>Two categories rather than one, because <b>the water changes what comes out</b> and a
      * single page could not say that without lying about one of the two.
      */
     public static List<Entry> sifting(Level world) {
-        return List.of(
-                screen(world, ModTags.Items.SIFTABLE_FLOWER, SiftingBoxBlock.FLOWER_CHANCE,
-                        ModItems.KIEF, "flower"),
-                screen(world, ModTags.Items.SIFTABLE_RESINOUS, SiftingBoxBlock.RESINOUS_CHANCE,
-                        ModItems.KIEF, "resinous"),
-                screen(world, ModTags.Items.SIFTABLE_TRIM, SiftingBoxBlock.TRIM_CHANCE,
-                        ModItems.KIEF, "trim"),
-                // The re-sift, which is the one row a player will not guess: the same box, a second
-                // pass, and a different product out. Its cost is the whole reason the ice room is
-                // worth building, so it has to be visible rather than discovered.
-                screen(world, ModTags.Items.SIFTABLE_KIEF, SiftingBoxBlock.KIEF_CHANCE,
-                        ModItems.FILTERED_KIEF, "kief"));
+        List<Entry> out = new ArrayList<>();
+        Genetics genetics = Genetics.of(world.registryAccess());
+        for (RecipeHolder<SiftingRecipe> holder : siftingRecipes(world)) {
+            SiftingRecipe recipe = holder.value();
+            List<Component> notes = new ArrayList<>();
+            notes.add(Component.translatable("hempdustry.category.sifting.info", perBatch(recipe.levels())));
+            // Buds sieve by their plant's resin, so their rows say so; leaves and kief carry none.
+            if (recipe.resinLevels().isPresent()) {
+                notes.add(sieveResin(genetics));
+            }
+            out.add(new Entry(holder.id().identifier(), List.of(recipe.ingredient()),
+                    new ItemStack(SiftingBoxBlock.yieldOf(recipe.screen(), false), SiftingBoxBlock.YIELD), notes, true));
+        }
+        return out;
     }
 
-    private static Entry screen(Level world, TagKey<Item> input, float chance, Item output, String name) {
-        return new Entry(Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "sifting/" + name),
-                List.of(ofTag(world, input)),
-                new ItemStack(output, SiftingBoxBlock.YIELD),
-                // Buds sieve by their plant's resin, so their rows say so; leaves and kief carry none.
-                input == ModTags.Items.SIFTABLE_TRIM || input == ModTags.Items.SIFTABLE_KIEF
-                        ? List.of(Component.translatable("hempdustry.category.sifting.info",
-                                Math.round(SiftingBoxBlock.FULL_LEVEL / chance)))
-                        : List.of(Component.translatable("hempdustry.category.sifting.info",
-                                        Math.round(SiftingBoxBlock.FULL_LEVEL / chance)),
-                                sieveResin(Genetics.of(world.registryAccess()))),
-                true);
-    }
+    /** The three jackets a wash page shows, best first, at the rates the box runs them. */
+    private static final List<Item> JACKETS = List.of(Items.BLUE_ICE, Items.PACKED_ICE, Items.ICE);
 
     /**
      * The ice-water wash — the same block with a bucket of water in it and ice on all four sides.
      *
-     * <p><b>Three rows, one per jacket</b>, because the jacket is the entire mechanic and a page
-     * that showed only "plant in, powder out" would be hiding the one thing a player has to know.
-     * The counts are the same arithmetic the block runs: {@code FULL_LEVEL} over the rate.
+     * <p><b>Three rows per plant recipe, one per jacket</b>, because the jacket is the entire mechanic and a
+     * page that showed only "plant in, powder out" would be hiding the one thing a player has to know. The
+     * count is the same arithmetic the block runs: {@code FULL_LEVEL} over the recipe's levels times the
+     * jacket's rate. A kief recipe has no wash rows: a wash takes plant matter and nothing else.
      */
     public static List<Entry> iceOLator(Level world) {
-        return List.of(
-                wash(world, Items.BLUE_ICE, SiftingBoxBlock.BLUE_ICE_RATE, ModTags.Items.SIFTABLE_FLOWER, SiftingBoxBlock.FLOWER_CHANCE, ""),
-                wash(world, Items.PACKED_ICE, SiftingBoxBlock.PACKED_ICE_RATE, ModTags.Items.SIFTABLE_FLOWER, SiftingBoxBlock.FLOWER_CHANCE, ""),
-                wash(world, Items.ICE, SiftingBoxBlock.ICE_RATE, ModTags.Items.SIFTABLE_FLOWER, SiftingBoxBlock.FLOWER_CHANCE, ""),
-                // The same three jackets for resinous buds, so the wash page shows what Beldía costs
-                // rather than leaving it off the page.
-                wash(world, Items.BLUE_ICE, SiftingBoxBlock.BLUE_ICE_RATE, ModTags.Items.SIFTABLE_RESINOUS, SiftingBoxBlock.RESINOUS_CHANCE, "resinous/"),
-                wash(world, Items.PACKED_ICE, SiftingBoxBlock.PACKED_ICE_RATE, ModTags.Items.SIFTABLE_RESINOUS, SiftingBoxBlock.RESINOUS_CHANCE, "resinous/"),
-                wash(world, Items.ICE, SiftingBoxBlock.ICE_RATE, ModTags.Items.SIFTABLE_RESINOUS, SiftingBoxBlock.RESINOUS_CHANCE, "resinous/"));
+        List<Entry> out = new ArrayList<>();
+        Genetics genetics = Genetics.of(world.registryAccess());
+        for (RecipeHolder<SiftingRecipe> holder : siftingRecipes(world)) {
+            SiftingRecipe recipe = holder.value();
+            if (recipe.screen() != SiftingBoxBlock.Content.PLANT) {
+                continue;
+            }
+            Identifier id = holder.id().identifier();
+            String name = id.getPath().startsWith("sifting/") ? id.getPath().substring("sifting/".length()) : id.getPath();
+            for (Item jacket : JACKETS) {
+                float rate = SiftingBoxBlock.iceRate(Block.byItem(jacket).defaultBlockState());
+                List<Component> notes = new ArrayList<>();
+                notes.add(Component.translatable("hempdustry.category.ice_o_lator.jacket").withStyle(ChatFormatting.DARK_GRAY));
+                notes.add(Component.translatable("hempdustry.category.sifting.info", perBatch(recipe.levels() * rate)));
+                if (recipe.resinLevels().isPresent()) {
+                    notes.add(sieveResin(genetics));
+                }
+                out.add(new Entry(Identifier.fromNamespaceAndPath(id.getNamespace(),
+                                "ice_o_lator/" + name + "/" + BuiltInRegistries.ITEM.getKey(jacket).getPath()),
+                        List.of(recipe.ingredient(), Ingredient.of(Items.WATER_BUCKET), Ingredient.of(jacket)),
+                        new ItemStack(SiftingBoxBlock.yieldOf(recipe.screen(), true), SiftingBoxBlock.YIELD), notes, true));
+            }
+        }
+        return out;
+    }
+
+    /** Every sifting recipe that moves a screen at all: plant screens first, then by id. */
+    private static List<RecipeHolder<SiftingRecipe>> siftingRecipes(Level world) {
+        return ModRecipes.allOfType(world, ModRecipes.SIFTING_TYPE).stream()
+                .filter(holder -> holder.value().levels() > 0.0F)
+                .sorted(Comparator.<RecipeHolder<SiftingRecipe>, Boolean>comparing(
+                                holder -> holder.value().screen() != SiftingBoxBlock.Content.PLANT)
+                        .thenComparing(holder -> holder.id().identifier()))
+                .toList();
+    }
+
+    /** About how many pieces fill a screen at {@code levels} a piece. */
+    private static int perBatch(float levels) {
+        return Math.round(SiftingBoxBlock.FULL_LEVEL / levels);
     }
 
     /**
@@ -280,31 +305,12 @@ public final class ViewerRecipes {
         return Component.translatable("hempdustry.number.decimal", hundredths / 100, fraction);
     }
 
-    private static Entry wash(Level world, Item jacket, float rate, TagKey<Item> buds, float budChance, String idPrefix) {
-        int budCount = Math.round(SiftingBoxBlock.FULL_LEVEL / (budChance * rate));
-        int leaves = Math.round(SiftingBoxBlock.FULL_LEVEL / (SiftingBoxBlock.TRIM_CHANCE * rate));
-        return new Entry(Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "ice_o_lator/" + idPrefix + BuiltInRegistries.ITEM.getKey(jacket).getPath()),
-                List.of(ofTag(world, buds),
-                        Ingredient.of(Items.WATER_BUCKET),
-                        Ingredient.of(jacket)),
-                new ItemStack(ModItems.BUBBLE_HASH, SiftingBoxBlock.YIELD),
-                List.of(Component.translatable("hempdustry.category.ice_o_lator.jacket")
-                                .withStyle(ChatFormatting.DARK_GRAY),
-                        Component.translatable("hempdustry.category.ice_o_lator.info", budCount, leaves),
-                        sieveResin(Genetics.of(world.registryAccess()))),
-                true);
-    }
-
     /**
      * An {@code Ingredient} over a tag, resolved against the world the viewer is looking at — which
      * is what makes these pages show a third-party strain's buds the moment a datapack adds them.
      * An unresolvable tag answers empty rather than throwing: a missing tag is a datapack problem,
      * not a reason for a recipe viewer to fail to open.
      */
-    private static Ingredient ofTag(Level world, TagKey<Item> tag) {
-        return ofTag(world, tag, ModItems.HEMP_LEAF);
-    }
-
     private static Ingredient ofTag(Level world, TagKey<Item> tag, Item fallback) {
         return world.registryAccess().lookupOrThrow(Registries.ITEM).get(tag)
                 .map(Ingredient::of).orElse(Ingredient.of(fallback));

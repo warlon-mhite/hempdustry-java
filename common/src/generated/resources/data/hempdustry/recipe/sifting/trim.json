@@ -1,0 +1,6 @@
+{
+  "type": "hempdustry:sifting",
+  "ingredient": "#hempdustry:siftable/trim",
+  "levels": 0.15,
+  "screen": "plant"
+}

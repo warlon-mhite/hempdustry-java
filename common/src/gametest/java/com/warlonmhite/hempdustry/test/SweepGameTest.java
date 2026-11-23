@@ -24,6 +24,7 @@ import com.warlonmhite.hempdustry.recipe.DecarboxylatingRecipe;
 import com.warlonmhite.hempdustry.recipe.InfusingRecipe;
 import com.warlonmhite.hempdustry.recipe.PackingRecipe;
 import com.warlonmhite.hempdustry.recipe.PressingRecipe;
+import com.warlonmhite.hempdustry.recipe.SiftingRecipe;
 import com.warlonmhite.hempdustry.strain.Strain;
 import com.warlonmhite.hempdustry.util.ModTags;
 
@@ -973,7 +974,7 @@ public final class SweepGameTest {
                     }
                 }
             } else if (recipe instanceof SingleItemRecipe || recipe instanceof DecarboxylatingRecipe
-                    || recipe instanceof PressingRecipe || recipe instanceof InfusingRecipe) {
+                    || recipe instanceof PressingRecipe || recipe instanceof InfusingRecipe || recipe instanceof SiftingRecipe) {
                 for (Ingredient ingredient : recipe.placementInfo().ingredients()) {
                     List<ItemStack> choices = choices(ingredient);
                     if (choices.isEmpty()) findings.putIfAbsent(id.toString(), "has an ingredient nothing satisfies");

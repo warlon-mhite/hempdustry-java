@@ -10,8 +10,10 @@ import com.warlonmhite.hempdustry.strain.ModStrains;
 import com.warlonmhite.hempdustry.strain.Strain;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.block.ModBlocks;
+import com.warlonmhite.hempdustry.block.custom.SiftingBoxBlock;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.block.entity.custom.DecarboxylatorBlockEntity;
 import com.warlonmhite.hempdustry.block.entity.custom.HempPressBlockEntity;
@@ -26,6 +28,7 @@ import com.warlonmhite.hempdustry.recipe.StampedSmeltingRecipe;
 import com.warlonmhite.hempdustry.recipe.PackingRecipe;
 import com.warlonmhite.hempdustry.recipe.StashJarUpgradeRecipe;
 import com.warlonmhite.hempdustry.recipe.PressingRecipe;
+import com.warlonmhite.hempdustry.recipe.SiftingRecipe;
 import com.warlonmhite.hempdustry.util.ModTags;
 import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
@@ -860,6 +863,22 @@ public class ModRecipeProvider extends FabricRecipeProvider {
                 "hemp_fiber");
 
         // ---------------------------------------------------------------------
+        // The Sifting Box's screens
+        // ---------------------------------------------------------------------
+        // One recipe per tag, at the rates the box has always run: buds fill a batch in seven, Beldia's
+        // resinous buds in four, fan leaf in about 47, and kief re-sifts at about three to one. Buds read
+        // their resin step at one level a bud, times the step's sieve factor in the genetics; leaves and
+        // kief carry none. What a batch becomes is the box's, not the recipe's: see SiftingRecipe.
+        offerSifting(ofTag(ModTags.Items.SIFTABLE_FLOWER), SiftingBoxBlock.Content.PLANT,
+                SiftingBoxBlock.FLOWER_CHANCE, Optional.of(SiftingBoxBlock.FLOWER_CHANCE), "flower");
+        offerSifting(ofTag(ModTags.Items.SIFTABLE_RESINOUS), SiftingBoxBlock.Content.PLANT,
+                SiftingBoxBlock.RESINOUS_CHANCE, Optional.of(SiftingBoxBlock.FLOWER_CHANCE), "resinous");
+        offerSifting(ofTag(ModTags.Items.SIFTABLE_TRIM), SiftingBoxBlock.Content.PLANT,
+                SiftingBoxBlock.TRIM_CHANCE, Optional.empty(), "trim");
+        offerSifting(ofTag(ModTags.Items.SIFTABLE_KIEF), SiftingBoxBlock.Content.KIEF,
+                SiftingBoxBlock.KIEF_CHANCE, Optional.empty(), "kief");
+
+        // ---------------------------------------------------------------------
         // Moon rocks
         // ---------------------------------------------------------------------
         // A bud, dipped in rosin, rolled in resin. Three tiers of the mod's own chain in one item,
@@ -1293,6 +1312,15 @@ public class ModRecipeProvider extends FabricRecipeProvider {
      */
     private void offerDecarboxylating(Ingredient input, ItemStackTemplate result, String name) {
         output.accept(id("decarboxylating/" + name), new DecarboxylatingRecipe(input, result), null);
+    }
+
+    /**
+     * One input of the Sifting Box. Named {@code sifting/<what it takes>}, so a datapack moving one rate
+     * overrides that file alone. See {@link SiftingRecipe}.
+     */
+    private void offerSifting(Ingredient input, SiftingBoxBlock.Content screen, float levels,
+                              Optional<Float> resinLevels, String name) {
+        output.accept(id("sifting/" + name), new SiftingRecipe(input, screen, levels, resinLevels), null);
     }
 
     /**
