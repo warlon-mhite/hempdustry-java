@@ -106,6 +106,25 @@ public final class ConfigGameTest {
     }
 
     /**
+     * A world section written before {@code plantStress} existed still loads: what it sets is applied, the switch it
+     * has never heard of comes in on, and the file is written back with it in it.
+     */
+    public static void aWorldSectionWithoutPlantStressLoads(GameTestHelper context) {
+        withConfig("{ \"world\": { \"_comment\": \"an older build's comment\", \"cropGrowthMultiplier\": 2.0,"
+                + " \"machineSpeedMultiplier\": 1.5, \"creepersSeekHemp\": false, \"mildew\": false } }", () -> {
+            HempdustryConfig.World world = HempdustryConfig.get().world();
+            context.assertTrue(world.cropGrowthMultiplier() == 2.0 && world.machineSpeedMultiplier() == 1.5
+                    && !world.creepersSeekHemp() && !world.mildew(), "an older world section was not applied: " + world);
+            context.assertTrue(world.plantStress(), "plantStress, which an older file never named, is not on: " + world);
+            String rewritten = new String(read(Services.PLATFORM.configDir().resolve(Hempdustry.MOD_ID + ".json")),
+                    StandardCharsets.UTF_8);
+            context.assertTrue(rewritten.contains("\"plantStress\": true"),
+                    "the file was not written back with plantStress in it");
+        });
+        context.succeed();
+    }
+
+    /**
      * Every key the config file holds is named in its section's {@code _comment} with its default, and a number with
      * the range it is clamped to: {@code key (default 4, 1-10)}. A pack maker reads the file, not the source, and a
      * comment written by hand drifts the day a default or a bound moves.
@@ -160,7 +179,7 @@ public final class ConfigGameTest {
             write(path, original);
             HempdustryConfig.load();
         }
-        Sweep.atLeast(context, "config keys described", keys, 25);
+        Sweep.atLeast(context, "config keys described", keys, 26);
         Sweep.report(context, "Every config key is described in its comment", findings, Map.of());
         context.succeed();
     }

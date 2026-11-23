@@ -307,6 +307,7 @@ public class EnderHazeCropBlock extends CropBlock implements RecordOnTheRoot {
         if (after.is(this) && isRoot(after) && this.getAge(after) != age) {
             Services.PLATFORM.cropGrew(world, pos, state);
         }
+        PlantStress.randomTick(world, pos, Direction.UP);
     }
 
     /**

@@ -312,6 +312,7 @@ public class SativaCropBlock extends CropBlock implements Mildew.Host, RecordOnT
             Services.PLATFORM.cropGrew(world, pos, state);
         }
         Mildew.randomTick(world, pos, random);
+        PlantStress.randomTick(world, pos, Direction.UP);
     }
 
     /** The divisor in the growth roll; {@link IndustrialHempCropBlock} grows at vanilla's 25. */

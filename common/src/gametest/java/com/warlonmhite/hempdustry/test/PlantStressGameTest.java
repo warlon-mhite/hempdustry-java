@@ -352,6 +352,60 @@ public final class PlantStressGameTest {
         context.succeed();
     }
 
+    /**
+     * {@code world.plantStress} off: no cause stresses a plant on a roll that would, a lost lamp leaves it the sun's
+     * record, and a plant stressed already is healthy again on its next random tick, every block of it. On again, the
+     * same roll stresses as before.
+     */
+    public static void plantStressCanBeSwitchedOff(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        Block indica = ModBlocks.INDICA_CROP;
+        BlockState pot = ModBlocks.GROW_POT.defaultBlockState();
+        BlockState wetPot = pot.setValue(GrowPotBlock.WATERED, true);
+        BlockState stagnant = ModBlocks.HYDRO_TRAY.defaultBlockState().setValue(HydroTrayBlock.LEVEL, 3);
+        // Stressed with the switch on, so the random tick that sets the plant up keeps it stressed.
+        plant(context, ModBlocks.SATIVA_CROP, moist(), 7, GrowLight.STRESSED);
+        ConfigGameTest.withConfig("{ \"world\": { \"plantStress\": false } }", () -> {
+            context.assertFalse(PlantStress.switchedOn(), "world.plantStress=false did not switch stress off");
+            BlockPos lower = context.absolutePos(CROP);
+            world.getBlockState(lower).randomTick(world, lower, MISS);
+            for (int y = 0; y <= 2; y++) {
+                BlockState segment = context.getBlockState(CROP.above(y));
+                context.assertTrue(segment.is(ModBlocks.SATIVA_CROP) && segment.getValue(GrowLight.PROPERTY) == GrowLight.NATURAL,
+                        "a stressed ripe Lemon Haze's random tick with world.plantStress=false left " + segment + " " + y + " up");
+            }
+
+            expect(context, step(context, indica, Blocks.FARMLAND.defaultBlockState(), 3, GrowLight.NATURAL, HIT),
+                    GrowLight.NATURAL, "a step on bone-dry farmland with world.plantStress=false");
+            expect(context, step(context, indica, pot, 4, GrowLight.NATURAL, HIT), GrowLight.NATURAL,
+                    "a step in a dry Grow Pot with world.plantStress=false");
+            expect(context, step(context, indica, stagnant, 4, GrowLight.NATURAL, HIT), GrowLight.NATURAL,
+                    "a step over still water, pump off, with world.plantStress=false");
+            expect(context, step(context, indica, wetPot.setValue(GrowPotBlock.FERTILITY, 3), 4, GrowLight.NATURAL, HIT),
+                    GrowLight.NATURAL, "bone meal in a fed pot with world.plantStress=false");
+            expect(context, step(context, indica, wetPot, 4, GrowLight.GROW_LAMP, HIT), GrowLight.NATURAL,
+                    "a flowering Grow Lamp plant that lost its lamp, with world.plantStress=false");
+
+            plant(context, indica, wetPot, 5, GrowLight.NATURAL);
+            PlantStress.roll(world, lower, StressCause.overwatering(1.0F), HIT);
+            expect(context, context.getBlockState(CROP).getValue(GrowLight.PROPERTY), GrowLight.NATURAL,
+                    "a bottle into a wet pot with world.plantStress=false");
+
+            // Planted stressed; the one random tick plant() gives it is the tick that heals it.
+            plant(context, indica, moist(), 6, GrowLight.STRESSED);
+            for (int y = 0; y <= 1; y++) {
+                expect(context, context.getBlockState(CROP.above(y)).getValue(GrowLight.PROPERTY), GrowLight.NATURAL,
+                        "a stressed Purple Kush's random tick with world.plantStress=false, " + y + " up,");
+            }
+        });
+        context.assertTrue(PlantStress.switchedOn(), "plant stress is not on at the default");
+        expect(context, step(context, indica, pot, 4, GrowLight.NATURAL, HIT), GrowLight.STRESSED,
+                "a step in a dry Grow Pot with the switch back on");
+        expect(context, step(context, indica, wetPot, 4, GrowLight.GROW_LAMP, HIT), GrowLight.STRESSED,
+                "a flowering Grow Lamp plant that lost its lamp, with the switch back on");
+        context.succeed();
+    }
+
     private static boolean dryFieldStep(ServerLevel world, BlockPos lower, long seed, GrowClimate.Stress odds) {
         return PlantStress.afterStep(world, lower, GrowLight.NATURAL, 3, 4, 2, StressCause.NONE, RandomSource.create(seed),
                 true, false, false, odds) == GrowLight.STRESSED;

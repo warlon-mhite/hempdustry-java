@@ -128,6 +128,7 @@ public final class HempdustryGameTests {
         register("light_and_pot_change_the_harvest", IndoorGrowGameTest::lightAndPotChangeTheHarvest);
         register("stress_has_more_causes_than_light", PlantStressGameTest::stressHasMoreCausesThanLight);
         register("the_stress_and_bone_meal_odds_are_data", PlantStressGameTest::theStressAndBoneMealOddsAreData);
+        register("plant_stress_can_be_switched_off", PlantStressGameTest::plantStressCanBeSwitchedOff);
         register("a_bee_step_is_a_growth_step", PlantStressGameTest::aBeeStepIsAGrowthStep);
         register("a_pot_takes_one_bottle", PlantStressGameTest::aPotTakesOneBottle);
         register("a_dispenser_waters_a_pot", PlantStressGameTest::aDispenserWatersAPot);
@@ -213,6 +214,7 @@ public final class HempdustryGameTests {
         register("every_config_key_is_described_in_its_comment", ConfigGameTest::everyConfigKeyIsDescribedInItsComment);
         register("a_client_section_without_the_puff_switches_loads",
                 ConfigGameTest::aClientSectionWithoutThePuffSwitchesLoads);
+        register("a_world_section_without_plant_stress_loads", ConfigGameTest::aWorldSectionWithoutPlantStressLoads);
         register("a_hemp_boat_does_not_stop_the_data_fixer", DataFixerGameTest::aHempBoatDoesNotStopTheDataFixer);
         register("one_bud_per_slot_is_the_dose", PackingGameTest::oneBudPerSlotIsTheDose);
         register("a_strain_reusing_items_keeps_the_tab_whole",

@@ -221,7 +221,11 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
                     + "still added to the mobs, they simply never start, so it takes effect on the next "
                     + "/hempdustry reload. "
                     + "mildew (default true): false keeps powdery mildew out of roofed grows: no plant catches it, "
-                    + "and a plant that has it is clean again on its next random tick.");
+                    + "and a plant that has it is clean again on its next random tick. "
+                    + "plantStress (default true): false stops flowering hemp being stressed into seeding its own "
+                    + "buds: no overfeeding, overwatering, dry bed, stagnant tray, bone-dry field or lost light does it, "
+                    + "a plant that loses its lamp only falls back to the sun's light, and a plant that is stressed "
+                    + "already is healthy again on its next random tick.");
             comment(root, "infuser", "Ticks; 20 ticks = 1 second. minTimeTicks (default 6000, 20-31980) is the "
                     + "earliest a batch can be pulled, 5 minutes; fullTimeTicks (default 18000, 40-32000, and at "
                     + "least minTimeTicks + 20) a full simmer, 15 minutes. The ceiling, 32000 (about 26 minutes), "
@@ -425,24 +429,29 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
      * @param mildew                   whether hemp under a roof can catch powdery mildew. A switch for
      *                                 the same reason as the creepers: it is behaviour in code, with no
      *                                 tag or table a datapack could empty instead
+     * @param plantStress              whether a flowering plant can be stressed, by its ground, its feeding or a
+     *                                 lost light ({@code PlantStress}). Off, a stressed plant is healthy again on
+     *                                 its next random tick, as a mildewed one is with {@code mildew} off. The
+     *                                 grow climate's odds can make stress rarer; only this takes it away
      */
     public record World(double cropGrowthMultiplier, double machineSpeedMultiplier, boolean creepersSeekHemp,
-                        boolean mildew) {
+                        boolean mildew, boolean plantStress) {
 
-        public static final World DEFAULT = new World(1.0, 1.0, true, true);
+        public static final World DEFAULT = new World(1.0, 1.0, true, true, true);
 
         public static final Codec<World> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.DOUBLE.fieldOf("cropGrowthMultiplier").forGetter(World::cropGrowthMultiplier),
                 Codec.DOUBLE.fieldOf("machineSpeedMultiplier").forGetter(World::machineSpeedMultiplier),
                 Codec.BOOL.fieldOf("creepersSeekHemp").forGetter(World::creepersSeekHemp),
-                Codec.BOOL.fieldOf("mildew").forGetter(World::mildew)
+                Codec.BOOL.fieldOf("mildew").forGetter(World::mildew),
+                Codec.BOOL.fieldOf("plantStress").forGetter(World::plantStress)
         ).apply(instance, World::new));
 
         World clamped() {
             return new World(
                     clampDouble("world.cropGrowthMultiplier", cropGrowthMultiplier, 0.05, 20.0),
                     clampDouble("world.machineSpeedMultiplier", machineSpeedMultiplier, 0.05, 20.0),
-                    creepersSeekHemp, mildew);
+                    creepersSeekHemp, mildew, plantStress);
         }
     }
 

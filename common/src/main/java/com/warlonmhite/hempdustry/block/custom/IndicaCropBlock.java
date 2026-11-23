@@ -384,6 +384,7 @@ public class IndicaCropBlock extends CropBlock implements Mildew.Host, RecordOnT
             Services.PLATFORM.cropGrew(world, pos, state);
         }
         Mildew.randomTick(world, pos, random);
+        PlantStress.randomTick(world, pos, this.growth());
     }
 
     /**

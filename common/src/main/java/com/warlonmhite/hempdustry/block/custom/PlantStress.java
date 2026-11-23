@@ -1,6 +1,7 @@
 package com.warlonmhite.hempdustry.block.custom;
 
 import com.warlonmhite.hempdustry.balance.GrowClimate;
+import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.strain.StressPhenomenon;
 import com.warlonmhite.hempdustry.strain.internal.Hardiness;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
@@ -49,7 +50,9 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  * <p>Only a flowering plant is at risk, as with the light: a young one shrugs it off. When two causes
  * meet on one step the plant rolls <b>once</b>, at the worse odds, each cause scaled by its own
  * phenomenon's step. Stress is kept for good, exactly as the light's is — a plant that has gone
- * hermaphrodite does not go back.
+ * hermaphrodite does not go back. The one way back is the server's: with {@code world.plantStress} off nothing
+ * is rolled, a lost light leaves the sun's record, and a stressed plant is healthy on its next random tick
+ * ({@link #randomTick}).
  *
  * <p>A lost light is certain, so the plant's light step reads differently: a resistant plant ignores the
  * loss 1 time in 2 and a very resistant one 3 times in 4, falling back to the sun's record as a young plant
@@ -143,7 +146,9 @@ public final class PlantStress {
         GrowLight next = shy ? shyStep(world, lower, record, toAge, genes.get(StressPhenomenon.LIGHT), random)
                 : touchy ? touchyStep(world, lower, record, fromAge, toAge, height, genes.get(StressPhenomenon.LIGHT), random)
                 : lightStep(record, fromAge, GrowLight.over(world, lower, height), genes.get(StressPhenomenon.LIGHT), random);
-        if (!stressable) {
+        // Switched off, every plant steps as one that cannot be stressed: a lost light leaves it the sun's record,
+        // and no ground is rolled. Read after the light step, so the draws at the default are the ones they were.
+        if (!stressable || !switchedOn()) {
             return next == GrowLight.STRESSED ? GrowLight.NATURAL : next;
         }
         if (next == GrowLight.STRESSED || toAge < GrowLight.FLOWERING_AGE) {
@@ -303,7 +308,7 @@ public final class PlantStress {
      */
     public static void roll(Level world, BlockPos lower, StressCause cause, RandomSource random) {
         BlockState plant = world.getBlockState(lower);
-        if (!isFlowering(plant) || plant.getValue(GrowLight.PROPERTY) == GrowLight.STRESSED
+        if (!switchedOn() || !isFlowering(plant) || plant.getValue(GrowLight.PROPERTY) == GrowLight.STRESSED
                 || plant.getBlock() instanceof CropBlock crop && crop.isMaxAge(plant)
                 || random.nextFloat() >= cause.chanceFor(PlantRecordBlockEntity.resistancesAt(world, lower))) {
             return;
@@ -311,6 +316,31 @@ public final class PlantStress {
         Block block = plant.getBlock();
         for (BlockPos pos = lower; world.getBlockState(pos).is(block); pos = pos.above()) {
             world.setBlock(pos, world.getBlockState(pos).setValue(GrowLight.PROPERTY, GrowLight.STRESSED),
+                    Block.UPDATE_CLIENTS);
+        }
+    }
+
+    /** Whether plants can be stressed at all: {@code world.plantStress}, read at every use so a reload takes. */
+    public static boolean switchedOn() {
+        return HempdustryConfig.get().world().plantStress();
+    }
+
+    /**
+     * What a plant's random tick does about stress, once any growth is done: nothing, unless the switch is off and the
+     * plant whose root is at {@code root} carries it, in which case every block of the plant, from the root the way it
+     * grows, is put back on the sun's record, as a mildewed plant is cleaned with {@code world.mildew} off.
+     */
+    public static void randomTick(Level world, BlockPos root, Direction growth) {
+        if (switchedOn()) {
+            return;
+        }
+        BlockState plant = world.getBlockState(root);
+        if (!plant.hasProperty(GrowLight.PROPERTY) || plant.getValue(GrowLight.PROPERTY) != GrowLight.STRESSED) {
+            return;
+        }
+        Block block = plant.getBlock();
+        for (BlockPos pos = root; world.getBlockState(pos).is(block); pos = pos.relative(growth)) {
+            world.setBlock(pos, world.getBlockState(pos).setValue(GrowLight.PROPERTY, GrowLight.NATURAL),
                     Block.UPDATE_CLIENTS);
         }
     }
