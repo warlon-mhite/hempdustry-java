@@ -47,6 +47,7 @@
   "commands.hempdustry.config.value.game_rule": "%s : %s, par la règle de jeu %s de ce monde (activé dans le fichier)",
   "commands.hempdustry.config.client": "Préférences propres à ce jeu dans %s, %s changées par rapport au défaut :",
   "commands.hempdustry.config.client.none": "Les préférences client sont propres à chaque joueur, dans le %s de son jeu : ce serveur n'en lit aucune.",
+  "commands.hempdustry.config.client.unread": "Préférences propres à ce jeu : %s n'a pas pu être lu en entier (le journal dit pourquoi) ; voici celles avec lesquelles il tournait avant, %s changées par rapport au défaut :",
   "commands.hempdustry.config.registries": "Registres de datapack, lus à l'ouverture du monde (un redémarrage les relit) :",
   "commands.hempdustry.config.registry": "%s : %s entrées, toutes celles du mod",
   "commands.hempdustry.config.registry.other": "%s : %s entrées, dont %s d'autres packs :",

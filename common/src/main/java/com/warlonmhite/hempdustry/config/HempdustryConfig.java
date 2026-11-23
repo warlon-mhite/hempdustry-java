@@ -296,9 +296,13 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
         return out;
     }
 
-    /** Every value pulled into its sane range, complaining about any it had to move. */
+    /**
+     * Every value pulled into its sane range, complaining about any it had to move — but for the {@code client}
+     * section, which nothing here runs with: a dedicated server never reads it, and a game that starts its own client
+     * file from it says so there ({@link ClientConfig}).
+     */
     private HempdustryConfig clamped() {
-        return new HempdustryConfig(client.clamped(), effects.clamped(), world.clamped(), infuser.clamped(), loot.clamped());
+        return new HempdustryConfig(client.clamped(false), effects.clamped(), world.clamped(), infuser.clamped(), loot.clamped());
     }
 
     /**
@@ -421,8 +425,12 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
     }
 
     private static double clampDouble(String name, double value, double min, double max) {
+        return clampDouble(name, value, min, max, true);
+    }
+
+    private static double clampDouble(String name, double value, double min, double max, boolean warn) {
         double clamped = Mth.clamp(value, min, max);
-        if (clamped != value) {
+        if (warn && clamped != value) {
             Hempdustry.LOGGER.warn("Config {} was {}, clamped to {}", name, value, clamped);
         }
         return clamped;
@@ -485,8 +493,13 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
         ).apply(instance, Client::new));
 
         Client clamped() {
+            return clamped(true);
+        }
+
+        /** {@link #clamped()}, saying so of a value moved only when {@code warn}. */
+        Client clamped(boolean warn) {
             return new Client(updateCheck,
-                    clampDouble("client.biomeTintStrength", biomeTintStrength, 0.0, 1.0), ripeAroma, animations,
+                    clampDouble("client.biomeTintStrength", biomeTintStrength, 0.0, 1.0, warn), ripeAroma, animations,
                     fanPuffs, terpenePuffs);
         }
 

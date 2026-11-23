@@ -171,6 +171,13 @@ public final class CommandGameTest {
             expectLine(context, said, "commands.hempdustry.config.value.default(client.fanPuffs,true)");
             context.assertTrue(said.stream().noneMatch(line -> line.startsWith("commands.hempdustry.config.client.none")),
                     "a game with its own client file said it reads none: " + said);
+            // A client file the last load could not read is said to be so, not told as if it held what runs.
+            ConfigGameTest.write(ClientConfig.state().file().orElseThrow(), "{ \"client\": ");
+            context.assertFalse(ClientConfig.reload(), "a broken client file was read");
+            List<String> unread = run(context, "hempdustry config", LevelBasedPermissionSet.GAMEMASTER);
+            expectLine(context, unread, "commands.hempdustry.config.client.unread(config/" + ClientConfig.FILE + ",1)");
+            context.assertTrue(unread.stream().noneMatch(line -> line.startsWith("commands.hempdustry.config.client(")),
+                    "a client file that could not be read was told as read: " + unread);
         });
         for (ConfigReport.RegistryReport registry : ConfigReport.registries(context.getLevel().getServer())) {
             context.assertTrue(registry.size() > 0 && registry.fromOtherPacks().isEmpty(),

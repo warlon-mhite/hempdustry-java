@@ -77,13 +77,14 @@ public final class ClientConfig {
             + "fanPuffs (default true), terpenePuffs (default true). hempdustry-client.json says what each does.";
 
     /**
-     * What a game runs with: the preferences, and the file they come from — none on a dedicated server, which reads
-     * no client file, and until a client has loaded one.
+     * What a game runs with: the preferences, the file they come from — none on a dedicated server, which reads no
+     * client file, and until a client has loaded one — and whether the last load read that file in full. When it did
+     * not, the preferences running are some or all of what ran before, not what the file says.
      */
-    public record State(HempdustryConfig.Client client, Optional<Path> file) {
+    public record State(HempdustryConfig.Client client, Optional<Path> file, boolean read) {
     }
 
-    private static volatile State state = new State(HempdustryConfig.Client.DEFAULT, Optional.empty());
+    private static volatile State state = new State(HempdustryConfig.Client.DEFAULT, Optional.empty(), true);
 
     private ClientConfig() {
     }
@@ -142,13 +143,13 @@ public final class ClientConfig {
                 Hempdustry.LOGGER.error("{} was not started from {}, which could not be read in full; it will be on the"
                         + " next start or /hempdustry reload that reads it", file, legacy);
             }
-            state = new State(read == null ? state.client() : read.clamped(), Optional.of(file));
+            state = new State(read == null ? state.client() : read.clamped(), Optional.of(file), false);
             return false;
         }
         if (starting) {
             Hempdustry.LOGGER.info("Started {} from the client section of {}", file, legacy);
         }
-        state = new State(read.clamped(), Optional.of(file));
+        state = new State(read.clamped(), Optional.of(file), true);
         write(file, state.client());
         return true;
     }

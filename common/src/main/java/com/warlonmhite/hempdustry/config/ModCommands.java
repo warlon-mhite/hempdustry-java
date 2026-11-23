@@ -163,7 +163,8 @@ public class ModCommands {
         Optional<ConfigReport.ClientReport> client = ConfigReport.client();
         if (client.isPresent()) {
             List<ConfigReport.Setting> preferences = client.get().settings();
-            source.sendSuccess(() -> Component.translatable(CONFIG + "client",
+            // A file the last load could not read in full is said to be so: what is told is what ran before it.
+            source.sendSuccess(() -> Component.translatable(client.get().read() ? CONFIG + "client" : CONFIG + "client.unread",
                     value("config/" + client.get().file().getFileName()),
                     value(preferences.stream().filter(ConfigReport.Setting::changed).count())), false);
             values(source, preferences);

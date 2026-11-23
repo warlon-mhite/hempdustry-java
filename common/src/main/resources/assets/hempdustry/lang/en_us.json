@@ -47,6 +47,7 @@
   "commands.hempdustry.config.value.game_rule": "%s: %s, by this world's game rule %s (the file leaves it on)",
   "commands.hempdustry.config.client": "This game's own preferences in %s, %s changed from the default:",
   "commands.hempdustry.config.client.none": "Client preferences are each player's own, in their game's %s: this server reads none.",
+  "commands.hempdustry.config.client.unread": "This game's own preferences: %s could not be read in full (the log says why), so these are what this game ran with before, %s changed from the default:",
   "commands.hempdustry.config.registries": "Datapack registries, read when the world opens (a restart re-reads them):",
   "commands.hempdustry.config.registry": "%s: %s entries, all the mod's own",
   "commands.hempdustry.config.registry.other": "%s: %s entries, %s of them from other packs:",

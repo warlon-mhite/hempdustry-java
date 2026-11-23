@@ -173,6 +173,28 @@ public final class ConfigGameTest {
     }
 
     /**
+     * The {@code client} section of {@code hempdustry.json} is still clamped, but says nothing of it: nothing on a
+     * server runs with it, and a dedicated server warning about a pack's tint every start would only puzzle its owner.
+     * A game's own client file still says so when it moves a value.
+     */
+    public static void theOldClientSectionIsClampedQuietly(GameTestHelper context) {
+        List<String> quiet = LogLines.warnings(() -> withConfig("{ \"client\": { \"biomeTintStrength\": 1.0E9 } }",
+                () -> context.assertTrue(HempdustryConfig.get().client().biomeTintStrength() == 1.0,
+                        "the old client section's tint was not clamped: " + HempdustryConfig.get().client())));
+        context.assertTrue(quiet.stream().noneMatch(line -> line.contains("client.biomeTintStrength")),
+                "the old client section warned on a server: " + quiet);
+        inClientFolder(folder -> {
+            Path file = folder.resolve(ClientConfig.FILE);
+            write(file, "{ \"client\": { \"biomeTintStrength\": 1.0E9 } }");
+            List<String> said = LogLines.warnings(() -> ClientConfig.load(file, folder.resolve(Hempdustry.MOD_ID + ".json")));
+            context.assertTrue(ClientConfig.get().biomeTintStrength() == 1.0
+                            && said.stream().anyMatch(line -> line.contains("client.biomeTintStrength")),
+                    "a client file's tint was not clamped with a warning: " + ClientConfig.get() + ", " + said);
+        });
+        context.succeed();
+    }
+
+    /**
      * With effects off, nothing greens a player out. A green-out strips every buff of a kind the mod
      * grants -- a potion's or a beacon's too -- and the player's saturation, then locks smoking for a
      * minute; with {@code enabled} false its own effects are filtered to nothing, so a server running

@@ -119,8 +119,11 @@ public final class ConfigReport {
                 section -> !section.equals("client"));
     }
 
-    /** The client preferences a game runs with, and the file they come from. */
-    public record ClientReport(Path file, List<Setting> settings) {
+    /**
+     * The client preferences a game runs with, the file they come from, and whether that file was read in full the
+     * last time it was loaded ({@code false}: the values told are what ran before, not what the file says).
+     */
+    public record ClientReport(Path file, List<Setting> settings, boolean read) {
     }
 
     /**
@@ -130,7 +133,7 @@ public final class ConfigReport {
     public static Optional<ClientReport> client() {
         ClientConfig.State state = ClientConfig.state();
         return state.file().map(file -> new ClientReport(file, settings(encode(ClientConfig.CODEC, state.client()),
-                encode(ClientConfig.CODEC, HempdustryConfig.Client.DEFAULT), section -> true)));
+                encode(ClientConfig.CODEC, HempdustryConfig.Client.DEFAULT), section -> true), state.read()));
     }
 
     private static List<Setting> settings(JsonObject running, JsonObject defaults, Predicate<String> sections) {
