@@ -3,6 +3,7 @@ package com.warlonmhite.hempdustry.neoforge;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.platform.Platform;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.packs.repository.KnownPack;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.entity.player.Player;
@@ -16,6 +17,7 @@ import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.CommonHooks;
 
 import java.nio.file.Path;
+import java.util.Arrays;
 
 public final class NeoForgePlatform implements Platform {
     @Override
@@ -65,6 +67,13 @@ public final class NeoForgePlatform implements Platform {
     @Override
     public Biome.ClimateSettings climateOf(Biome biome) {
         return biome.getModifiedClimateSettings();
+    }
+
+    @Override
+    public boolean isOwnPack(KnownPack pack) {
+        // NeoForge names a jar's pack "mod/" and the ids of the mods in it, joined by commas.
+        return pack.namespace().equals("neoforge") && pack.id().startsWith("mod/")
+                && Arrays.asList(pack.id().substring("mod/".length()).split(",")).contains(Hempdustry.MOD_ID);
     }
 
     /** Never made: a crop only for the right to call the protected growth odds, NeoForge's form of them. */

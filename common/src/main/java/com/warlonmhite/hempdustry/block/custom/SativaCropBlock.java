@@ -245,7 +245,7 @@ public class SativaCropBlock extends CropBlock implements Mildew.Host, RecordOnT
      * run ahead and reconciling the shape afterwards: age is what the loot table and the models
      * read, so an age-7 lone stalk would look and harvest like a finished three-tall plant.
      */
-    private int maxAgeFor(LevelReader world, BlockPos pos) {
+    int maxAgeFor(LevelReader world, BlockPos pos) {
         if (!this.canOccupy(world, pos.above())) {
             return TWO_TALL_AGE - 1;
         }

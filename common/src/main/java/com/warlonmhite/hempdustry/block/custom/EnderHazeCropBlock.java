@@ -258,7 +258,7 @@ public class EnderHazeCropBlock extends CropBlock implements RecordOnTheRoot {
      * of the height it cannot reach. Holding back the <em>age</em>, not only the shape, keeps the
      * harvest honest — the loot table and the models read the age.
      */
-    private int maxAgeFor(LevelReader world, BlockPos pos) {
+    int maxAgeFor(LevelReader world, BlockPos pos) {
         for (int above = 1; above < HEIGHT; above++) {
             if (!this.canOccupy(world, pos.above(above))) {
                 return AGE_FOR_HEIGHT[above + 1] - 1;

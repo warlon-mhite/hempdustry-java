@@ -4,6 +4,7 @@ import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.platform.Platform;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.packs.repository.KnownPack;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.entity.player.Player;
@@ -61,6 +62,13 @@ public final class FabricPlatform implements Platform {
     @Override
     public Biome.ClimateSettings climateOf(Biome biome) {
         return biome.climateSettings;
+    }
+
+    @Override
+    public boolean isOwnPack(KnownPack pack) {
+        // Fabric API files every mod's pack under the namespace "vanilla" (not the game's own, "minecraft"), by the
+        // mod's id.
+        return pack.namespace().equals("vanilla") && pack.id().equals(Hempdustry.MOD_ID);
     }
 
     /** Never made: a crop only for the right to call vanilla's protected growth odds. */

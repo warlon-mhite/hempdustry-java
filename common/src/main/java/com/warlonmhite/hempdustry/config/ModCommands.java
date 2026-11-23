@@ -1,27 +1,51 @@
 package com.warlonmhite.hempdustry.config;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 import com.warlonmhite.hempdustry.Hempdustry;
+import com.warlonmhite.hempdustry.block.custom.PlantInspection;
+import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
+import com.warlonmhite.hempdustry.component.StashContents;
 import com.warlonmhite.hempdustry.platform.Services;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.permissions.Permission;
 import net.minecraft.server.permissions.PermissionCheck;
 import net.minecraft.server.permissions.PermissionLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 
 /**
- * {@code /hempdustry reload} — re-reads {@code config/hempdustry.json} without a restart.
+ * {@code /hempdustry} — the server owner's commands, every one at permission level 2, the bar vanilla puts on
+ * {@code /reload} and {@code /gamerule}.
  *
- * <p>Permission level 2, the same bar vanilla puts on {@code /reload} and {@code /gamerule}: this
- * changes how the mod behaves for everyone on the server.
+ * <ul>
+ *   <li>{@code reload} re-reads {@code config/hempdustry.json} without a restart.</li>
+ *   <li>{@code inspect [pos]} tells what the plant (or the Stash Jar) at {@code pos}, or at the block looked at,
+ *       holds and why it stands as it does ({@link PlantInspection}). At level 2 because it shows the genes a
+ *       player is never shown.</li>
+ *   <li>{@code config} prints every config value and where it comes from, and which entries of the mod's datapack
+ *       registries a pack other than the mod's own supplied ({@link ConfigReport}).</li>
+ * </ul>
  *
- * <p><b>It does not reload strains, and nothing can short of a restart.</b> Strains are a dynamic
+ * <p><b>{@code reload} does not reload strains, and nothing can short of a restart.</b> Strains are a dynamic
  * registry, which the server reads once, when the world opens; vanilla's {@code /reload} keeps the
  * registries it has and only re-reads their tags. Until 2.0.3 the chat reply sent admins to
  * {@code /reload} for strains, which did nothing.
  */
 public class ModCommands {
+    private static final String INSPECT = "commands.hempdustry.inspect.";
+    private static final String CONFIG = "commands.hempdustry.config.";
 
     public static void registerCommands() {
         Services.EVENTS.onRegisterCommands(dispatcher -> dispatcher.register(build()));
@@ -45,6 +69,95 @@ public class ModCommands {
                     context.getSource().sendSuccess(
                             () -> Component.translatable("commands.hempdustry.reload"), true);
                     return 1;
-                }));
+                }))
+                .then(Commands.literal("inspect")
+                        .executes(context -> inspect(context.getSource(), lookedAt(context.getSource())))
+                        .then(Commands.argument("pos", BlockPosArgument.blockPos())
+                                .executes(context -> inspect(context.getSource(),
+                                        Optional.of(BlockPosArgument.getLoadedBlockPos(context, "pos"))))))
+                .then(Commands.literal("config").executes(ModCommands::config));
+    }
+
+    /** The block the command's entity looks at, within its reach; nothing for the console or a look at the sky. */
+    private static Optional<BlockPos> lookedAt(CommandSourceStack source) {
+        Entity entity = source.getEntity();
+        if (entity == null) {
+            return Optional.empty();
+        }
+        double reach = entity instanceof Player player ? player.blockInteractionRange() : 5.0;
+        HitResult hit = entity.pick(reach, 0.0F, false);
+        return hit instanceof BlockHitResult block && hit.getType() == HitResult.Type.BLOCK
+                ? Optional.of(block.getBlockPos()) : Optional.empty();
+    }
+
+    /** Says what stands at {@code pos}; the number of lines said, 0 when there was nothing to inspect. */
+    private static int inspect(CommandSourceStack source, Optional<BlockPos> target) {
+        if (target.isEmpty()) {
+            source.sendFailure(Component.translatable(INSPECT + "no_target"));
+            return 0;
+        }
+        BlockPos pos = target.get();
+        ServerLevel world = source.getLevel();
+        Optional<List<Component>> lines = PlantInspection.of(world, pos);
+        if (lines.isEmpty() && world.getBlockEntity(pos) instanceof StashJarBlockEntity jar) {
+            lines = Optional.of(jar(jar));
+        }
+        if (lines.isEmpty()) {
+            source.sendFailure(Component.translatable(INSPECT + "none", pos.getX() + " " + pos.getY() + " " + pos.getZ()));
+            return 0;
+        }
+        for (Component line : lines.get()) {
+            source.sendSuccess(() -> line, false);
+        }
+        return lines.get().size();
+    }
+
+    /** A Stash Jar's contents: how full it is, then one line per kind it holds. */
+    private static List<Component> jar(StashJarBlockEntity jar) {
+        StashContents contents = jar.contents();
+        BlockPos pos = jar.getBlockPos();
+        List<Component> lines = new ArrayList<>();
+        lines.add(Component.translatable(INSPECT + "jar", jar.getBlockState().getBlock().getName().withStyle(ChatFormatting.GREEN),
+                value(pos.getX() + " " + pos.getY() + " " + pos.getZ()), value(contents.count()),
+                value(jar.capacity()), value(contents.size())));
+        for (StashContents.Entry entry : contents.entries()) {
+            lines.add(Component.translatable(INSPECT + "jar.entry", value(entry.count()), entry.icon().getHoverName()));
+        }
+        return lines;
+    }
+
+    /** Prints every config value with its source, then the mod's registries and what other packs put in them. */
+    private static int config(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        List<ConfigReport.Setting> settings = ConfigReport.settings();
+        long changed = settings.stream().filter(ConfigReport.Setting::changed).count();
+        source.sendSuccess(() -> Component.translatable(CONFIG + "settings",
+                value("config/" + Hempdustry.MOD_ID + ".json"), value(changed)), false);
+        for (ConfigReport.Setting setting : settings) {
+            Component line = setting.changed()
+                    ? Component.translatable(CONFIG + "value." + setting.source().getSerializedName(),
+                            Component.literal(setting.key()), value(setting.value()).withStyle(ChatFormatting.GOLD),
+                            value(setting.defaultValue()))
+                    : Component.translatable(CONFIG + "value.default", Component.literal(setting.key()), value(setting.value()));
+            source.sendSuccess(() -> line, false);
+        }
+        source.sendSuccess(() -> Component.translatable(CONFIG + "registries"), false);
+        for (ConfigReport.RegistryReport registry : ConfigReport.registries(source.getServer())) {
+            Component line = registry.fromOtherPacks().isEmpty()
+                    ? Component.translatable(CONFIG + "registry", value(registry.registry()), value(registry.size()))
+                    : Component.translatable(CONFIG + "registry.other", value(registry.registry()), value(registry.size()),
+                            value(registry.fromOtherPacks().size()).withStyle(ChatFormatting.GOLD));
+            source.sendSuccess(() -> line, false);
+            for (ConfigReport.Entry entry : registry.fromOtherPacks()) {
+                Component other = Component.translatable(CONFIG + "entry." + entry.origin().getSerializedName(),
+                        value(entry.id()), value(entry.pack()));
+                source.sendSuccess(() -> other, false);
+            }
+        }
+        return settings.size();
+    }
+
+    private static net.minecraft.network.chat.MutableComponent value(Object value) {
+        return Component.literal(String.valueOf(value)).withStyle(ChatFormatting.AQUA);
     }
 }

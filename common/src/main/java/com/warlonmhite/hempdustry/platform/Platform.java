@@ -1,6 +1,7 @@
 package com.warlonmhite.hempdustry.platform;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.packs.repository.KnownPack;
 import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
@@ -63,4 +64,11 @@ public interface Platform {
      * modifier puts its change. Read by the grow climate, which makes a swamp damp and a desert dry.
      */
     Biome.ClimateSettings climateOf(Biome biome);
+
+    /**
+     * Whether {@code pack} is this mod's own data pack, the one its jar brings: the pack a datapack registry
+     * entry or a data file says it came from. Fabric knows a mod's pack by the mod's id, NeoForge by
+     * {@code mod/} and the ids of every mod in the jar.
+     */
+    boolean isOwnPack(KnownPack pack);
 }
