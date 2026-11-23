@@ -203,6 +203,7 @@ public final class HempdustryGameTests {
         register("a_full_green_out_ends_the_high", RebalanceGameTest::aFullGreenOutEndsTheHigh);
         register("a_lowered_level_cap_still_buys_time", RebalanceGameTest::aLoweredLevelCapStillBuysTime);
         register("edibles_buy_time_not_level", RebalanceGameTest::ediblesBuyTimeNotLevel);
+        register("edibles_last_as_long_as_the_server_says", RebalanceGameTest::ediblesLastAsLongAsTheServerSays);
         register("every_edible_onset_fills_its_window", RebalanceGameTest::everyEdibleOnsetFillsItsWindow);
         register("a_pending_edible_is_saved_with_the_player", RebalanceGameTest::aPendingEdibleIsSavedWithThePlayer);
         register("an_edible_kicks_in_with_debuffs_off", RebalanceGameTest::anEdibleKicksInWithDebuffsOff);

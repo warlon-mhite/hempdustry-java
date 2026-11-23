@@ -207,6 +207,63 @@ public final class RebalanceGameTest {
     }
 
     /**
+     * {@code effects.durationMultiplier} reaches every length an edible hands out: at ×1 Regeneration's own lengths
+     * are the bundle's 5/10/15/20 s, at ×2 they are twice that, and every other effect still ends with the high, now
+     * twice as long; no level moves. A dose waiting on a player keeps the length it was eaten with, through a save
+     * and after the setting goes back, so it is scaled once, at the swallow.
+     */
+    public static void ediblesLastAsLongAsTheServerSays(GameTestHelper context) {
+        EdibleBundle data = EdibleBundle.BUILT_IN;
+        java.util.Map<String, List<EdibleEffects.Dose>> once = new java.util.HashMap<>();
+        for (int tier = 1; tier <= EdibleEffects.MAX_TIER; tier++) {
+            for (Quality quality : Quality.values()) {
+                once.put(tier + " " + quality, EdibleEffects.bundle(data, tier, quality, 0));
+            }
+            int regeneration = find(allowed(once.get(tier + " " + Quality.PERFECT)), MobEffects.REGENERATION).getDuration();
+            context.assertTrue(regeneration == 100 * tier,
+                    "a tier " + tier + " edible's Regeneration lasts " + regeneration + " ticks at x1, not " + 100 * tier);
+        }
+        ServerPlayer eater = freshPlayer(context);
+        ConfigGameTest.withConfig("{ \"effects\": { \"durationMultiplier\": 2.0 } }", () -> {
+            for (int tier = 1; tier <= EdibleEffects.MAX_TIER; tier++) {
+                for (Quality quality : Quality.values()) {
+                    String what = "a tier " + tier + " " + quality + " edible at x2";
+                    List<EdibleEffects.Dose> single = once.get(tier + " " + quality);
+                    List<EdibleEffects.Dose> twice = EdibleEffects.bundle(data, tier, quality, 0);
+                    int high = 2 * single.stream().filter(d -> d.effect().getEffect().equals(MobEffects.SLOWNESS))
+                            .findFirst().orElseThrow().effect().getDuration();
+                    context.assertTrue(single.size() == twice.size(), what + " hands out " + twice.size()
+                            + " effects, at x1 " + single.size());
+                    for (int i = 0; i < single.size(); i++) {
+                        MobEffectInstance a = single.get(i).effect();
+                        MobEffectInstance b = twice.get(i).effect();
+                        boolean ownLength = b.getEffect().equals(MobEffects.REGENERATION);
+                        int expected = ownLength ? 2 * a.getDuration() : high - (single.get(i).delay());
+                        context.assertTrue(b.getEffect().equals(a.getEffect()) && b.getAmplifier() == a.getAmplifier()
+                                        && single.get(i).delay() == twice.get(i).delay(),
+                                what + " moved " + a + " to " + b + " or its arrival");
+                        context.assertTrue(b.getDuration() == expected, what + ": " + b.getEffect().getRegisteredName()
+                                + " lasts " + b.getDuration() + " ticks, expected " + expected + " (x1: " + a.getDuration() + ")");
+                    }
+                }
+            }
+            EdibleEffects.consume(eater, 4, Quality.PERFECT);
+        });
+        int waiting = EdibleScheduler.pending(eater).stream().map(EdibleScheduler.Pending::effect)
+                .filter(e -> e.getEffect().equals(MobEffects.REGENERATION)).findFirst().orElseThrow().getDuration();
+        context.assertTrue(waiting == 800, "a tier IV edible eaten at x2 keeps Regeneration for " + waiting
+                + " ticks once the setting is back at x1, not the 800 it was eaten with");
+        var registries = context.getLevel().registryAccess();
+        TagValueOutput saved = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, registries);
+        eater.saveWithoutId(saved);
+        ServerPlayer back = freshPlayer(context);
+        back.load(TagValueInput.create(ProblemReporter.DISCARDING, registries, saved.buildResult()));
+        context.assertTrue(EdibleScheduler.pending(back).equals(EdibleScheduler.pending(eater)),
+                "the doses eaten at x2 read back from the save changed");
+        context.succeed();
+    }
+
+    /**
      * Every quality's onset can land anywhere in its window, nowhere else, and with no pile-up at an
      * edge -- the old centre-and-clamp roll put a tenth of Rough's onsets on exactly its first tick
      * and none in its last fifteen seconds. And the windows keep their order: a worse batch waits

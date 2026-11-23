@@ -201,7 +201,9 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
                     + "maxLevel (default 4, 1-10) caps every effect the mod applies; maxBuffLevel (default 2, 1-10) "
                     + "caps only the helpful ones (Speed, Resistance, Absorption...), so a big dose still costs its "
                     + "full Hunger. Raise maxBuffLevel for a stronger mod in a modded pack. "
-                    + "durationMultiplier (default 1.0, 0.05-10.0) scales how long the effects last. "
+                    + "durationMultiplier (default 1.0, 0.05-10.0) scales how long the effects last, "
+                    + "smoked and eaten alike: an edible's whole high, and Regeneration's own short run with it, so the "
+                    + "heal it gives scales too. "
                     + "cooldownMultiplier (default 1.0, 0.0-10.0) scales the use cooldowns; 0 is no cooldown. "
                     + "greenOutChanceMultiplier (default 1.0, 0.0-100.0) scales the odds of a green-out; 0 disables "
                     + "green-outs, as do greenOut=false and enabled=false. "
@@ -364,7 +366,10 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
      *                                 Haste III in the first hour. A dose past it, or past
      *                                 {@code maxLevel} where that is lower, buys duration instead
      *                                 (see {@code SmokeContents#effects}); costs are not capped by it
-     * @param durationMultiplier       scales every effect's duration, smoking and edibles alike
+     * @param durationMultiplier       scales every effect's duration, smoking and edibles alike: a smoked hit's
+     *                                 effects, an edible's high, and the lengths an edible's effect has per tier of
+     *                                 its own (Regeneration's), which scale its heal with it. Uniform, so a stronger
+     *                                 tier never lasts shorter than a weaker one
      * @param cooldownMultiplier       scales the per-device use cooldowns
      * @param greenOutChanceMultiplier scales green-out odds; {@code 0} disables them
      * @param onsetMultiplier          scales every quality's come-up window (45 s–4:20 built in)

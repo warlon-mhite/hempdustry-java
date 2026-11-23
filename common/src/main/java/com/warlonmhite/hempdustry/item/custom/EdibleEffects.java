@@ -163,8 +163,8 @@ public final class EdibleEffects {
      *
      * <p>Each effect lands its {@code arrives_ticks} after the onset and, unless it has a length of
      * its own per tier, ends with the high rather than outlasting it: the heaviness is what lingers,
-     * which is the right way round. A per-tier length is not scaled by the server's duration
-     * multiplier, as Regeneration's never was.
+     * which is the right way round. A per-tier length (Regeneration's) is scaled by the server's
+     * duration multiplier as the high is, so the heal it buys grows and shrinks with everything else.
      */
     public static List<Dose> bundle(EdibleBundle data, int tier, Quality quality, int onset) {
         return bundle(data, tier, 0, quality, onset);
@@ -198,9 +198,16 @@ public final class EdibleEffects {
         return out;
     }
 
+    /**
+     * How long {@code effect} lasts at tier {@code index + 1}, after the server's duration multiplier: its own
+     * length for the tier where it has one, or the high's length less its arrival. A length of its own is scaled
+     * here, the high's already is in {@link #durationTicks}, and a zero stays zero (no effect at that tier).
+     */
     private static int lengthAt(EdibleBundle data, EdibleBundle.Effect effect, int index, Quality quality) {
         int duration = (int) (durationTicks(data, quality) * (double) data.tierShare().get(index));
-        return effect.durationByTier().map(ticks -> ticks.get(index)).orElse(duration - effect.arrivesTicks());
+        return effect.durationByTier().map(ticks -> ticks.get(index))
+                .map(ticks -> ticks > 0 ? EffectPolicy.duration(ticks) : ticks)
+                .orElse(duration - effect.arrivesTicks());
     }
 
     /** An edible's CBD tier, 0 for none. */
