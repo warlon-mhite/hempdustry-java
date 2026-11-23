@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.strain.StressPhenomenon;
 import com.warlonmhite.hempdustry.strain.internal.Hardiness;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
@@ -37,6 +38,9 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  *   <tr><td>a growth step on farmland at moisture 0</td><td>field</td><td>{@link #DRY_FIELD} per step</td><td>dry ground</td></tr>
  * </table>
  *
+ * <p>The odds are the built-in ones; a world reads its own from the {@code stress} object of its grow climate
+ * ({@link GrowClimate.Stress}, {@link #odds}), at every roll, so a datapack can move any of them.
+ *
  * <p>The odds are a neutral plant's. Each plant rolls its own resistance to each phenomenon at planting
  * ({@link ResistanceGenes}, kept on its record), and its step multiplies every cause of that phenomenon
  * ({@link Hardiness#factor}): a very weak plant in a dry bed stresses 2 times in 3, a very resistant one 1 time
@@ -52,16 +56,17 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  * does; a weak or very weak one is stressed by it a stage early, from {@link Resistance#WEAK_LIGHT_LOSS_AGE}.
  */
 public final class PlantStress {
+    // The built-in odds, the grow climate's defaults. A world reads its own at each roll (odds(world)).
     /**
      * Our bone meal is one stage a use and a third of uses fail, so a plant rushed from flowering to
      * ripe takes three of these rolls: about 30% at 1 in 9. At 1 in 4 it was 58%, which is harsh.
      */
-    public static final float OVERFED = 1.0F / 9;
-    public static final float OVERWATERED = 1.0F / 4;
-    public static final float DRY_BED = 1.0F / 3;
+    public static final float OVERFED = GrowClimate.Stress.DEFAULT.overfed();
+    public static final float OVERWATERED = GrowClimate.Stress.DEFAULT.overwatered();
+    public static final float DRY_BED = GrowClimate.Stress.DEFAULT.dryBed();
     /** Still water and no air: the roots rot, which is the classic way a deep-water-culture grow fails. */
-    public static final float STAGNANT = 1.0F / 6;
-    public static final float DRY_FIELD = 1.0F / 20;
+    public static final float STAGNANT = GrowClimate.Stress.DEFAULT.stagnant();
+    public static final float DRY_FIELD = GrowClimate.Stress.DEFAULT.dryField();
     /**
      * The age from which a light leaking into the night stresses a plant touchy about its light: a stage
      * before {@link GrowLight#FLOWERING_AGE}, the age a lost light stresses a weak plant from.
@@ -71,17 +76,22 @@ public final class PlantStress {
     private PlantStress() {
     }
 
+    /** The stress odds in this world: the {@code stress} object of its grow climate. */
+    public static GrowClimate.Stress odds(Level world) {
+        return GrowClimate.of(world.registryAccess()).stress();
+    }
+
     /**
      * What one growth step may stress a flowering plant standing on {@code floor} with, at a neutral plant's
-     * odds. A bed of ours answers for itself; farmland only once it is bone dry, which vanilla's
+     * {@code odds}. A bed of ours answers for itself; farmland only once it is bone dry, which vanilla's
      * {@code FarmlandBlock} only lets happen after about seven random ticks with no water in reach and no rain.
      */
-    public static StressCause ofGround(BlockState floor) {
+    public static StressCause ofGround(BlockState floor, GrowClimate.Stress odds) {
         if (floor.getBlock() instanceof GrowMedium medium) {
-            return medium.stress(floor);
+            return medium.stress(floor, odds);
         }
         return floor.is(Blocks.FARMLAND) && floor.getValue(FarmlandBlock.MOISTURE) == 0
-                ? StressCause.dryGround(DRY_FIELD) : StressCause.NONE;
+                ? StressCause.dryGround(odds.dryField()) : StressCause.NONE;
     }
 
     /**
@@ -115,6 +125,17 @@ public final class PlantStress {
     public static GrowLight afterStep(Level world, BlockPos lower, GrowLight record, int fromAge, int toAge,
                                       int height, StressCause extra, RandomSource random, boolean stressable,
                                       boolean touchy, boolean shy) {
+        return afterStep(world, lower, record, fromAge, toAge, height, extra, random, stressable, touchy, shy,
+                odds(world));
+    }
+
+    /**
+     * As above, with the ground read at {@code odds} instead of this world's: every growth step comes through here,
+     * and so does its one roll.
+     */
+    public static GrowLight afterStep(Level world, BlockPos lower, GrowLight record, int fromAge, int toAge,
+                                      int height, StressCause extra, RandomSource random, boolean stressable,
+                                      boolean touchy, boolean shy, GrowClimate.Stress odds) {
         // The open-sky and working-tray records ride the same step as the light record, on every growth route.
         PlantRecordBlockEntity.recordSky(world, lower, fromAge, height);
         PlantRecordBlockEntity.recordTray(world, lower, fromAge);
@@ -128,7 +149,7 @@ public final class PlantStress {
         if (next == GrowLight.STRESSED || toAge < GrowLight.FLOWERING_AGE) {
             return next;
         }
-        float chance = Math.max(ofGround(world.getBlockState(lower.below())).chanceFor(genes), extra.chanceFor(genes));
+        float chance = Math.max(ofGround(world.getBlockState(lower.below()), odds).chanceFor(genes), extra.chanceFor(genes));
         return chance > 0.0F && random.nextFloat() < chance ? GrowLight.STRESSED : next;
     }
 
@@ -269,7 +290,7 @@ public final class PlantStress {
     public static StressCause ofBoneMeal(Level world, BlockPos lower, BlockState plant) {
         BlockState floor = world.getBlockState(lower.below());
         return isFlowering(plant) && floor.getBlock() instanceof GrowMedium medium && medium.fed(floor)
-                ? StressCause.overwatering(OVERFED) : StressCause.NONE;
+                ? StressCause.overwatering(odds(world).overfed()) : StressCause.NONE;
     }
 
     /**

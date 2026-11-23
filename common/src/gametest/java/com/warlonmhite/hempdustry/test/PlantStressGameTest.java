@@ -1,19 +1,25 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
+import com.warlonmhite.hempdustry.block.custom.EnderHazeCropBlock;
 import com.warlonmhite.hempdustry.block.custom.GrowLight;
 import com.warlonmhite.hempdustry.block.custom.GrowPotBlock;
 import com.warlonmhite.hempdustry.block.custom.HydroTrayBlock;
+import com.warlonmhite.hempdustry.block.custom.IndicaCropBlock;
 import com.warlonmhite.hempdustry.block.custom.PlantStress;
+import com.warlonmhite.hempdustry.block.custom.SativaCropBlock;
 import com.warlonmhite.hempdustry.block.custom.StressCause;
 import com.warlonmhite.hempdustry.strain.Resistance;
 import com.warlonmhite.hempdustry.strain.ResistanceGenes;
 import com.warlonmhite.hempdustry.strain.StressPhenomenon;
 import java.util.List;
+import java.util.Random;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -268,6 +274,105 @@ public final class PlantStressGameTest {
         context.succeed();
     }
 
+    // ----- the odds as data -----
+
+    /**
+     * The stress odds and the share of bone meal that fails are the grow climate's: the built-in numbers are the
+     * agreed ones, the shipped file holds them, and a changed number changes what the game does. Rolls come from
+     * seeds drawn off a seeded {@link java.util.Random}, so the counts are the same every run.
+     */
+    public static void theStressAndBoneMealOddsAreData(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        GrowClimate.Stress built = GrowClimate.Stress.DEFAULT;
+        context.assertTrue(built.equals(new GrowClimate.Stress(9, 4, 3, 6, 20)) && GrowClimate.BUILT_IN.stress().equals(built),
+                "the built-in stress odds are not 1 in 9 overfed, 4 overwatered, 3 dry bed, 6 stagnant, 20 dry field: " + built);
+        context.assertTrue(built.overfed() == PlantStress.OVERFED && built.overwatered() == PlantStress.OVERWATERED
+                        && built.dryBed() == PlantStress.DRY_BED && built.stagnant() == PlantStress.STAGNANT
+                        && built.dryField() == PlantStress.DRY_FIELD && PlantStress.DRY_FIELD == 1.0F / 20,
+                "the grow climate's stress odds are not PlantStress's");
+        context.assertTrue(GrowClimate.BUILT_IN.boneMealFailsOneIn() == 3 && IndicaCropBlock.BONEMEAL_FAILURE_CHANCE == 3
+                        && SativaCropBlock.BONEMEAL_FAILURE_CHANCE == 3 && EnderHazeCropBlock.BONEMEAL_FAILURE_CHANCE == 3,
+                "bone meal does not fail 1 in 3 on every hemp crop");
+        GrowClimate shipped = GrowClimate.of(world.registryAccess());
+        context.assertTrue(shipped.stress().equals(built) && shipped.boneMealFailsOneIn() == 3,
+                "the shipped grow_climate/default.json does not hold the built-in stress and bone meal odds: " + shipped);
+
+        // Every bed's cause reads the odds it is handed.
+        GrowClimate.Stress changed = new GrowClimate.Stress(5, 7, 10, 12, 2);
+        BlockState dryField = Blocks.FARMLAND.defaultBlockState();
+        BlockState tray = ModBlocks.HYDRO_TRAY.defaultBlockState();
+        context.assertTrue(PlantStress.ofGround(dryField, changed).equals(StressCause.dryGround(1.0F / 2))
+                        && PlantStress.ofGround(ModBlocks.GROW_POT.defaultBlockState(), changed).equals(StressCause.dryGround(1.0F / 10))
+                        && PlantStress.ofGround(tray, changed).equals(StressCause.dryGround(1.0F / 10))
+                        && PlantStress.ofGround(tray.setValue(HydroTrayBlock.LEVEL, 3), changed)
+                        .equals(StressCause.overwatering(1.0F / 12)),
+                "a bed does not stress at the odds it is handed");
+
+        // A neutral flowering plant on bone-dry farmland, stepped on the same seeds at three odds.
+        plant(context, ModBlocks.INDICA_CROP, dryField, 3, GrowLight.NATURAL);
+        Genes.set(context, CROP, ResistanceGenes.NEUTRAL);
+        BlockPos lower = context.absolutePos(CROP);
+        Random seeds = new Random(4207L);
+        int steps = 400;
+        int atDefault = 0;
+        int atChanged = 0;
+        for (int i = 0; i < steps; i++) {
+            long seed = seeds.nextLong();
+            boolean inWorld = PlantStress.afterStep(world, lower, GrowLight.NATURAL, 3, 4, 2, StressCause.NONE,
+                    RandomSource.create(seed), true, false, false) == GrowLight.STRESSED;
+            boolean atBuilt = dryFieldStep(world, lower, seed, built);
+            boolean atTwo = dryFieldStep(world, lower, seed, changed);
+            context.assertTrue(inWorld == atBuilt, "a step on seed " + seed + " read other odds than the world's");
+            context.assertTrue(!atBuilt || atTwo, "a step stressed at 1 in 20 was not at 1 in 2, on seed " + seed);
+            atDefault += atBuilt ? 1 : 0;
+            atChanged += atTwo ? 1 : 0;
+        }
+        context.assertTrue(atDefault >= 8 && atDefault <= 35,
+                atDefault + " of " + steps + " steps on bone-dry farmland stressed at 1 in 20");
+        context.assertTrue(atChanged >= 160 && atChanged <= 240,
+                atChanged + " of " + steps + " steps on bone-dry farmland stressed at 1 in 2");
+
+        // Bone meal: each crop rolls as the world's climate does, and the climate's number decides it.
+        BlockPos pos = context.absolutePos(CROP);
+        for (Block crop : List.of(ModBlocks.INDICA_CROP, ModBlocks.SATIVA_CROP, ModBlocks.ENDER_HAZE_CROP)) {
+            BlockState state = crop.defaultBlockState();
+            Random cropSeeds = new Random(420L);
+            for (int i = 0; i < 300; i++) {
+                long seed = cropSeeds.nextLong();
+                context.assertTrue(((CropBlock) crop).isBonemealSuccess(world, RandomSource.create(seed), pos, state,
+                                BonemealSource.INTERACTION) == GrowClimate.BUILT_IN.boneMealTakes(RandomSource.create(seed)),
+                        BuiltInRegistries.BLOCK.getKey(crop) + "'s bone meal on seed " + seed + " read other odds than the world's");
+            }
+        }
+        context.assertTrue(takes(GrowClimate.BUILT_IN, 300) >= 170 && takes(GrowClimate.BUILT_IN, 300) <= 230,
+                takes(GrowClimate.BUILT_IN, 300) + " of 300 bone meal took at 1 in 3 failing");
+        context.assertTrue(takes(boneMealFailing(1), 300) == 0, "bone meal failing 1 in 1 still took");
+        context.assertTrue(takes(boneMealFailing(1_000_000), 300) == 300,
+                "bone meal failing 1 in a million failed " + (300 - takes(boneMealFailing(1_000_000), 300)) + " of 300 times");
+        context.succeed();
+    }
+
+    private static boolean dryFieldStep(ServerLevel world, BlockPos lower, long seed, GrowClimate.Stress odds) {
+        return PlantStress.afterStep(world, lower, GrowLight.NATURAL, 3, 4, 2, StressCause.NONE, RandomSource.create(seed),
+                true, false, false, odds) == GrowLight.STRESSED;
+    }
+
+    /** How many of {@code uses} bone meal grow a plant under {@code climate}, on seeds from one seeded random. */
+    private static int takes(GrowClimate climate, int uses) {
+        Random seeds = new Random(4200L);
+        int took = 0;
+        for (int i = 0; i < uses; i++) {
+            took += climate.boneMealTakes(RandomSource.create(seeds.nextLong())) ? 1 : 0;
+        }
+        return took;
+    }
+
+    private static GrowClimate boneMealFailing(int oneIn) {
+        GrowClimate c = GrowClimate.BUILT_IN;
+        return new GrowClimate(c.onsetOneIn(), c.spreadOneIn(), c.air(), c.humidity(), c.biome(), c.wetReach(),
+                c.trimmed(), c.fan(), c.dehumidifier(), c.stress(), oneIn);
+    }
+
     // ----- the pot's water -----
 
     public static void aPotTakesOneBottle(GameTestHelper context) {
@@ -426,7 +531,7 @@ public final class PlantStressGameTest {
     }
 
     private static void odds(GameTestHelper context, BlockState floor, StressCause expected, String what) {
-        StressCause actual = PlantStress.ofGround(floor);
+        StressCause actual = PlantStress.ofGround(floor, PlantStress.odds(context.getLevel()));
         context.assertTrue(actual.equals(expected), what + " stresses with " + actual + " a step, expected " + expected);
     }
 

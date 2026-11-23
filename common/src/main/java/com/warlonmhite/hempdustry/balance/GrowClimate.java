@@ -10,6 +10,7 @@ import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.ExtraCodecs;
+import net.minecraft.util.RandomSource;
 
 /**
  * How powdery mildew reads a plant's climate, as data: {@code data/<namespace>/hempdustry/grow_climate/default.json}.
@@ -23,6 +24,9 @@ import net.minecraft.util.ExtraCodecs;
  *
  * <p>The mod ships its own numbers as that file, so a world that never touches it plays as built; the
  * {@code world.mildew} switch in the config still turns the whole thing off.
+ *
+ * <p>The same file holds the rest of a plant's luck with its keeping: the odds of each cause of plant stress beyond
+ * the light ({@code stress}), and the share of bone meal that does nothing ({@code bone_meal_fails_one_in}).
  *
  * <p><b>Every key is optional</b>, inside the objects too, and reads as the built-in number when it is left out
  * ({@link FileFields#written}): a datapack that changes one number writes that one number, and a key added in a
@@ -38,9 +42,12 @@ import net.minecraft.util.ExtraCodecs;
  * @param trimmed      the factor for a plant trimmed in either window: a thinner canopy
  * @param fan          how far ahead of it, and how wide, a running Grow Fan blows
  * @param dehumidifier how far a running Dehumidifier dries the air, by how much, and what fills its tank
+ * @param stress       the odds of each cause of plant stress beyond the light, against a neutral plant
+ * @param boneMealFailsOneIn the share of bone meal on a hemp plant that does nothing, though it is still used up,
+ *                     as one in this many
  */
 public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity humidity, BiomeRule biome, int wetReach,
-                          float trimmed, Fan fan, Drier dehumidifier) {
+                          float trimmed, Fan fan, Drier dehumidifier, Stress stress, int boneMealFailsOneIn) {
 
     public static final ResourceKey<Registry<GrowClimate>> REGISTRY_KEY =
             ResourceKey.createRegistryKey(Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "grow_climate"));
@@ -55,6 +62,8 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
     private static final class Ranges {
         static final Codec<Float> FACTOR = Codec.floatRange(0.0F, 64.0F);
         static final Codec<Integer> BLOCKS = Codec.intRange(0, 8);
+        /** Odds as one in this many: from always (1) to all but never. */
+        static final Codec<Integer> ONE_IN = Codec.intRange(1, 1_000_000);
     }
 
     /** The factor for each air: {@code open} sky, {@code stirred} under glass, {@code still} in a sealed room. */
@@ -142,6 +151,50 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
     }
 
     /**
+     * The odds of each cause of stress beyond the light against a flowering plant of neutral resistance, each as one
+     * in this many: bone meal on a plant in a fed Grow Pot or Hydro Tray ({@code overfed}), a bottle poured into a
+     * pot that is still wet ({@code overwatered}), a growth step in a dry pot or tray ({@code dry_bed}), one in a
+     * watered tray with its pump off ({@code stagnant}), and one on bone-dry farmland ({@code dry_field}). A plant's
+     * own resistance to the cause's phenomenon then scales each, as it scales the built-in odds.
+     */
+    public record Stress(int overfedOneIn, int overwateredOneIn, int dryBedOneIn, int stagnantOneIn, int dryFieldOneIn) {
+        public static final Stress DEFAULT = new Stress(9, 4, 3, 6, 20);
+        public static final Codec<Stress> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                FileFields.written(Ranges.ONE_IN, "overfed_one_in", DEFAULT.overfedOneIn).forGetter(Stress::overfedOneIn),
+                FileFields.written(Ranges.ONE_IN, "overwatered_one_in", DEFAULT.overwateredOneIn)
+                        .forGetter(Stress::overwateredOneIn),
+                FileFields.written(Ranges.ONE_IN, "dry_bed_one_in", DEFAULT.dryBedOneIn).forGetter(Stress::dryBedOneIn),
+                FileFields.written(Ranges.ONE_IN, "stagnant_one_in", DEFAULT.stagnantOneIn).forGetter(Stress::stagnantOneIn),
+                FileFields.written(Ranges.ONE_IN, "dry_field_one_in", DEFAULT.dryFieldOneIn).forGetter(Stress::dryFieldOneIn)
+        ).apply(instance, Stress::new));
+
+        /** Bone meal on a flowering plant in a fed bed. */
+        public float overfed() {
+            return 1.0F / overfedOneIn;
+        }
+
+        /** A bottle poured into a Grow Pot that is still wet. */
+        public float overwatered() {
+            return 1.0F / overwateredOneIn;
+        }
+
+        /** A growth step in a dry Grow Pot or Hydro Tray. */
+        public float dryBed() {
+            return 1.0F / dryBedOneIn;
+        }
+
+        /** A growth step in a watered Hydro Tray with its pump off. */
+        public float stagnant() {
+            return 1.0F / stagnantOneIn;
+        }
+
+        /** A growth step on farmland at moisture 0. */
+        public float dryField() {
+            return 1.0F / dryFieldOneIn;
+        }
+    }
+
+    /**
      * The 2.2 climate. A field catches mildew at 1 in 1,500 a step and passes it to a neighbour at 1 in 100, as
      * 2.1's open sky did; glass triples both, a sealed room six times them, and a swamp's hydro room 24 times.
      * A trim takes a quarter off: real but modest, as leaf removal is in a vineyard. A fan blows a lane 9 blocks long
@@ -150,6 +203,9 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
      * it reaches from a plant one block above it (one on the floor beside a pot) to three below it (one hung from the
      * ceiling over a field). A Dehumidifier dries a 9 x 9 room two steps, two blocks up and down, and 64 dried steps
      * make a level of its tank: a 9 x 9 grow of 81 plants, seven steps each, empties it about once.
+     *
+     * <p>Stress and bone meal are 2.1's numbers, as {@code PlantStress} has them: a bed carries the risk and a field
+     * barely does, and a third of bone meal on hemp is wasted, so it nudges a plant rather than rushing it.
      */
     public static final GrowClimate BUILT_IN = new GrowClimate(
             1500, 100,
@@ -159,7 +215,9 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
             2,
             0.75F,
             Fan.DEFAULT,
-            Drier.DEFAULT);
+            Drier.DEFAULT,
+            Stress.DEFAULT,
+            3);
 
     public static final Codec<GrowClimate> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             FileFields.written(ExtraCodecs.POSITIVE_INT, "onset_one_in", BUILT_IN.onsetOneIn).forGetter(GrowClimate::onsetOneIn),
@@ -170,7 +228,10 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
             FileFields.written(Codec.intRange(0, 4), "wet_reach", BUILT_IN.wetReach).forGetter(GrowClimate::wetReach),
             FileFields.written(Ranges.FACTOR, "trimmed", BUILT_IN.trimmed).forGetter(GrowClimate::trimmed),
             FileFields.written(Fan.CODEC, "fan", BUILT_IN.fan).forGetter(GrowClimate::fan),
-            FileFields.written(Drier.CODEC, "dehumidifier", BUILT_IN.dehumidifier).forGetter(GrowClimate::dehumidifier)
+            FileFields.written(Drier.CODEC, "dehumidifier", BUILT_IN.dehumidifier).forGetter(GrowClimate::dehumidifier),
+            FileFields.written(Stress.CODEC, "stress", BUILT_IN.stress).forGetter(GrowClimate::stress),
+            FileFields.written(Ranges.ONE_IN, "bone_meal_fails_one_in", BUILT_IN.boneMealFailsOneIn)
+                    .forGetter(GrowClimate::boneMealFailsOneIn)
     ).apply(instance, GrowClimate::new));
 
     public static void bootstrap(BootstrapContext<GrowClimate> registerable) {
@@ -185,6 +246,14 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
     /** The odds a mildewed plant reaches the neighbour it picked, before that neighbour's climate. */
     public float spread() {
         return 1.0F / spreadOneIn;
+    }
+
+    /**
+     * Whether one bone meal on a hemp plant grows it: all but one in {@code bone_meal_fails_one_in} do. The bone meal
+     * is used up either way ({@code BoneMealItem} spends it whatever the block answers), so a miss is a wasted one.
+     */
+    public boolean boneMealTakes(RandomSource random) {
+        return random.nextInt(boneMealFailsOneIn) != 0;
     }
 
     /** The climate in this world. */

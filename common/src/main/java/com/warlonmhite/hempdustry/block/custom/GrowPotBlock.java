@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.balance.GrowClimate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
@@ -115,8 +116,8 @@ public class GrowPotBlock extends Block implements GrowMedium {
     }
 
     @Override
-    public StressCause stress(BlockState state) {
-        return state.getValue(WATERED) ? StressCause.NONE : StressCause.dryGround(PlantStress.DRY_BED);
+    public StressCause stress(BlockState state, GrowClimate.Stress odds) {
+        return state.getValue(WATERED) ? StressCause.NONE : StressCause.dryGround(odds.dryBed());
     }
 
     // ----- water -----
@@ -134,7 +135,7 @@ public class GrowPotBlock extends Block implements GrowMedium {
      */
     public static void water(Level world, BlockPos pos, BlockState state, RandomSource random) {
         if (state.getValue(WATERED)) {
-            PlantStress.roll(world, pos.above(), StressCause.overwatering(PlantStress.OVERWATERED), random);
+            PlantStress.roll(world, pos.above(), StressCause.overwatering(PlantStress.odds(world).overwatered()), random);
         } else {
             world.setBlock(pos, state.setValue(WATERED, true), Block.UPDATE_CLIENTS);
         }

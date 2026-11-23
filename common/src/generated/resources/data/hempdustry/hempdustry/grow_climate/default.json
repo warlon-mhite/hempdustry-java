@@ -9,6 +9,7 @@
     "wet_from_downfall": 0.85,
     "wet_from_temperature": 0.5
   },
+  "bone_meal_fails_one_in": 3,
   "dehumidifier": {
     "above": 2,
     "below": 2,
@@ -30,6 +31,13 @@
   },
   "onset_one_in": 1500,
   "spread_one_in": 100,
+  "stress": {
+    "dry_bed_one_in": 3,
+    "dry_field_one_in": 20,
+    "overfed_one_in": 9,
+    "overwatered_one_in": 4,
+    "stagnant_one_in": 6
+  },
   "trimmed": 0.75,
   "wet_reach": 2
 }

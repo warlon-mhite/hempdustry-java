@@ -127,6 +127,7 @@ public final class HempdustryGameTests {
         register("a_wild_plant_loads_without_a_warning", WildPlantChunkGameTest::aWildPlantLoadsWithoutAWarning);
         register("light_and_pot_change_the_harvest", IndoorGrowGameTest::lightAndPotChangeTheHarvest);
         register("stress_has_more_causes_than_light", PlantStressGameTest::stressHasMoreCausesThanLight);
+        register("the_stress_and_bone_meal_odds_are_data", PlantStressGameTest::theStressAndBoneMealOddsAreData);
         register("a_bee_step_is_a_growth_step", PlantStressGameTest::aBeeStepIsAGrowthStep);
         register("a_pot_takes_one_bottle", PlantStressGameTest::aPotTakesOneBottle);
         register("a_dispenser_waters_a_pot", PlantStressGameTest::aDispenserWatersAPot);

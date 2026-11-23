@@ -87,12 +87,14 @@ public final class MildewGameTest {
         context.assertTrue(climate("{}").equals(built), "an empty climate file is not the built-in climate: " + climate("{}"));
         GrowClimate onset = climate("{\"onset_one_in\": 500}");
         context.assertTrue(onset.equals(new GrowClimate(500, built.spreadOneIn(), built.air(), built.humidity(),
-                        built.biome(), built.wetReach(), built.trimmed(), built.fan(), built.dehumidifier())),
+                        built.biome(), built.wetReach(), built.trimmed(), built.fan(), built.dehumidifier(), built.stress(),
+                        built.boneMealFailsOneIn())),
                 "a file holding only onset_one_in did not keep every other number: " + onset);
         GrowClimate fan = climate("{\"fan\": {\"ahead\": 12}}");
         context.assertTrue(fan.fan().equals(new GrowClimate.Fan(12, 2, 3, 1))
                         && fan.equals(new GrowClimate(built.onsetOneIn(), built.spreadOneIn(), built.air(), built.humidity(),
-                        built.biome(), built.wetReach(), built.trimmed(), fan.fan(), built.dehumidifier())),
+                        built.biome(), built.wetReach(), built.trimmed(), fan.fan(), built.dehumidifier(), built.stress(),
+                        built.boneMealFailsOneIn())),
                 "a file holding only the fan's reach ahead did not keep every other number: " + fan);
         GrowClimate humidity = climate("{\"humidity\": {\"soaked\": 8.0}, \"dehumidifier\": {\"dries\": 1}}");
         context.assertTrue(humidity.humidity().equals(new GrowClimate.Humidity(0.5F, 1.0F, 2.0F, 8.0F))
@@ -103,11 +105,11 @@ public final class MildewGameTest {
         JsonObject written = GrowClimate.CODEC.encodeStart(JsonOps.INSTANCE, built)
                 .getOrThrow().getAsJsonObject();
         context.assertTrue(written.keySet().equals(Set.of("onset_one_in", "spread_one_in", "air", "humidity",
-                        "biome", "wet_reach", "trimmed", "fan", "dehumidifier")),
+                        "biome", "wet_reach", "trimmed", "fan", "dehumidifier", "stress", "bone_meal_fails_one_in")),
                 "the built-in climate is not written in full: " + written.keySet());
         context.assertTrue(written.getAsJsonObject("fan").size() == 4 && written.getAsJsonObject("air").size() == 3
                         && written.getAsJsonObject("humidity").size() == 4 && written.getAsJsonObject("biome").size() == 3
-                        && written.getAsJsonObject("dehumidifier").size() == 5,
+                        && written.getAsJsonObject("dehumidifier").size() == 5 && written.getAsJsonObject("stress").size() == 5,
                 "an object of the built-in climate is not written in full: " + written);
         context.assertTrue(climate(written.toString()).equals(built), "the built-in climate does not read back as itself");
         // Every key, one at a time, at the top and inside each object: the file without it is still the built-in climate.
@@ -125,7 +127,7 @@ public final class MildewGameTest {
                 keys++;
             }
         }
-        context.assertTrue(keys >= 28, "only " + keys + " climate keys were left out one at a time");
+        context.assertTrue(keys >= 35, "only " + keys + " climate keys were left out one at a time");
         context.assertTrue(GrowClimate.CODEC.parse(JsonOps.INSTANCE,
                         JsonParser.parseString("{\"fan\": {\"ahead\": 0}}")).isError(),
                 "a fan reaching no block ahead loaded");

@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.advancement.HarvestHempCriterion;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
@@ -61,8 +62,11 @@ public class IndicaCropBlock extends CropBlock implements Mildew.Host, RecordOnT
     /** The lower half sprouts an upper half once it reaches this age (and there is room above). */
     public static final int DOUBLE_BLOCK_AGE = 4;
 
-    /** One in this many bonemeal applications does nothing (but is still consumed). */
-    public static final int BONEMEAL_FAILURE_CHANCE = 3;
+    /**
+     * One in this many bonemeal applications does nothing (but is still consumed): the built-in number. A world
+     * reads its own, {@code bone_meal_fails_one_in} in its grow climate, at each use.
+     */
+    public static final int BONEMEAL_FAILURE_CHANCE = GrowClimate.BUILT_IN.boneMealFailsOneIn();
 
     private static final VoxelShape[] LOWER_SHAPE_BY_AGE = new VoxelShape[]{
             Block.box(0.0D, 0.0D, 0.0D, 16.0D, 4.0D, 16.0D),
@@ -475,12 +479,12 @@ public class IndicaCropBlock extends CropBlock implements Mildew.Host, RecordOnT
      * Whether a bonemeal application actually grows the plant. Bonemeal is consumed
      * regardless of this result (see {@code BoneMealItem.useOnFertilizable}), so
      * returning false here means the application is wasted. Indica has a
-     * {@code 1 / BONEMEAL_FAILURE_CHANCE} chance of that happening, making bonemeal
+     * one in {@code bone_meal_fails_one_in} (the grow climate's, 3 built in) chance of that happening, making bonemeal
      * an unreliable nudge rather than a fast path to harvest for this slow plant.
      */
     @Override
     public boolean isBonemealSuccess(Level world, RandomSource random, BlockPos pos, BlockState state, BonemealSource source) {
-        return random.nextInt(BONEMEAL_FAILURE_CHANCE) != 0;
+        return GrowClimate.of(world.registryAccess()).boneMealTakes(random);
     }
 
     /**

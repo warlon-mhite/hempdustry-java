@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.advancement.HarvestHempCriterion;
 import com.warlonmhite.hempdustry.item.ModItems;
@@ -68,8 +69,11 @@ public class SativaCropBlock extends CropBlock implements Mildew.Host, RecordOnT
     /** From this age it wants a third (LOWER + MIDDLE + UPPER); the old UPPER becomes the MIDDLE. */
     public static final int THREE_TALL_AGE = 6;
 
-    /** One in this many bonemeal applications does nothing (but is still consumed). */
-    public static final int BONEMEAL_FAILURE_CHANCE = 3;
+    /**
+     * One in this many bonemeal applications does nothing (but is still consumed): the built-in number. A world
+     * reads its own, {@code bone_meal_fails_one_in} in its grow climate, at each use.
+     */
+    public static final int BONEMEAL_FAILURE_CHANCE = GrowClimate.BUILT_IN.boneMealFailsOneIn();
 
     /**
      * Divisor in the random-tick growth roll. Vanilla wheat — and indica — use 25.0F; the higher
@@ -467,7 +471,7 @@ public class SativaCropBlock extends CropBlock implements Mildew.Host, RecordOnT
      */
     @Override
     public boolean isBonemealSuccess(Level world, RandomSource random, BlockPos pos, BlockState state, BonemealSource source) {
-        return random.nextInt(BONEMEAL_FAILURE_CHANCE) != 0;
+        return GrowClimate.of(world.registryAccess()).boneMealTakes(random);
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.util.ModTags;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -48,9 +49,9 @@ public interface GrowMedium extends BonemealableBlock {
 
     /**
      * What one growth step in this bed may stress a flowering plant with, and at what odds against a neutral
-     * plant: a dry bed is dry ground, stale water is overwatering. See {@link PlantStress}.
+     * plant at the world's {@code odds}: a dry bed is dry ground, stale water is overwatering. See {@link PlantStress}.
      */
-    StressCause stress(BlockState state);
+    StressCause stress(BlockState state, GrowClimate.Stress odds);
 
     /**
      * Feeds a bed from the player's hand with <b>anything in {@code #c:fertilizers}</b> — bone meal

@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.advancement.HarvestHempCriterion;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.effect.ModEffects;
@@ -99,8 +100,11 @@ public class EnderHazeCropBlock extends CropBlock implements RecordOnTheRoot {
     /** What any ground gives it: end stone is no farmland, and nothing crowds it. */
     private static final float FLAT_MOISTURE = 1.0F;
 
-    /** One in this many bonemeal applications does nothing (but is still consumed), as on Lemon Haze. */
-    public static final int BONEMEAL_FAILURE_CHANCE = 3;
+    /**
+     * One in this many bonemeal applications does nothing (but is still consumed), as on Lemon Haze: the built-in
+     * number. A world reads its own, {@code bone_meal_fails_one_in} in its grow climate, at each use.
+     */
+    public static final int BONEMEAL_FAILURE_CHANCE = GrowClimate.BUILT_IN.boneMealFailsOneIn();
 
     /** How far a harvest carries, in blocks: the endermen within it turn on the player. */
     public static final double PROVOKE_RADIUS = 16.0;
@@ -354,7 +358,7 @@ public class EnderHazeCropBlock extends CropBlock implements RecordOnTheRoot {
 
     @Override
     public boolean isBonemealSuccess(Level world, RandomSource random, BlockPos pos, BlockState state, BonemealSource source) {
-        return random.nextInt(BONEMEAL_FAILURE_CHANCE) != 0;
+        return GrowClimate.of(world.registryAccess()).boneMealTakes(random);
     }
 
     /**

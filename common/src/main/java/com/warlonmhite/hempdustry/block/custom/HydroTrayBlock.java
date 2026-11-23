@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.balance.GrowClimate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -135,11 +136,11 @@ public class HydroTrayBlock extends Block implements GrowMedium {
      * which is the classic way a deep-water-culture grow fails. A running pump over water is safe.
      */
     @Override
-    public StressCause stress(BlockState state) {
+    public StressCause stress(BlockState state, GrowClimate.Stress odds) {
         if (state.getValue(LEVEL) == 0) {
-            return StressCause.dryGround(PlantStress.DRY_BED);
+            return StressCause.dryGround(odds.dryBed());
         }
-        return state.getValue(POWERED) ? StressCause.NONE : StressCause.overwatering(PlantStress.STAGNANT);
+        return state.getValue(POWERED) ? StressCause.NONE : StressCause.overwatering(odds.stagnant());
     }
 
     /**
