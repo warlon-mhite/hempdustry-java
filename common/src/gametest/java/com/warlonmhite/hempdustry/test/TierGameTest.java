@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.strain.internal.Dosing;
 import com.warlonmhite.hempdustry.strain.internal.Rolls;
 import com.warlonmhite.hempdustry.strain.internal.Tiers;
@@ -117,16 +118,16 @@ public final class TierGameTest {
             int luck = i - 1;
             int total = 0;
             for (BudTier tier : BudTier.values()) {
-                total += Tiers.weightAt(tier, luck);
+                total += Tiers.weightAt(Genetics.BUILT_IN, tier, luck);
             }
             for (BudTier tier : BudTier.values()) {
-                int percent = Math.round(100.0F * Tiers.weightAt(tier, luck) / total);
+                int percent = Math.round(100.0F * Tiers.weightAt(Genetics.BUILT_IN, tier, luck) / total);
                 context.assertValueEqual(percent, TABLE[i][tier.ordinal()], tier + "'s share at L " + luck);
             }
         }
-        context.assertValueEqual(Tiers.weightAt(BudTier.EPIC, 3), 0, "Epic's weight at L 3: it appears only from L 4");
-        context.assertTrue(Tiers.weightAt(BudTier.EPIC, 4) > 0, "Epic's weight at L 4");
-        context.assertValueEqual(Tiers.weightAt(BudTier.TOP_SHELF, 0.5F), 3, "Top Shelf's weight at a fractional L 0.5");
+        context.assertValueEqual(Tiers.weightAt(Genetics.BUILT_IN, BudTier.EPIC, 3), 0, "Epic's weight at L 3: it appears only from L 4");
+        context.assertTrue(Tiers.weightAt(Genetics.BUILT_IN, BudTier.EPIC, 4) > 0, "Epic's weight at L 4");
+        context.assertValueEqual(Tiers.weightAt(Genetics.BUILT_IN, BudTier.TOP_SHELF, 0.5F), 3, "Top Shelf's weight at a fractional L 0.5");
 
         // Rolled at several L, on seeds drawn from a seeded java.util.Random: within 1.5 % of the table.
         Random seeds = new Random(20261112L);
@@ -135,16 +136,16 @@ public final class TierGameTest {
             int rolls = 20000;
             int[] seen = new int[BudTier.values().length];
             for (int roll = 0; roll < rolls; roll++) {
-                seen[Tiers.roll(luck, random).ordinal()]++;
+                seen[Tiers.roll(Genetics.BUILT_IN, luck, random).ordinal()]++;
             }
             int total = 0;
             for (BudTier tier : BudTier.values()) {
-                total += Tiers.weightAt(tier, luck);
+                total += Tiers.weightAt(Genetics.BUILT_IN, tier, luck);
             }
             for (BudTier tier : BudTier.values()) {
-                double expected = (double) Tiers.weightAt(tier, luck) / total;
+                double expected = (double) Tiers.weightAt(Genetics.BUILT_IN, tier, luck) / total;
                 double share = (double) seen[tier.ordinal()] / rolls;
-                context.assertTrue(Tiers.weightAt(tier, luck) == 0 ? seen[tier.ordinal()] == 0 : Math.abs(share - expected) < 0.015,
+                context.assertTrue(Tiers.weightAt(Genetics.BUILT_IN, tier, luck) == 0 ? seen[tier.ordinal()] == 0 : Math.abs(share - expected) < 0.015,
                         tier + " came up " + share + " of the time at L " + luck + ", expected " + expected);
             }
         }
@@ -154,7 +155,7 @@ public final class TierGameTest {
             long seed = seeds.nextLong();
             RandomSource rolled = RandomSource.create(seed);
             RandomSource counted = RandomSource.create(seed);
-            Tiers.roll(luck, rolled);
+            Tiers.roll(Genetics.BUILT_IN, luck, rolled);
             counted.nextInt(1000);
             context.assertValueEqual(rolled.nextLong(), counted.nextLong(), "the draw after a roll at L " + luck
                     + ": a roll took other than one draw");
@@ -231,8 +232,8 @@ public final class TierGameTest {
         BlockState ruderalis = ModBlocks.RUDERALIS_CROP.defaultBlockState();
         int ruderalisCeiling = ceiling(ModStrains.RUDERALIS, registries, ruderalis, false);
         context.assertValueEqual(ruderalisCeiling, 2, "Ruderalis's ceiling");
-        context.assertValueEqual(Tiers.weightAt(BudTier.EPIC, ruderalisCeiling), 0, "Epic's weight at Ruderalis's ceiling");
-        context.assertValueEqual(Tiers.weightAt(BudTier.EPIC, ruderalisCeiling + 1), 0,
+        context.assertValueEqual(Tiers.weightAt(Genetics.BUILT_IN, BudTier.EPIC, ruderalisCeiling), 0, "Epic's weight at Ruderalis's ceiling");
+        context.assertValueEqual(Tiers.weightAt(Genetics.BUILT_IN, BudTier.EPIC, ruderalisCeiling + 1), 0,
                 "Epic's weight at Ruderalis's ceiling with its own Luck smoke");
         context.succeed();
     }
@@ -499,23 +500,23 @@ public final class TierGameTest {
         int[] greenOut = {4, 5, 8, 16};
         for (BudTier tier : BudTier.values()) {
             SmokeContents load = tiered(kush, 1, tier);
-            context.assertValueEqual(Smoking.coughOneIn(3, load), cough[tier.ordinal()], "a bong's cough, 1 in N, at " + tier);
-            context.assertValueEqual(Smoking.nauseaOneIn(5, load), nausea[tier.ordinal()], "a bong's Nausea, 1 in N, at " + tier);
-            context.assertValueEqual(Smoking.greenOutOneIn(4, load), greenOut[tier.ordinal()], "a full green-out, 1 in N, at " + tier);
+            context.assertValueEqual(Smoking.coughOneIn(Genetics.BUILT_IN, 3, load), cough[tier.ordinal()], "a bong's cough, 1 in N, at " + tier);
+            context.assertValueEqual(Smoking.nauseaOneIn(Genetics.BUILT_IN, 5, load), nausea[tier.ordinal()], "a bong's Nausea, 1 in N, at " + tier);
+            context.assertValueEqual(Smoking.greenOutOneIn(Genetics.BUILT_IN, 4, load), greenOut[tier.ordinal()], "a full green-out, 1 in N, at " + tier);
         }
-        context.assertValueEqual(Smoking.coughOneIn(3, spliff), 0, "an Epic bud's spliff with Mids hash: the bud decides, no cough");
-        context.assertValueEqual(Smoking.greenOutOneIn(0, tiered(kush, 1, BudTier.MIDS)), 0, "a dose that never greens out");
+        context.assertValueEqual(Smoking.coughOneIn(Genetics.BUILT_IN, 3, spliff), 0, "an Epic bud's spliff with Mids hash: the bud decides, no cough");
+        context.assertValueEqual(Smoking.greenOutOneIn(Genetics.BUILT_IN, 0, tiered(kush, 1, BudTier.MIDS)), 0, "a dose that never greens out");
 
         // Schwag smokes outside the tiers: 2.1's duration and odds, whatever its entry says.
         Holder<Strain> schwag = strain(registries, ModStrains.SCHWAG);
         SmokeContents spoiled = SmokeContents.of(schwag, 1);
-        context.assertValueEqual(Smoking.nauseaOneIn(5, spoiled), 5, "a schwag bong's Nausea, 1 in N, as 2.1");
+        context.assertValueEqual(Smoking.nauseaOneIn(Genetics.BUILT_IN, 5, spoiled), 5, "a schwag bong's Nausea, 1 in N, as 2.1");
         for (BudTier tier : BudTier.values()) {
-            context.assertValueEqual(Smoking.greenOutOneIn(4, tiered(schwag, 1, tier)), Smoking.greenOutOneIn(4, spoiled),
+            context.assertValueEqual(Smoking.greenOutOneIn(Genetics.BUILT_IN, 4, tiered(schwag, 1, tier)), Smoking.greenOutOneIn(Genetics.BUILT_IN, 4, spoiled),
                     "a schwag load's green-out, 1 in N, with its entry at " + tier);
-            context.assertValueEqual(Smoking.coughOneIn(3, tiered(schwag, 1, tier)), Smoking.coughOneIn(3, spoiled),
+            context.assertValueEqual(Smoking.coughOneIn(Genetics.BUILT_IN, 3, tiered(schwag, 1, tier)), Smoking.coughOneIn(Genetics.BUILT_IN, 3, spoiled),
                     "a schwag bong's cough, 1 in N, with its entry at " + tier);
-            context.assertValueEqual(Smoking.nauseaOneIn(5, tiered(schwag, 1, tier)), 5,
+            context.assertValueEqual(Smoking.nauseaOneIn(Genetics.BUILT_IN, 5, tiered(schwag, 1, tier)), 5,
                     "a schwag load's Nausea, 1 in N, with its entry at " + tier);
         }
         context.assertValueEqual(duration(tiered(schwag, 1, BudTier.EPIC), device, MobEffects.POISON),

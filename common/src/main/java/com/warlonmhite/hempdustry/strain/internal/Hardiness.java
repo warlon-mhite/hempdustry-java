@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.strain.internal;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.strain.Resistance;
 import net.minecraft.util.RandomSource;
 
@@ -13,46 +14,60 @@ import net.minecraft.util.RandomSource;
  *       ({@link #ignoresLostLight}: resistant 1 time in 2, very resistant 3 in 4) and from which age a loss
  *       stresses it ({@link #lightLossAge}: weak and very weak from age 3, everyone else from age 4).</li>
  * </ul>
+ *
+ * <p>Those are the built-in numbers. Every step but neutral reads its own from the world's
+ * {@code genetics/default.json} ({@link Genetics.Resistance}); neutral, the step of a plant with no record, keeps
+ * ×1, age 4 and no shrug, so such a plant stresses as it always did.
  */
 public final class Hardiness {
-    /** The age from which a lost light stresses a weak or very weak plant, a stage before flowering. */
+    /** The built-in age from which a lost light stresses a weak or very weak plant, a stage before flowering. */
     public static final int WEAK_LIGHT_LOSS_AGE = 3;
-    /** The age from which a lost light stresses every other plant: flowering ({@code GrowLight#FLOWERING_AGE}). */
-    public static final int LIGHT_LOSS_AGE = 4;
+    /** The age from which a lost light stresses a neutral plant: flowering ({@code GrowLight#FLOWERING_AGE}). */
+    public static final int LIGHT_LOSS_AGE = Genetics.Resistance.NEUTRAL_LIGHT_LOSS_AGE;
 
     private Hardiness() {
     }
 
     /** What {@code step} multiplies a cause's chance by. */
-    public static float factor(Resistance step) {
+    public static float factor(Genetics genetics, Resistance step) {
+        Genetics.Hardy<Float> factors = genetics.resistance().stressFactor();
         return switch (step) {
-            case VERY_WEAK -> 2.0F;
-            case WEAK -> 1.5F;
+            case VERY_WEAK -> factors.veryWeak();
+            case WEAK -> factors.weak();
             case NEUTRAL -> 1.0F;
-            case RESISTANT -> 0.5F;
-            case VERY_RESISTANT -> 0.25F;
+            case RESISTANT -> factors.resistant();
+            case VERY_RESISTANT -> factors.veryResistant();
         };
     }
 
     /** {@code chance} for a plant of {@code step}: multiplied by {@link #factor}, never above certain. */
-    public static float apply(Resistance step, float chance) {
-        return Math.min(1.0F, chance * factor(step));
+    public static float apply(Genetics genetics, Resistance step, float chance) {
+        return Math.min(1.0F, chance * factor(genetics, step));
     }
 
     /** The age from which losing its light stresses a plant of {@code step}. */
-    public static int lightLossAge(Resistance step) {
-        return step.score() < 0 ? WEAK_LIGHT_LOSS_AGE : LIGHT_LOSS_AGE;
+    public static int lightLossAge(Genetics genetics, Resistance step) {
+        Genetics.Hardy<Integer> ages = genetics.resistance().lightLossAge();
+        return switch (step) {
+            case VERY_WEAK -> ages.veryWeak();
+            case WEAK -> ages.weak();
+            case NEUTRAL -> LIGHT_LOSS_AGE;
+            case RESISTANT -> ages.resistant();
+            case VERY_RESISTANT -> ages.veryResistant();
+        };
     }
 
     /**
      * Whether a plant of {@code step} shrugs off a lost light this time. Draws from {@code random} only for a
-     * resistant or very resistant plant, so every other plant's step takes the draws it always did.
+     * resistant or very resistant plant whose odds are above none, so every other plant's step takes the draws it
+     * always did.
      */
-    public static boolean ignoresLostLight(Resistance step, RandomSource random) {
+    public static boolean ignoresLostLight(Genetics genetics, Resistance step, RandomSource random) {
+        Genetics.Ignores odds = genetics.resistance().ignoresLostLight();
         float ignores = switch (step) {
             case VERY_WEAK, WEAK, NEUTRAL -> 0.0F;
-            case RESISTANT -> 0.5F;
-            case VERY_RESISTANT -> 0.75F;
+            case RESISTANT -> odds.resistant();
+            case VERY_RESISTANT -> odds.veryResistant();
         };
         return ignores > 0.0F && random.nextFloat() < ignores;
     }

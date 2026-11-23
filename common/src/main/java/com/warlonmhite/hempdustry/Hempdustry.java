@@ -6,6 +6,7 @@ import com.warlonmhite.hempdustry.balance.DeviceStats;
 import com.warlonmhite.hempdustry.balance.EdibleBundle;
 import com.warlonmhite.hempdustry.balance.GreenOut;
 import com.warlonmhite.hempdustry.balance.GrowClimate;
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.balance.ModBalance;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.ModCauldronBehaviors;
@@ -68,6 +69,7 @@ public class Hempdustry {
 		registration.registerSyncedDynamicRegistry(EdibleBundle.REGISTRY_KEY, EdibleBundle.CODEC);
 		registration.registerSyncedDynamicRegistry(GreenOut.REGISTRY_KEY, GreenOut.CODEC);
 		registration.registerSyncedDynamicRegistry(GrowClimate.REGISTRY_KEY, GrowClimate.CODEC);
+		registration.registerSyncedDynamicRegistry(Genetics.REGISTRY_KEY, Genetics.CODEC);
 	}
 
 	/** Registers everything else, in order; each loader's entry point calls it once. */

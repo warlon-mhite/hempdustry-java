@@ -5,6 +5,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.warlonmhite.hempdustry.Hempdustry;
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.strain.BudTier;
 import com.warlonmhite.hempdustry.strain.Chemotype;
 import com.warlonmhite.hempdustry.strain.Strain;
@@ -341,10 +342,12 @@ public record SmokeContents(List<Entry> entries) {
      * Every status effect one hit of this load applies on the hit ({@code onExhale} false) or with
      * the exhale ({@code onExhale} true), before the config's {@code EffectPolicy}. An effect with a
      * {@code chance} below one is rolled on {@code random}, once per call. Each entry's strain applies its
-     * own effects at its own count, weighed by the entry's chemotype, band and tier.
+     * own effects at its own count, weighed by the entry's chemotype, band and tier, a tier's length
+     * as the genetics of the world the calling thread runs have it: on a client's thread the ones its server synced,
+     * on the server's thread the server's, the built-in numbers anywhere else.
      */
     public List<MobEffectInstance> effects(int durationTicks, boolean onExhale, RandomGenerator random) {
-        return Dosing.effects(this, durationTicks, onExhale, random);
+        return Dosing.effects(Genetics.running(), this, durationTicks, onExhale, random);
     }
 
     /**

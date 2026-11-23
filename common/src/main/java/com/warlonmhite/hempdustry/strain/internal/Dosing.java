@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.strain.internal;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.config.EffectPolicy;
 import com.warlonmhite.hempdustry.item.custom.SmokeContents;
 import com.warlonmhite.hempdustry.item.custom.SmokeContents.Entry;
@@ -277,8 +278,8 @@ public final class Dosing {
      * the device and the tier.
      *
      * <p><b>Each entry's tier scales the device's duration for that entry alone</b>
-     * ({@link Tiers#durationFactor}): Mids three quarters, Dank as 2.1, Top Shelf a quarter more, Epic
-     * half again, applied before the rules above, so the band's stretch and its cap work on the tiered
+     * ({@link Tiers#durationFactor}, the world's {@code genetics}): built in, Mids three quarters, Dank as 2.1, Top
+     * Shelf a quarter more, Epic half again, applied before the rules above, so the band's stretch and its cap work on the tiered
      * duration.
      *
      * <p><b>A bud loaded with a concentrate goes one level past the cap</b> (see
@@ -286,8 +287,8 @@ public final class Dosing {
      * Every other entry, the concentrate's own strain-agnostic effects included, is held to the plain cap here,
      * so the raised cap {@code Smoking} hands the policy lifts only the bud.
      */
-    public static List<MobEffectInstance> effects(SmokeContents contents, int durationTicks, boolean onExhale,
-                                                  RandomGenerator random) {
+    public static List<MobEffectInstance> effects(Genetics genetics, SmokeContents contents, int durationTicks,
+                                                  boolean onExhale, RandomGenerator random) {
         int load = contents.buffBonus();
         List<MobEffectInstance> out = new ArrayList<>();
         for (Entry entry : contents.entries()) {
@@ -296,7 +297,7 @@ public final class Dosing {
             int past = Math.max(0, entry.count() - cap);
             // The entry's tier scales the device's duration for its own effects; times the band's stretch,
             // an extra-high Epic bud lasts three times the device. A CBD effect keeps its own clock.
-            int lasting = untiered(entry) ? durationTicks : Tiers.scaleDuration(entry.tier(), durationTicks);
+            int lasting = untiered(entry) ? durationTicks : Tiers.scaleDuration(genetics, entry.tier(), durationTicks);
             int thcDose = thcDose(entry);
             Burn burn = new Burn(entry.count(), thcDose, entry.chemotype(),
                     thcTicks(lasting, thcUnits(entry), thcDose, cap),

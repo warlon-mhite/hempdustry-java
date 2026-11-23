@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.strain.internal.Hardiness;
 import com.warlonmhite.hempdustry.strain.internal.Rolls;
 import com.google.gson.JsonElement;
@@ -77,13 +78,13 @@ public final class ResistanceGameTest {
         float[] factors = {2.0F, 1.5F, 1.0F, 0.5F, 0.25F};
         int[] lossAges = {3, 3, 4, 4, 4};
         for (Resistance step : Resistance.values()) {
-            context.assertValueEqual(Hardiness.factor(step), factors[step.ordinal()], step + "'s factor");
-            context.assertValueEqual(Hardiness.lightLossAge(step), lossAges[step.ordinal()], step + "'s light loss age");
+            context.assertValueEqual(Hardiness.factor(Genetics.BUILT_IN, step), factors[step.ordinal()], step + "'s factor");
+            context.assertValueEqual(Hardiness.lightLossAge(Genetics.BUILT_IN, step), lossAges[step.ordinal()], step + "'s light loss age");
             context.assertValueEqual(step.score(), step.ordinal() - 2, step + "'s place on the hardiness scale");
         }
-        context.assertValueEqual(Hardiness.apply(Resistance.VERY_WEAK, 1.0F / 3), 2.0F / 3, "a very weak plant in a dry bed");
-        context.assertValueEqual(Hardiness.apply(Resistance.VERY_RESISTANT, 1.0F / 3), 1.0F / 12, "a very resistant plant in a dry bed");
-        context.assertValueEqual(Hardiness.apply(Resistance.VERY_WEAK, 0.75F), 1.0F, "a doubled chance past certain");
+        context.assertValueEqual(Hardiness.apply(Genetics.BUILT_IN, Resistance.VERY_WEAK, 1.0F / 3), 2.0F / 3, "a very weak plant in a dry bed");
+        context.assertValueEqual(Hardiness.apply(Genetics.BUILT_IN, Resistance.VERY_RESISTANT, 1.0F / 3), 1.0F / 12, "a very resistant plant in a dry bed");
+        context.assertValueEqual(Hardiness.apply(Genetics.BUILT_IN, Resistance.VERY_WEAK, 0.75F), 1.0F, "a doubled chance past certain");
 
         int[][] rows = {{60, 25, 15, 0, 0}, {19, 62, 12, 7, 0}, {7, 12, 62, 12, 7}, {0, 7, 12, 62, 19}, {0, 0, 15, 25, 60}};
         for (Resistance step : Resistance.values()) {
@@ -97,18 +98,18 @@ public final class ResistanceGameTest {
                 "an always-neutral phenomenon reads as the spread around neutral, so it would write as one");
 
         // A lost light: a resistant plant ignores it 1 time in 2, a very resistant one 3 in 4; one draw for those, none for the rest.
-        context.assertTrue(Hardiness.ignoresLostLight(Resistance.RESISTANT, decided(0.49F))
-                        && !Hardiness.ignoresLostLight(Resistance.RESISTANT, decided(0.51F))
-                        && Hardiness.ignoresLostLight(Resistance.VERY_RESISTANT, decided(0.74F))
-                        && !Hardiness.ignoresLostLight(Resistance.VERY_RESISTANT, decided(0.76F))
-                        && !Hardiness.ignoresLostLight(Resistance.NEUTRAL, decided(0.0F))
-                        && !Hardiness.ignoresLostLight(Resistance.WEAK, decided(0.0F)),
+        context.assertTrue(Hardiness.ignoresLostLight(Genetics.BUILT_IN, Resistance.RESISTANT, decided(0.49F))
+                        && !Hardiness.ignoresLostLight(Genetics.BUILT_IN, Resistance.RESISTANT, decided(0.51F))
+                        && Hardiness.ignoresLostLight(Genetics.BUILT_IN, Resistance.VERY_RESISTANT, decided(0.74F))
+                        && !Hardiness.ignoresLostLight(Genetics.BUILT_IN, Resistance.VERY_RESISTANT, decided(0.76F))
+                        && !Hardiness.ignoresLostLight(Genetics.BUILT_IN, Resistance.NEUTRAL, decided(0.0F))
+                        && !Hardiness.ignoresLostLight(Genetics.BUILT_IN, Resistance.WEAK, decided(0.0F)),
                 "a lost light is ignored at other odds than resistant 1 in 2, very resistant 3 in 4, nobody else");
         for (Resistance step : Resistance.values()) {
             long seed = new Random(20261113L + step.ordinal()).nextLong();
             RandomSource rolled = RandomSource.create(seed);
             RandomSource counted = RandomSource.create(seed);
-            Hardiness.ignoresLostLight(step, rolled);
+            Hardiness.ignoresLostLight(Genetics.BUILT_IN, step, rolled);
             if (step.compareTo(Resistance.RESISTANT) >= 0) {
                 counted.nextFloat();
             }

@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.test;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.strain.internal.Rolls;
 import com.warlonmhite.hempdustry.strain.internal.Resins;
 import com.warlonmhite.hempdustry.strain.internal.Bands;
@@ -109,10 +110,10 @@ public final class ResinGameTest {
                 int i = step.ordinal();
                 float expectedSieve = i < 3 ? sieve[i] : richSieve.get(texture)[i - 3];
                 float expectedRub = i < 3 ? rub[i] : richRub.get(texture)[i - 3];
-                context.assertTrue(Math.abs(Resins.sieveFactor(step, texture) - expectedSieve) < 1e-6F,
-                        step + " " + texture + " sieves ×" + Resins.sieveFactor(step, texture) + ", not ×" + expectedSieve);
-                context.assertTrue(Math.abs(Resins.rubChance(step, texture) - expectedRub) < 1e-6F,
-                        step + " " + texture + " rubs at " + Resins.rubChance(step, texture) + ", not " + expectedRub);
+                context.assertTrue(Math.abs(Resins.sieveFactor(Genetics.BUILT_IN, step, texture) - expectedSieve) < 1e-6F,
+                        step + " " + texture + " sieves ×" + Resins.sieveFactor(Genetics.BUILT_IN, step, texture) + ", not ×" + expectedSieve);
+                context.assertTrue(Math.abs(Resins.rubChance(Genetics.BUILT_IN, step, texture) - expectedRub) < 1e-6F,
+                        step + " " + texture + " rubs at " + Resins.rubChance(Genetics.BUILT_IN, step, texture) + ", not " + expectedRub);
             }
         }
         for (ResinStep step : ResinStep.values()) {
@@ -323,13 +324,13 @@ public final class ResinGameTest {
         // Written only where nothing written would sieve otherwise: a very rich bud in the resinous tag is left bare
         // for a dry strain (the tag's double rate is its own), written for any other texture (which a datapack's
         // tagged strain may have), and an average bud outside the tag is never written.
-        context.assertTrue(Resins.written(Resins.stamp(new ItemStack(ModItems.BELDIA_BUDS), ResinStep.VERY_RICH,
+        context.assertTrue(Resins.written(Resins.stamp(Genetics.BUILT_IN, new ItemStack(ModItems.BELDIA_BUDS), ResinStep.VERY_RICH,
                 ResinTexture.DRY)).isEmpty(), "a very rich bud of a dry resinous strain was written");
         for (ResinTexture texture : List.of(ResinTexture.EVEN, ResinTexture.STICKY)) {
-            context.assertTrue(Resins.written(Resins.stamp(new ItemStack(ModItems.BELDIA_BUDS), ResinStep.VERY_RICH,
+            context.assertTrue(Resins.written(Resins.stamp(Genetics.BUILT_IN, new ItemStack(ModItems.BELDIA_BUDS), ResinStep.VERY_RICH,
                     texture)).isPresent(), "a very rich bud of an " + texture.getSerializedName()
                     + " resinous strain was left bare, so it would sieve at the tag's double rate");
-            context.assertTrue(Resins.written(Resins.stamp(new ItemStack(ModItems.INDICA_BUDS), ResinStep.AVERAGE,
+            context.assertTrue(Resins.written(Resins.stamp(Genetics.BUILT_IN, new ItemStack(ModItems.INDICA_BUDS), ResinStep.AVERAGE,
                     texture)).isEmpty(), "an average bud outside the tag was written");
         }
 
@@ -370,7 +371,7 @@ public final class ResinGameTest {
                 float sun = Defoliation.charasChance(world, pos, state);
                 float lamp = Defoliation.charasChance(world, pos, state.setValue(GrowLight.PROPERTY, GrowLight.LAMP));
                 float stressed = Defoliation.charasChance(world, pos, state.setValue(GrowLight.PROPERTY, GrowLight.STRESSED));
-                float expected = Resins.rubChance(step, crop.getValue());
+                float expected = Resins.rubChance(Genetics.BUILT_IN, step, crop.getValue());
                 context.assertTrue(Math.abs(sun - expected) < 1e-6F && Math.abs(lamp - expected / 2) < 1e-6F
                                 && Math.abs(stressed - expected / 2) < 1e-6F,
                         "a " + step + " " + crop.getKey() + " rubs at " + sun + " / lamp " + lamp + " / stressed " + stressed

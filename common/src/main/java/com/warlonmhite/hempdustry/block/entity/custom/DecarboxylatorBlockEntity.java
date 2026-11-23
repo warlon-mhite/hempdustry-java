@@ -1,5 +1,8 @@
 package com.warlonmhite.hempdustry.block.entity.custom;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
+import com.warlonmhite.hempdustry.item.custom.StrainPlantItem;
+import com.warlonmhite.hempdustry.strain.internal.Bands;
 import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.warlonmhite.hempdustry.block.custom.DecarboxylatorBlock;
 import com.warlonmhite.hempdustry.block.entity.ImplementedInventory;
@@ -225,13 +228,16 @@ public class DecarboxylatorBlockEntity extends NamedMachineBlockEntity
         // A bud's potency band, or a leaf's high mark, moves a mid piece's count by its offset (a high
         // bud of a 4 bakes into 5, a marked leaf into 2), never below one. A mid bud is worth its
         // strain's base, as in the bowl, unless its recipe writes a count of its own, which then moves
-        // the oven alone (DecarboxylatingRecipe#midCount).
+        // the oven alone (DecarboxylatingRecipe#midCount). A bud's offset is the world's genetics' (Bands#offset); a
+        // leaf's mark is always one leaf more.
         PotencyBand band = PotencyBand.of(stack);
+        int offset = stack.getItem() instanceof StrainPlantItem.Buds
+                ? Bands.offset(Genetics.of(world.registryAccess()), band) : band.offset();
         return Services.RECIPES.firstMatch(world, ModRecipes.DECARBOXYLATING_TYPE, input)
                 .map(entry -> {
                     ItemStack result = Stamping.apply(entry.value().assemble(input), chemotype);
                     int mid = entry.value().midCount(stack, world.registryAccess());
-                    result.setCount(Math.max(1, mid + band.offset()));
+                    result.setCount(Math.max(1, mid + offset));
                     return result;
                 })
                 .orElse(ItemStack.EMPTY);

@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.strain.StressPhenomenon;
@@ -143,9 +144,11 @@ public final class PlantStress {
         PlantRecordBlockEntity.recordSky(world, lower, fromAge, height);
         PlantRecordBlockEntity.recordTray(world, lower, fromAge);
         ResistanceGenes genes = PlantRecordBlockEntity.resistancesAt(world, lower);
+        Genetics genetics = Genetics.of(world.registryAccess());
         GrowLight next = shy ? shyStep(world, lower, record, toAge, genes.get(StressPhenomenon.LIGHT), random)
                 : touchy ? touchyStep(world, lower, record, fromAge, toAge, height, genes.get(StressPhenomenon.LIGHT), random)
-                : lightStep(record, fromAge, GrowLight.over(world, lower, height), genes.get(StressPhenomenon.LIGHT), random);
+                : lightStep(genetics, record, fromAge, GrowLight.over(world, lower, height), genes.get(StressPhenomenon.LIGHT),
+                random);
         // Switched off, every plant steps as one that cannot be stressed: a lost light leaves it the sun's record,
         // and no ground is rolled. Read after the light step, so the draws at the default are the ones they were.
         if (!stressable || !switchedOn()) {
@@ -154,7 +157,8 @@ public final class PlantStress {
         if (next == GrowLight.STRESSED || toAge < GrowLight.FLOWERING_AGE) {
             return next;
         }
-        float chance = Math.max(ofGround(world.getBlockState(lower.below()), odds).chanceFor(genes), extra.chanceFor(genes));
+        float chance = Math.max(ofGround(world.getBlockState(lower.below()), odds).chanceFor(genetics, genes),
+                extra.chanceFor(genetics, genes));
         return chance > 0.0F && random.nextFloat() < chance ? GrowLight.STRESSED : next;
     }
 
@@ -163,10 +167,11 @@ public final class PlantStress {
      * the record's own ladder, a loss stressing from the step's {@link Hardiness#lightLossAge}, and a resistant
      * plant ignoring the loss now and then, which leaves it the sun's record as a young plant's loss does.
      */
-    static GrowLight lightStep(GrowLight record, int fromAge, GrowLight now, Resistance light, RandomSource random) {
-        GrowLight next = record.afterStep(fromAge, now, Hardiness.lightLossAge(light));
-        return next == GrowLight.STRESSED && record != GrowLight.STRESSED && Hardiness.ignoresLostLight(light, random)
-                ? GrowLight.NATURAL : next;
+    static GrowLight lightStep(Genetics genetics, GrowLight record, int fromAge, GrowLight now, Resistance light,
+                               RandomSource random) {
+        GrowLight next = record.afterStep(fromAge, now, Hardiness.lightLossAge(genetics, light));
+        return next == GrowLight.STRESSED && record != GrowLight.STRESSED
+                && Hardiness.ignoresLostLight(genetics, light, random) ? GrowLight.NATURAL : next;
     }
 
     /**
@@ -194,13 +199,15 @@ public final class PlantStress {
                                 Resistance light, RandomSource random) {
         Hours hours = hours(world, lower);
         if (hours == Hours.DAY) {
-            return lightStep(record, fromAge, GrowLight.over(world, lower, height), light, random);
+            return lightStep(Genetics.of(world.registryAccess()), record, fromAge, GrowLight.over(world, lower, height),
+                    light, random);
         }
         if (hours == Hours.NIGHT && toAge >= TOUCHY_AGE && leaks(world, lower, height)) {
             return GrowLight.STRESSED;
         }
         GrowLight fixture = GrowLight.fixtureOver(world, lower, height);
-        return fixture == GrowLight.NATURAL ? record : record.afterStep(fromAge, fixture, Hardiness.lightLossAge(light));
+        return fixture == GrowLight.NATURAL ? record
+                : record.afterStep(fromAge, fixture, Hardiness.lightLossAge(Genetics.of(world.registryAccess()), light));
     }
 
     /**
@@ -214,11 +221,12 @@ public final class PlantStress {
      */
     static GrowLight shyStep(Level world, BlockPos lower, GrowLight record, int toAge, Resistance light,
                              RandomSource random) {
-        if (record == GrowLight.STRESSED || toAge < Hardiness.lightLossAge(light)
+        Genetics genetics = Genetics.of(world.registryAccess());
+        if (record == GrowLight.STRESSED || toAge < Hardiness.lightLossAge(genetics, light)
                 || EchoOgCropBlock.lightAtTop(world, lower) <= EchoOgCropBlock.MAX_LIGHT) {
             return record;
         }
-        return Hardiness.ignoresLostLight(light, random) ? record : GrowLight.STRESSED;
+        return Hardiness.ignoresLostLight(genetics, light, random) ? record : GrowLight.STRESSED;
     }
 
     /** Day, night, or the twilight around the switch between them, as a plant touchy about its light keeps them. */
@@ -310,7 +318,8 @@ public final class PlantStress {
         BlockState plant = world.getBlockState(lower);
         if (!switchedOn() || !isFlowering(plant) || plant.getValue(GrowLight.PROPERTY) == GrowLight.STRESSED
                 || plant.getBlock() instanceof CropBlock crop && crop.isMaxAge(plant)
-                || random.nextFloat() >= cause.chanceFor(PlantRecordBlockEntity.resistancesAt(world, lower))) {
+                || random.nextFloat() >= cause.chanceFor(Genetics.of(world.registryAccess()),
+                PlantRecordBlockEntity.resistancesAt(world, lower))) {
             return;
         }
         Block block = plant.getBlock();

@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.strain.internal;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.strain.BudTier;
 import net.minecraft.ChatFormatting;
@@ -22,6 +23,9 @@ import net.minecraft.world.item.Rarity;
  * from L 4: genetics, care and setup together, never one act. A stressed or mildewed plant does not
  * roll: it gives Mids.
  *
+ * <p>Those are the built-in numbers, and so are the factors below: every one of them is read from the world's
+ * {@code genetics/default.json} ({@link Genetics.TierTable}), whose bounds keep a tier from reaching a level.
+ *
  * <h2>What a tier buys when smoked</h2>
  *
  * Smoothness and length, never level: a tier scales how long its own entry's effects last
@@ -38,36 +42,29 @@ public final class Tiers {
     private Tiers() {
     }
 
-    /** {@code tier}'s weight at grow luck {@code luck}: vanilla's {@code max(⌊weight + quality × luck⌋, 0)}. */
-    public static int weightAt(BudTier tier, float luck) {
-        int weight = switch (tier) {
-            case MIDS -> 60;
-            case DANK -> 35;
-            case TOP_SHELF -> 0;
-            case EPIC -> -6;
-        };
-        int quality = switch (tier) {
-            case MIDS -> -10;
-            case DANK -> 4;
-            case TOP_SHELF -> 6;
-            case EPIC -> 2;
-        };
-        return Math.max(Mth.floor((float) weight + (float) quality * luck), 0);
+    /**
+     * {@code tier}'s weight at grow luck {@code luck}: vanilla's {@code max(⌊weight + quality × luck⌋, 0)}, with the
+     * weight and quality {@code genetics} gives it.
+     */
+    public static int weightAt(Genetics genetics, BudTier tier, float luck) {
+        Genetics.Tier numbers = genetics.tiers().of(tier);
+        return Math.max(Mth.floor((float) numbers.weight() + (float) numbers.quality() * luck), 0);
     }
 
     /**
      * One harvest's tier at grow luck {@code luck}: exactly one draw on {@code random}, whatever it
      * decides, so the caller always knows how many it took.
      */
-    public static BudTier roll(float luck, RandomSource random) {
+    public static BudTier roll(Genetics genetics, float luck, RandomSource random) {
         int total = 0;
         for (BudTier tier : BudTier.values()) {
-            total += weightAt(tier, luck);
+            total += weightAt(genetics, tier, luck);
         }
-        // Mids gains weight as luck falls and Dank as it rises, so the total is never zero.
+        // Mids gains weight as luck falls and Dank as it rises, so the built-in total is never zero; a file that
+        // weighs every tier at nothing still takes its one draw, and gives Mids.
         int pick = random.nextInt(Math.max(1, total));
         for (BudTier tier : BudTier.values()) {
-            pick -= weightAt(tier, luck);
+            pick -= weightAt(genetics, tier, luck);
             if (pick < 0) {
                 return tier;
             }
@@ -86,49 +83,29 @@ public final class Tiers {
         return a.rank() <= b.rank() ? a : b;
     }
 
-    /** What {@code tier} multiplies the device's cough chance by: Mids half again, Epic none. */
-    public static float coughFactor(BudTier tier) {
-        return switch (tier) {
-            case MIDS -> 1.5F;
-            case DANK -> 1.0F;
-            case TOP_SHELF -> 0.5F;
-            case EPIC -> 0.0F;
-        };
+    /** What {@code tier} multiplies the device's cough chance by: built in, Mids half again, Epic none. */
+    public static float coughFactor(Genetics genetics, BudTier tier) {
+        return genetics.tiers().of(tier).cough();
     }
 
-    /** What {@code tier} multiplies the device's duration by, for its own entry's effects. */
-    public static float durationFactor(BudTier tier) {
-        return switch (tier) {
-            case MIDS -> 0.75F;
-            case DANK -> 1.0F;
-            case TOP_SHELF -> 1.25F;
-            case EPIC -> 1.5F;
-        };
+    /** What {@code tier} multiplies the device's duration by, for its own entry's effects: built in, ×0.75 to ×1.5. */
+    public static float durationFactor(Genetics genetics, BudTier tier) {
+        return genetics.tiers().of(tier).duration();
     }
 
-    /** What {@code tier} multiplies the device's Nausea chance by: Mids as 2.1, Epic none. */
-    public static float nauseaFactor(BudTier tier) {
-        return switch (tier) {
-            case MIDS -> 1.0F;
-            case DANK -> 0.75F;
-            case TOP_SHELF -> 0.5F;
-            case EPIC -> 0.0F;
-        };
+    /** What {@code tier} multiplies the device's Nausea chance by: built in, Mids as 2.1, Epic none. */
+    public static float nauseaFactor(Genetics genetics, BudTier tier) {
+        return genetics.tiers().of(tier).nausea();
     }
 
-    /** What {@code tier} multiplies the green-out chance by: Mids as 2.1, Epic a quarter, never none. */
-    public static float greenOutFactor(BudTier tier) {
-        return switch (tier) {
-            case MIDS -> 1.0F;
-            case DANK -> 0.75F;
-            case TOP_SHELF -> 0.5F;
-            case EPIC -> 0.25F;
-        };
+    /** What {@code tier} multiplies the green-out chance by: built in, Mids as 2.1, Epic a quarter. */
+    public static float greenOutFactor(Genetics genetics, BudTier tier) {
+        return genetics.tiers().of(tier).greenOut();
     }
 
     /** {@code ticks} lasting as long as {@code tier} makes them. */
-    public static int scaleDuration(BudTier tier, int ticks) {
-        return Math.round(ticks * durationFactor(tier));
+    public static int scaleDuration(Genetics genetics, BudTier tier, int ticks) {
+        return Math.round(ticks * durationFactor(genetics, tier));
     }
 
     /**

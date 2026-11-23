@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
@@ -109,13 +110,14 @@ public final class PlantInspection {
         }
         // No harvester: a player's own Luck would add to this, as it does at the harvest.
         float luck = GrowLuck.of(record, plant, record.getLevel(), null);
+        Genetics genetics = Genetics.of(record.getLevel().registryAccess());
         int total = 0;
         for (BudTier tier : BudTier.values()) {
-            total += Tiers.weightAt(tier, luck);
+            total += Tiers.weightAt(genetics, tier, luck);
         }
         List<Component> odds = new ArrayList<>();
         for (BudTier tier : BudTier.values()) {
-            int weight = Tiers.weightAt(tier, luck);
+            int weight = Tiers.weightAt(genetics, tier, luck);
             if (weight > 0) {
                 odds.add(Component.translatable(KEY + "tier", Component.translatable(tier.getTranslationKey()),
                         value(Math.round(100.0F * weight / Math.max(1, total)))));
@@ -164,13 +166,14 @@ public final class PlantInspection {
         }
         ResistanceGenes genes = PlantRecordBlockEntity.resistancesAt(world, root);
         Resistance lightStep = genes.get(StressPhenomenon.LIGHT);
+        Genetics genetics = Genetics.of(world.registryAccess());
         int height = height(plant);
         int next = age + 1;
         IndicaCropBlock indica = plant.getBlock() instanceof IndicaCropBlock found ? found : null;
         // The light first, as a growth step reads it, then the ground: the same order and the same rules.
         if (indica != null && indica.shunsLight()) {
             int light = EchoOgCropBlock.lightAtTop(world, root);
-            if (next >= Hardiness.lightLossAge(lightStep) && light > EchoOgCropBlock.MAX_LIGHT) {
+            if (next >= Hardiness.lightLossAge(genetics, lightStep) && light > EchoOgCropBlock.MAX_LIGHT) {
                 lines.add(Component.translatable(KEY + "stress.bright", value(light), value(EchoOgCropBlock.MAX_LIGHT))
                         .withStyle(ChatFormatting.GOLD));
                 return;
@@ -181,7 +184,7 @@ public final class PlantInspection {
             return;
         } else if (indica == null || !indica.leaksAtNight() || PlantStress.hours(world, root) == PlantStress.Hours.DAY) {
             GrowLight over = GrowLight.over(world, root, height);
-            if (kept.afterStep(age, over, Hardiness.lightLossAge(lightStep)) == GrowLight.STRESSED) {
+            if (kept.afterStep(age, over, Hardiness.lightLossAge(genetics, lightStep)) == GrowLight.STRESSED) {
                 lines.add(Component.translatable(KEY + "stress.light", value(kept), value(over))
                         .withStyle(ChatFormatting.GOLD));
                 return;
@@ -193,7 +196,7 @@ public final class PlantInspection {
         }
         GrowClimate.Stress odds = PlantStress.odds(world);
         StressCause ground = PlantStress.ofGround(world.getBlockState(root.below()), odds);
-        float chance = ground.chanceFor(genes);
+        float chance = ground.chanceFor(genetics, genes);
         if (chance > 0.0F) {
             lines.add(Component.translatable(KEY + "stress.risk", oneIn(chance), value(ground.phenomenon()))
                     .withStyle(ChatFormatting.GOLD));

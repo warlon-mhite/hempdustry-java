@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.strain.internal.Resins;
 import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.warlonmhite.hempdustry.strain.internal.Bands;
@@ -187,7 +188,8 @@ public final class Defoliation {
         if (step == null) {
             return 1.0F / charasOneIn(lowerState);
         }
-        float chance = Resins.rubChance(step, PlantRecordBlockEntity.textureOf(world, lowerState));
+        float chance = Resins.rubChance(Genetics.of(world.registryAccess()), step,
+                PlantRecordBlockEntity.textureOf(world, lowerState));
         boolean lamps = lowerState.hasProperty(GrowLight.PROPERTY) && lowerState.getValue(GrowLight.PROPERTY).artificial();
         return lamps ? chance / 2.0F : chance;
     }

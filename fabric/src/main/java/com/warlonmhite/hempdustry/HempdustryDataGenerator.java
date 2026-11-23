@@ -6,6 +6,7 @@ import com.warlonmhite.hempdustry.balance.DeviceStats;
 import com.warlonmhite.hempdustry.balance.EdibleBundle;
 import com.warlonmhite.hempdustry.balance.GreenOut;
 import com.warlonmhite.hempdustry.balance.GrowClimate;
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.datagen.*;
 import com.warlonmhite.hempdustry.item.ModFuelAndCompost;
 import com.warlonmhite.hempdustry.strain.ModStrains;
@@ -48,6 +49,7 @@ public class HempdustryDataGenerator implements DataGeneratorEntrypoint {
 		registryBuilder.add(EdibleBundle.REGISTRY_KEY, EdibleBundle::bootstrap);
 		registryBuilder.add(GreenOut.REGISTRY_KEY, GreenOut::bootstrap);
 		registryBuilder.add(GrowClimate.REGISTRY_KEY, GrowClimate::bootstrap);
+		registryBuilder.add(Genetics.REGISTRY_KEY, Genetics::bootstrap);
 		registryBuilder.add(Registries.FEATURE, ModConfiguredFeatures::bootstrap);
 		registryBuilder.add(Registries.PLACED_FEATURE, ModPlacedFeatures::bootstrap);
 	}

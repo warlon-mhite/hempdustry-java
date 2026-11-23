@@ -8,6 +8,7 @@ import com.warlonmhite.hempdustry.balance.DeviceStats;
 import com.warlonmhite.hempdustry.balance.EdibleBundle;
 import com.warlonmhite.hempdustry.balance.GreenOut;
 import com.warlonmhite.hempdustry.balance.GrowClimate;
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.strain.Strain;
 import com.warlonmhite.hempdustry.strain.Terpene;
@@ -32,10 +33,10 @@ import net.minecraft.util.StringRepresentable;
  * prints it, and the server logs what differs once its world is open ({@link #logDifferences}).
  */
 public final class ConfigReport {
-    /** The six datapack registries, in the order the mod registers them. */
+    /** The seven datapack registries, in the order the mod registers them. */
     public static final List<ResourceKey<? extends Registry<?>>> REGISTRIES = List.of(
             Terpene.REGISTRY_KEY, Strain.REGISTRY_KEY, DeviceStats.REGISTRY_KEY, EdibleBundle.REGISTRY_KEY,
-            GreenOut.REGISTRY_KEY, GrowClimate.REGISTRY_KEY);
+            GreenOut.REGISTRY_KEY, GrowClimate.REGISTRY_KEY, Genetics.REGISTRY_KEY);
 
     private ConfigReport() {
     }

@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.item.custom;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.strain.internal.Dosing;
 import com.warlonmhite.hempdustry.strain.internal.Terpenes;
 import com.warlonmhite.hempdustry.strain.internal.Tiers;
@@ -254,23 +255,24 @@ public final class Smoking {
                                 SmokeContents contents, int durationTicks, int coughChanceOneIn,
                                 int nauseaChanceOneIn, int greenOutChanceOneIn,
                                 ParticleOptions exhaleParticle, int exhaleDelayTicks) {
+        Genetics genetics = Genetics.of(world.registryAccess());
 
         // Every chance and every effect below goes through EffectPolicy, which is where the
         // server's config knobs are applied — once, rather than at each site that hands one out.
-        int greenOutOdds = EffectPolicy.greenOutChanceOneIn(greenOutOneIn(greenOutChanceOneIn, contents));
+        int greenOutOdds = EffectPolicy.greenOutChanceOneIn(greenOutOneIn(genetics, greenOutChanceOneIn, contents));
         boolean greenedOut = greenOutOdds > 0
                 && ThreadLocalRandom.current().nextInt(greenOutOdds) == 0;
 
         if (greenedOut) {
             greenOut(player, Dosing.thcDose(contents));
         } else {
-            for (MobEffectInstance effect : EffectPolicy.filter(contents.effects(durationTicks, false, ThreadLocalRandom.current()), contents.buffBonus())) {
+            for (MobEffectInstance effect : EffectPolicy.filter(Dosing.effects(genetics, contents, durationTicks, false, ThreadLocalRandom.current()), contents.buffBonus())) {
                 player.addEffect(effect);
             }
             // What a strain holds back to the exhale -- Beldía's streaming eyes -- rides the same
             // timer as the puff, filtered now so a server's debuffs switch still removes it.
             if (!world.isClientSide()) {
-                List<MobEffectInstance> exhaled = EffectPolicy.filter(contents.effects(durationTicks, true, ThreadLocalRandom.current()), contents.buffBonus());
+                List<MobEffectInstance> exhaled = EffectPolicy.filter(Dosing.effects(genetics, contents, durationTicks, true, ThreadLocalRandom.current()), contents.buffBonus());
                 if (!exhaled.isEmpty()) {
                     SmokeScheduler.scheduleEffects(player, exhaled, exhaleDelayTicks);
                 }
@@ -289,7 +291,7 @@ public final class Smoking {
             SmokeScheduler.schedule(player, tinted(world, exhaleParticle, contents), exhaleDelayTicks);
         }
 
-        int coughOdds = easedByOutfit(player, coughOneIn(coughChanceOneIn, contents));
+        int coughOdds = easedByOutfit(player, coughOneIn(genetics, coughChanceOneIn, contents));
         if (coughOdds > 0 && ThreadLocalRandom.current().nextInt(coughOdds) == 0) {
             world.playSound(null, player.getX(), player.getY(), player.getZ(),
                     ModSounds.COUGHING, SoundSource.PLAYERS, 1f, 1f);
@@ -298,7 +300,7 @@ public final class Smoking {
 
         // Nausea is its own roll and stays per-device, dose-independent — it is the "harsh smoke"
         // cost, not the "too much" cost. A green-out already brings its own, longer nausea.
-        int nauseaOdds = easedByOutfit(player, nauseaOneIn(EffectPolicy.nauseaChanceOneIn(nauseaChanceOneIn), contents));
+        int nauseaOdds = easedByOutfit(player, nauseaOneIn(genetics, EffectPolicy.nauseaChanceOneIn(nauseaChanceOneIn), contents));
         if (!greenedOut && nauseaOdds > 0 && ThreadLocalRandom.current().nextInt(nauseaOdds) == 0) {
             apply(player, new MobEffectInstance(MobEffects.NAUSEA, NAUSEA_DURATION_TICKS, 0));
         }
@@ -314,27 +316,32 @@ public final class Smoking {
      * The load's green-out odds before the server's config: the device's 1-in-N widened by the primary
      * material's {@code green_out_factor} ({@link #smoothed}), then by its tier: Mids as 2.1, Dank three
      * quarters of the chance, Top Shelf half, Epic a quarter. A good bud is smoother; it never stops a
-     * green-out, which is the price of a big hit. A schwag load keeps 2.1's odds.
+     * green-out, which is the price of a big hit. A schwag load keeps 2.1's odds. The tier's factors are
+     * {@code genetics}' (those are the built-in ones).
      */
-    public static int greenOutOneIn(int greenOutChanceOneIn, SmokeContents contents) {
-        return Tiers.scaleOneIn(smoothed(greenOutChanceOneIn, contents), Dosing.primaryTier(contents).map(Tiers::greenOutFactor).orElse(1.0F));
+    public static int greenOutOneIn(Genetics genetics, int greenOutChanceOneIn, SmokeContents contents) {
+        return Tiers.scaleOneIn(smoothed(greenOutChanceOneIn, contents),
+                Dosing.primaryTier(contents).map(tier -> Tiers.greenOutFactor(genetics, tier)).orElse(1.0F));
     }
 
     /**
      * The load's cough odds before the outfit: the device's 1-in-N narrowed or widened by the primary
      * material's {@code cough_factor} ({@link #harshened}), then by its tier: Mids half as many coughs
-     * again, Dank as 2.1, Top Shelf half, Epic none.
+     * again, Dank as 2.1, Top Shelf half, Epic none (built in; {@code genetics} has the factors).
      */
-    public static int coughOneIn(int coughChanceOneIn, SmokeContents contents) {
-        return Tiers.scaleOneIn(harshened(coughChanceOneIn, contents), Dosing.primaryTier(contents).map(Tiers::coughFactor).orElse(1.0F));
+    public static int coughOneIn(Genetics genetics, int coughChanceOneIn, SmokeContents contents) {
+        return Tiers.scaleOneIn(harshened(coughChanceOneIn, contents),
+                Dosing.primaryTier(contents).map(tier -> Tiers.coughFactor(genetics, tier)).orElse(1.0F));
     }
 
     /**
      * The load's Nausea odds before the outfit: the device's 1-in-N (after the server's config), widened by
-     * the primary material's tier: Mids as 2.1, Dank three quarters of the chance, Top Shelf half, Epic none.
+     * the primary material's tier: Mids as 2.1, Dank three quarters of the chance, Top Shelf half, Epic none
+     * (built in; {@code genetics} has the factors).
      */
-    public static int nauseaOneIn(int nauseaChanceOneIn, SmokeContents contents) {
-        return Tiers.scaleOneIn(nauseaChanceOneIn, Dosing.primaryTier(contents).map(Tiers::nauseaFactor).orElse(1.0F));
+    public static int nauseaOneIn(Genetics genetics, int nauseaChanceOneIn, SmokeContents contents) {
+        return Tiers.scaleOneIn(nauseaChanceOneIn,
+                Dosing.primaryTier(contents).map(tier -> Tiers.nauseaFactor(genetics, tier)).orElse(1.0F));
     }
 
     /**

@@ -302,6 +302,10 @@ public final class HempdustryGameTests {
         register("a_green_out_softens_the_legs_while_it_slows", JellyLegsGameTest::aGreenOutSoftensTheLegsWhileItSlows);
         register("the_grow_climate_is_the_agreed_one", MildewGameTest::theGrowClimateIsTheAgreedOne);
         register("a_partial_grow_climate_loads", MildewGameTest::aPartialGrowClimateLoads);
+        register("the_genetics_are_the_agreed_ones", GeneticsGameTest::theGeneticsAreTheAgreedOnes);
+        register("a_partial_genetics_file_loads", GeneticsGameTest::aPartialGeneticsFileLoads);
+        register("the_rules_read_the_genetics", GeneticsGameTest::theRulesReadTheGenetics);
+        register("rules_without_a_world_read_their_threads_genetics", GeneticsGameTest::rulesWithoutAWorldReadTheirThreadsGenetics);
         register("mildew_follows_the_air", MildewGameTest::mildewFollowsTheAir);
         register("mildew_follows_the_damp", MildewGameTest::mildewFollowsTheDamp);
         register("water_and_trims_keep_mildew_off", MildewGameTest::waterAndTrimsKeepMildewOff);

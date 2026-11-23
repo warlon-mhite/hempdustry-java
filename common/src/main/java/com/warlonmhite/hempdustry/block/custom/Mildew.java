@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.balance.GrowClimate;
 import com.warlonmhite.hempdustry.strain.StressPhenomenon;
 import com.warlonmhite.hempdustry.strain.internal.Hardiness;
@@ -171,13 +172,13 @@ public enum Mildew implements StringRepresentable {
      */
     public static float onsetFor(Level world, BlockPos lower, BlockState plant) {
         float odds = GrowClimate.of(world.registryAccess()).onset() * Climate.factor(world, lower, plant);
-        return Hardiness.apply(mildewStep(world, lower), Math.min(1.0F, odds));
+        return Hardiness.apply(Genetics.of(world.registryAccess()), mildewStep(world, lower), Math.min(1.0F, odds));
     }
 
     /** The odds a mildewed neighbour's random tick reaches the plant at {@code lower}, standing as {@code plant}. */
     public static float spreadTo(Level world, BlockPos lower, BlockState plant) {
         float odds = GrowClimate.of(world.registryAccess()).spread() * Climate.factor(world, lower, plant);
-        return Hardiness.apply(mildewStep(world, lower), Math.min(1.0F, odds));
+        return Hardiness.apply(Genetics.of(world.registryAccess()), mildewStep(world, lower), Math.min(1.0F, odds));
     }
 
     /**

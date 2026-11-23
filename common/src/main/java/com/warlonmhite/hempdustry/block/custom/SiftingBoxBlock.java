@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.strain.internal.Resins;
 import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.warlonmhite.hempdustry.strain.internal.Tiers;
@@ -514,7 +515,7 @@ public class SiftingBoxBlock extends Block implements EntityBlock {
         if (stack.is(ModTags.Items.SIFTABLE_RESINOUS) || stack.is(ModTags.Items.SIFTABLE_FLOWER)) {
             ResinStep step = Resins.written(stack).orElse(null);
             if (step != null) {
-                return FLOWER_CHANCE * Resins.sieveFactor(step, textureOf(stack, registries));
+                return FLOWER_CHANCE * Resins.sieveFactor(Genetics.of(registries), step, textureOf(stack, registries));
             }
         }
         if (stack.is(ModTags.Items.SIFTABLE_RESINOUS)) {

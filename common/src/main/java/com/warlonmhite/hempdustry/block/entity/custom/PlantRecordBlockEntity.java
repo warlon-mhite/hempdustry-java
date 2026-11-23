@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.block.entity.custom;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.strain.internal.Rolls;
 import com.warlonmhite.hempdustry.strain.internal.Strains;
 import com.warlonmhite.hempdustry.strain.internal.Tiers;
@@ -440,7 +441,8 @@ public class PlantRecordBlockEntity extends BlockEntity {
         if (harvestTier == null || harvest.get() != harvestKey) {
             harvestTier = GrowLuck.givesMids(root)
                     ? BudTier.MIDS
-                    : Tiers.roll(GrowLuck.of(this, root, level, harvester), RandomSource.create());
+                    : Tiers.roll(Genetics.of(level.registryAccess()), GrowLuck.of(this, root, level, harvester),
+                            RandomSource.create());
             harvest = new WeakReference<>(harvestKey);
         }
         return harvestTier;

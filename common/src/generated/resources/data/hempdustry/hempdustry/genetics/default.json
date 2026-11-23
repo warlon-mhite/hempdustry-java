@@ -1,0 +1,83 @@
+{
+  "band_offsets": {
+    "extra_high": 2,
+    "high": 1,
+    "low": -1
+  },
+  "resin": {
+    "rub_one_in": {
+      "low": 6,
+      "rich": 3,
+      "very_low": 8,
+      "very_rich": 2
+    },
+    "rub_share": {
+      "dry": 0.0,
+      "even": 0.5,
+      "sticky": 1.0
+    },
+    "sieve": {
+      "low": 0.75,
+      "rich": 1.5,
+      "very_low": 0.5,
+      "very_rich": 2.0
+    },
+    "sieve_share": {
+      "dry": 1.0,
+      "even": 0.5,
+      "sticky": 0.5
+    }
+  },
+  "resistance": {
+    "ignores_lost_light": {
+      "resistant": 0.5,
+      "very_resistant": 0.75
+    },
+    "light_loss_age": {
+      "resistant": 4,
+      "very_resistant": 4,
+      "very_weak": 3,
+      "weak": 3
+    },
+    "stress_factor": {
+      "resistant": 0.5,
+      "very_resistant": 0.25,
+      "very_weak": 2.0,
+      "weak": 1.5
+    }
+  },
+  "tiers": {
+    "dank": {
+      "cough": 1.0,
+      "duration": 1.0,
+      "green_out": 0.75,
+      "nausea": 0.75,
+      "quality": 4,
+      "weight": 35
+    },
+    "epic": {
+      "cough": 0.0,
+      "duration": 1.5,
+      "green_out": 0.25,
+      "nausea": 0.0,
+      "quality": 2,
+      "weight": -6
+    },
+    "mids": {
+      "cough": 1.5,
+      "duration": 0.75,
+      "green_out": 1.0,
+      "nausea": 1.0,
+      "quality": -10,
+      "weight": 60
+    },
+    "top_shelf": {
+      "cough": 0.5,
+      "duration": 1.25,
+      "green_out": 0.5,
+      "nausea": 0.5,
+      "quality": 6,
+      "weight": 0
+    }
+  }
+}

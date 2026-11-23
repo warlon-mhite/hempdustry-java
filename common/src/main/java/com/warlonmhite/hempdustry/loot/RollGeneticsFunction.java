@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.loot;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.strain.internal.Rolls;
 import com.warlonmhite.hempdustry.strain.internal.Resins;
 import com.warlonmhite.hempdustry.strain.internal.Bands;
@@ -57,11 +58,12 @@ public final class RollGeneticsFunction extends LootItemConditionalFunction {
         RandomSource random = RandomSource.create(context.getRandom().nextLong());
         PotencyBand band = Rolls.roll(sheet.traits().potency(), random);
         QualityGene gene = Rolls.roll(sheet.traits().quality(), random);
-        BudTier tier = Tiers.roll(sheet.traits().quality().baseLuck() + Rolls.luck(gene), random);
+        Genetics genetics = Genetics.of(registries);
+        BudTier tier = Tiers.roll(genetics, sheet.traits().quality().baseLuck() + Rolls.luck(gene), random);
         ResinStep resin = Rolls.roll(sheet.traits().resin(), random);
         Bands.stamp(stack, band);
         Tiers.stamp(stack, tier);
-        return Resins.stamp(stack, resin, sheet.traits().resin().texture());
+        return Resins.stamp(genetics, stack, resin, sheet.traits().resin().texture());
     }
 
     /** The function as a loot table builder takes it. */

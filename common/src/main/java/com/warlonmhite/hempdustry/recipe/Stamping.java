@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.recipe;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.strain.internal.Dosing;
 import com.warlonmhite.hempdustry.strain.internal.Chemotypes;
 import com.warlonmhite.hempdustry.strain.internal.Bands;
@@ -147,13 +148,13 @@ public final class Stamping {
     /**
      * One bud's band offset as a load counts it: the band's offset on each unit the bud is worth
      * ({@code dose_per_item}, one for every strain the mod ships), so a load's sum stays exactly what
-     * its THC averages to. With no registries to ask (nothing is crafting), one unit.
+     * its THC averages to. With no registries to ask (nothing is crafting), one unit, at the built-in offsets.
      */
     public static int budOffset(ItemStack bud, @Nullable HolderLookup.Provider registries) {
         int units = registries == null ? 1 : Strain.fromBuds(registries, bud.getItem())
                 .map(strain -> Math.max(1, strain.value().dosePerItem()))
                 .orElse(1);
-        return PotencyBand.of(bud).offset() * units;
+        return Bands.offset(Genetics.orBuiltIn(registries), PotencyBand.of(bud)) * units;
     }
 
     /** Whether the stamped matter in {@code input} is all of one chemotype, its leaves of one mark, and its hash of one tier. */

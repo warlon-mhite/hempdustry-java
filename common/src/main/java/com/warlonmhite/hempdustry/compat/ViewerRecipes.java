@@ -8,7 +8,9 @@ import com.warlonmhite.hempdustry.strain.PotencyBand;
 import com.warlonmhite.hempdustry.strain.Chemotype;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.balance.DeviceStats;
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.balance.GrowClimate;
+import com.warlonmhite.hempdustry.strain.internal.Resins;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.ModCauldronBehaviors;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
@@ -45,6 +47,7 @@ import com.warlonmhite.hempdustry.util.ModTags;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -224,7 +227,7 @@ public final class ViewerRecipes {
                                 Math.round(SiftingBoxBlock.FULL_LEVEL / chance)))
                         : List.of(Component.translatable("hempdustry.category.sifting.info",
                                         Math.round(SiftingBoxBlock.FULL_LEVEL / chance)),
-                                Component.translatable("hempdustry.category.sifting.resin")),
+                                sieveResin(Genetics.of(world.registryAccess()))),
                 true);
     }
 
@@ -247,6 +250,36 @@ public final class ViewerRecipes {
                 wash(world, Items.ICE, SiftingBoxBlock.ICE_RATE, ModTags.Items.SIFTABLE_RESINOUS, SiftingBoxBlock.RESINOUS_CHANCE, "resinous/"));
     }
 
+    /**
+     * The sieve pages' resin line: the lowest and the highest factor a bud's resin step gives its rate in
+     * {@code genetics}, the world's, for any texture (×0.5 to ×2 built in), so a datapack that moves the steps moves
+     * the page with them. Both viewers build their pages from here.
+     */
+    public static Component sieveResin(Genetics genetics) {
+        float[] range = Resins.sieveRange(genetics);
+        return Component.translatable("hempdustry.category.sifting.resin", decimal(range[0]), decimal(range[1]));
+    }
+
+    /** The rubbing page's resin line: the worst and the best odds of a charas in {@code genetics} (1 in 8 to 1 in 2). */
+    public static Component rubResin(Genetics genetics) {
+        float[] range = Resins.rubRange(genetics);
+        return Component.translatable("hempdustry.category.world.rubbing.resin",
+                Math.round(1.0F / range[0]), Math.round(1.0F / range[1]));
+    }
+
+    /**
+     * {@code value} to two places as the reader's language writes a decimal ({@code hempdustry.number.decimal}: 0.5 in
+     * English, 0,5 in French), a whole number as it is.
+     */
+    static Object decimal(float value) {
+        int hundredths = Math.round(value * 100.0F);
+        if (hundredths % 100 == 0) {
+            return hundredths / 100;
+        }
+        String fraction = String.format(Locale.ROOT, "%02d", hundredths % 100).replaceAll("0+$", "");
+        return Component.translatable("hempdustry.number.decimal", hundredths / 100, fraction);
+    }
+
     private static Entry wash(Level world, Item jacket, float rate, TagKey<Item> buds, float budChance, String idPrefix) {
         int budCount = Math.round(SiftingBoxBlock.FULL_LEVEL / (budChance * rate));
         int leaves = Math.round(SiftingBoxBlock.FULL_LEVEL / (SiftingBoxBlock.TRIM_CHANCE * rate));
@@ -258,7 +291,7 @@ public final class ViewerRecipes {
                 List.of(Component.translatable("hempdustry.category.ice_o_lator.jacket")
                                 .withStyle(ChatFormatting.DARK_GRAY),
                         Component.translatable("hempdustry.category.ice_o_lator.info", budCount, leaves),
-                        Component.translatable("hempdustry.category.sifting.resin")),
+                        sieveResin(Genetics.of(world.registryAccess()))),
                 true);
     }
 
@@ -329,7 +362,7 @@ public final class ViewerRecipes {
                     Component.translatable("hempdustry.category.world.rubbing", Defoliation.CHARAS_CHANCE_ONE_IN),
                     Component.translatable("hempdustry.category.world.rubbing.lamps",
                             Defoliation.CHARAS_CHANCE_ONE_IN_UNDER_LIGHTS),
-                    Component.translatable("hempdustry.category.world.rubbing.resin")));
+                    rubResin(Genetics.of(world.registryAccess()))));
             out.add(inWorld("schwag", List.of(plant), new ItemStack(ModItems.SCHWAG),
                     Component.translatable("hempdustry.category.world.schwag"),
                     Component.translatable("hempdustry.category.world.schwag.fortune")));

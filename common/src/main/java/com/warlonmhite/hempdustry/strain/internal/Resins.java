@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry.strain.internal;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.strain.ResinStep;
 import com.warlonmhite.hempdustry.strain.ResinTexture;
@@ -30,43 +31,53 @@ import net.minecraft.world.item.ItemStack;
  * </table>
  *
  * <p>A low step costs in full on both routes. A lamp record or a stressed plant still halves the rub.
+ *
+ * <p>Those are the built-in numbers. Every step but average, and every share, is read from the world's
+ * {@code genetics/default.json} ({@link Genetics.Resin}); average stays ×1 and 1 in 4, the rates a bud or a plant
+ * with no step has always had.
  */
 public final class Resins {
     private Resins() {
     }
 
-    private static float sieve(ResinStep step) {
+    private static float sieve(Genetics genetics, ResinStep step) {
+        Genetics.Steps sieve = genetics.resin().sieve();
         return switch (step) {
-            case VERY_LOW -> 0.5F;
-            case LOW -> 0.75F;
+            case VERY_LOW -> sieve.veryLow();
+            case LOW -> sieve.low();
             case AVERAGE -> 1.0F;
-            case RICH -> 1.5F;
-            case VERY_RICH -> 2.0F;
+            case RICH -> sieve.rich();
+            case VERY_RICH -> sieve.veryRich();
         };
     }
 
-    private static float rub(ResinStep step) {
-        return switch (step) {
-            case VERY_LOW -> 1.0F / 8;
-            case LOW -> 1.0F / 6;
-            case AVERAGE -> 1.0F / 4;
-            case RICH -> 1.0F / 3;
-            case VERY_RICH -> 1.0F / 2;
+    private static float rub(Genetics genetics, ResinStep step) {
+        Genetics.RubOdds rub = genetics.resin().rubOneIn();
+        return 1.0F / switch (step) {
+            case VERY_LOW -> rub.veryLowOneIn();
+            case LOW -> rub.lowOneIn();
+            case AVERAGE -> Genetics.RubOdds.AVERAGE_ONE_IN;
+            case RICH -> rub.richOneIn();
+            case VERY_RICH -> rub.veryRichOneIn();
+        };
+    }
+
+    private static float share(Genetics.Shares shares, ResinTexture texture) {
+        return switch (texture) {
+            case DRY -> shares.dry();
+            case EVEN -> shares.even();
+            case STICKY -> shares.sticky();
         };
     }
 
     /** How much of a rich plant's bonus the sieve pays for {@code texture}: 0 to 1. */
-    public static float sieveShare(ResinTexture texture) {
-        return texture == ResinTexture.DRY ? 1.0F : 0.5F;
+    public static float sieveShare(Genetics genetics, ResinTexture texture) {
+        return share(genetics.resin().sieveShare(), texture);
     }
 
     /** How much of a rich plant's bonus the rub pays for {@code texture}: 0 to 1. */
-    public static float rubShare(ResinTexture texture) {
-        return switch (texture) {
-            case DRY -> 0.0F;
-            case EVEN -> 0.5F;
-            case STICKY -> 1.0F;
-        };
+    public static float rubShare(Genetics genetics, ResinTexture texture) {
+        return share(genetics.resin().rubShare(), texture);
     }
 
     /** The step {@code offset} places around average, held to the five. */
@@ -76,16 +87,47 @@ public final class Resins {
     }
 
     /** What a bud of {@code step} multiplies its rate at the Sifting Box by, for a strain of {@code texture}. */
-    public static float sieveFactor(ResinStep step, ResinTexture texture) {
-        float sieve = sieve(step);
-        return step.offset() <= 0 ? sieve : 1.0F + (sieve - 1.0F) * sieveShare(texture);
+    public static float sieveFactor(Genetics genetics, ResinStep step, ResinTexture texture) {
+        float sieve = sieve(genetics, step);
+        return step.offset() <= 0 ? sieve : 1.0F + (sieve - 1.0F) * sieveShare(genetics, texture);
     }
 
     /** The chance that rubbing a plant of {@code step} pays a charas, for a strain of {@code texture}, before a lamp halves it. */
-    public static float rubChance(ResinStep step, ResinTexture texture) {
-        float rub = rub(step);
-        float average = rub(ResinStep.AVERAGE);
-        return step.offset() <= 0 ? rub : average + (rub - average) * rubShare(texture);
+    public static float rubChance(Genetics genetics, ResinStep step, ResinTexture texture) {
+        float rub = rub(genetics, step);
+        float average = rub(genetics, ResinStep.AVERAGE);
+        return step.offset() <= 0 ? rub : average + (rub - average) * rubShare(genetics, texture);
+    }
+
+    /**
+     * The lowest and the highest {@link #sieveFactor} of any step and texture: what a recipe viewer's sieve page says
+     * a bud's resin moves its rate between (×0.5 to ×2 built in).
+     */
+    public static float[] sieveRange(Genetics genetics) {
+        float low = Float.MAX_VALUE;
+        float high = 0.0F;
+        for (ResinStep step : ResinStep.values()) {
+            for (ResinTexture texture : ResinTexture.values()) {
+                float factor = sieveFactor(genetics, step, texture);
+                low = Math.min(low, factor);
+                high = Math.max(high, factor);
+            }
+        }
+        return new float[]{low, high};
+    }
+
+    /** The lowest and the highest {@link #rubChance} of any step and texture (1 in 8 to 1 in 2 built in). */
+    public static float[] rubRange(Genetics genetics) {
+        float low = Float.MAX_VALUE;
+        float high = 0.0F;
+        for (ResinStep step : ResinStep.values()) {
+            for (ResinTexture texture : ResinTexture.values()) {
+                float chance = rubChance(genetics, step, texture);
+                low = Math.min(low, chance);
+                high = Math.max(high, chance);
+            }
+        }
+        return new float[]{low, high};
     }
 
     /** The step an item carries, if one is written on it. */
@@ -115,11 +157,13 @@ public final class Resins {
      * {@link #stamp(ItemStack, ResinStep)} for a bud of a strain of {@code texture}: its {@link #legacy} step is
      * written too when a bud with nothing written would sieve otherwise. Only a strain a datapack adds to
      * {@code #hempdustry:siftable/resinous} that is not dry meets it: its very rich buds sieve at its texture's
-     * rate, and left unwritten they would take the tag's double one. Returns the stack.
+     * rate, and left unwritten they would take the tag's double one. So does any very rich bud of a world whose
+     * {@code genetics} sieve it at another rate than the tag's, which stays the built-in very rich rate. Returns the
+     * stack.
      */
-    public static ItemStack stamp(ItemStack stack, ResinStep step, ResinTexture texture) {
+    public static ItemStack stamp(Genetics genetics, ItemStack stack, ResinStep step, ResinTexture texture) {
         ResinStep legacy = legacy(stack);
-        if (step == legacy && sieveFactor(step, texture) == sieve(legacy)) {
+        if (step == legacy && sieveFactor(genetics, step, texture) == sieve(Genetics.BUILT_IN, legacy)) {
             stack.remove(ModComponents.RESIN_STEP);
         } else {
             stack.set(ModComponents.RESIN_STEP, step);

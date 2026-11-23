@@ -1,5 +1,6 @@
 package com.warlonmhite.hempdustry;
 
+import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.config.ShownConfig;
 import com.warlonmhite.hempdustry.client.anim.BodyPoses;
 import com.warlonmhite.hempdustry.client.anim.Gestures;
@@ -49,6 +50,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.model.object.boat.BoatModel;
 import net.minecraft.client.renderer.BiomeColors;
@@ -128,6 +130,16 @@ public class HempdustryClient {
         registerPlayerAnimations(client);
         // What a server sent of its config holds for that server only.
         client.onLeaveWorld(ShownConfig::forget);
+        // A rule reached with no world in hand reads the genetics of the world this client is in, as its server
+        // synced them, and only on the client's own thread: the integrated server's are read on that server's.
+        Genetics.clientRegistries = () -> {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (!minecraft.isSameThread()) {
+                return null;
+            }
+            ClientLevel level = minecraft.level;
+            return level == null ? null : level.registryAccess();
+        };
     }
 
     /**
