@@ -218,6 +218,9 @@ public final class HempdustryGameTests {
                 ConfigGameTest::aClientSectionWithoutThePuffSwitchesLoads);
         register("a_world_section_without_plant_stress_loads", ConfigGameTest::aWorldSectionWithoutPlantStressLoads);
         register("a_loot_section_without_its_switches_loads", ConfigGameTest::aLootSectionWithoutItsSwitchesLoads);
+        register("an_old_client_section_starts_the_client_file", ConfigGameTest::anOldClientSectionStartsTheClientFile);
+        register("a_config_without_a_client_section_loads", ConfigGameTest::aConfigWithoutAClientSectionLoads);
+        register("a_broken_client_file_is_left_alone", ConfigGameTest::aBrokenClientFileIsLeftAlone);
         register("inspect_tells_a_plants_facts", CommandGameTest::inspectTellsAPlantsFacts);
         register("config_tells_each_value_and_its_source", CommandGameTest::configTellsEachValueAndItsSource);
         register("the_start_up_line_names_only_what_differs", CommandGameTest::theStartUpLineNamesOnlyWhatDiffers);

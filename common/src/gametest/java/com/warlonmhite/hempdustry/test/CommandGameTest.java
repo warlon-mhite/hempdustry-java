@@ -7,6 +7,7 @@ import com.warlonmhite.hempdustry.block.custom.Defoliation;
 import com.warlonmhite.hempdustry.block.custom.GrowLight;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
 import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
+import com.warlonmhite.hempdustry.config.ClientConfig;
 import com.warlonmhite.hempdustry.config.ConfigReport;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.item.ModItems;
@@ -144,10 +145,23 @@ public final class CommandGameTest {
             expectLine(context, said, "commands.hempdustry.config.value.file(effects.maxLevel,6,4)");
             expectLine(context, said, "commands.hempdustry.config.value.default(effects.maxBuffLevel,2)");
             expectLine(context, said, "commands.hempdustry.config.value.default(world.plantStress,true)");
+            // A dedicated server reads no client file: the client preferences are each player's, and it says so.
+            expectLine(context, said, "commands.hempdustry.config.client.none(config/" + ClientConfig.FILE + ")");
+            context.assertTrue(said.stream().noneMatch(line -> line.contains("(client.")),
+                    "a dedicated server told client preferences: " + said);
             long values = said.stream().filter(line -> line.startsWith("commands.hempdustry.config.value.")).count();
-            context.assertTrue(values == ConfigReport.settings().size() && values >= 35,
+            context.assertTrue(values == ConfigReport.settings().size() && values >= 29,
                     values + " config values told, of " + ConfigReport.settings().size());
             expectLine(context, said, "commands.hempdustry.config.registry(hempdustry:grow_climate,1)");
+        });
+        // A game hosting its own world tells the preferences it runs with, from its own client file.
+        ConfigGameTest.withClientConfig("{ \"client\": { \"animations\": \"off\" } }", () -> {
+            List<String> said = run(context, "hempdustry config", LevelBasedPermissionSet.GAMEMASTER);
+            expectLine(context, said, "commands.hempdustry.config.client(config/" + ClientConfig.FILE + ",1)");
+            expectLine(context, said, "commands.hempdustry.config.value.file(client.animations,off,auto)");
+            expectLine(context, said, "commands.hempdustry.config.value.default(client.fanPuffs,true)");
+            context.assertTrue(said.stream().noneMatch(line -> line.startsWith("commands.hempdustry.config.client.none")),
+                    "a game with its own client file said it reads none: " + said);
         });
         for (ConfigReport.RegistryReport registry : ConfigReport.registries(context.getLevel().getServer())) {
             context.assertTrue(registry.size() > 0 && registry.fromOtherPacks().isEmpty(),
@@ -220,6 +234,19 @@ public final class CommandGameTest {
             context.assertTrue(broken.equals(List.of("commands.hempdustry.reload.failed()")),
                     "a reload of a broken file said " + broken);
         });
+        // In a game hosting its own world the reload re-reads its client file too, and says when it could not.
+        ConfigGameTest.withClientConfig("{}", () -> ConfigGameTest.withConfig("{}", () -> {
+            java.nio.file.Path file = ClientConfig.state().file().orElseThrow();
+            ConfigGameTest.write(file, "{ \"client\": { \"ripeAroma\": false } }");
+            List<String> read = run(context, "hempdustry reload", LevelBasedPermissionSet.GAMEMASTER);
+            context.assertTrue(read.equals(List.of("commands.hempdustry.reload()")) && !ClientConfig.get().ripeAroma(),
+                    "a reload with a changed client file said " + read + " and runs with " + ClientConfig.get());
+            ConfigGameTest.write(file, "{ \"client\": ");
+            List<String> broken = run(context, "hempdustry reload", LevelBasedPermissionSet.GAMEMASTER);
+            context.assertTrue(broken.equals(List.of("commands.hempdustry.reload()", "commands.hempdustry.reload.client_failed()"))
+                            && !ClientConfig.get().ripeAroma(),
+                    "a reload with a broken client file said " + broken + " and runs with " + ClientConfig.get());
+        }));
         context.succeed();
     }
 

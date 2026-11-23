@@ -1,6 +1,6 @@
 package com.warlonmhite.hempdustry.client.anim;
 
-import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ClientConfig;
 import com.warlonmhite.hempdustry.platform.Services;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,7 +35,7 @@ public enum Style {
      * @param packAnimatesModel whether Entity Model Features animates the model being posed
      */
     public static @Nullable Style now(boolean packAnimatesModel) {
-        return switch (HempdustryConfig.get().client().animations()) {
+        return switch (ClientConfig.get().animations()) {
             case OFF -> null;
             case VANILLA -> VANILLA;
             case AUTO -> NOT_ENOUGH_ANIMATIONS ? EASED : packAnimatesModel ? FRESH : VANILLA;

@@ -1,7 +1,7 @@
 package com.warlonmhite.hempdustry.block.custom;
 
 import com.warlonmhite.hempdustry.strain.internal.Terpenes;
-import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ClientConfig;
 import com.warlonmhite.hempdustry.particle.ModParticles;
 import com.warlonmhite.hempdustry.strain.Terpene;
 import net.minecraft.core.BlockPos;
@@ -70,7 +70,7 @@ public final class RipeAroma {
         // The roll first: it is the cheapest test and fails fourteen times in fifteen, so the block
         // lookup above almost never happens.
         if (random.nextInt(chance) != 0
-                || !HempdustryConfig.get().client().ripeAroma()
+                || !ClientConfig.get().ripeAroma()
                 || !world.getBlockState(pos.relative(growth)).isAir()) {
             return;
         }

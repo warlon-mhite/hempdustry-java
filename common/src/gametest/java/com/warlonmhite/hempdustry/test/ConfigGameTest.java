@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.warlonmhite.hempdustry.Hempdustry;
+import com.warlonmhite.hempdustry.config.ClientConfig;
 import com.warlonmhite.hempdustry.config.EffectPolicy;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.platform.Services;
@@ -160,49 +161,230 @@ public final class ConfigGameTest {
         int keys = 0;
         try {
             JsonObject defaults = written(path, new JsonObject());
-            JsonObject bottom = written(path, everyNumber(defaults, -1_000_000_000, -1.0E9));
-            JsonObject top = written(path, everyNumber(defaults, 1_000_000_000, 1.0E9));
-            for (var section : defaults.entrySet()) {
-                JsonObject values = section.getValue().getAsJsonObject();
-                String comment = values.has("_comment") ? values.get("_comment").getAsString() : "";
-                for (var key : values.entrySet()) {
-                    if (key.getKey().equals("_comment")) {
-                        continue;
-                    }
-                    keys++;
-                    String where = section.getKey() + "." + key.getKey();
-                    Matcher said = Pattern.compile("(?<![A-Za-z])" + Pattern.quote(key.getKey())
-                            + " \\(default ([^,;)]+)(?:, ([0-9.]+)-([0-9.]+))?").matcher(comment);
-                    if (!said.find()) {
-                        findings.put(where, "is not named in the comment as \"" + key.getKey() + " (default …)\"");
-                        continue;
-                    }
-                    JsonPrimitive value = key.getValue().getAsJsonPrimitive();
-                    if (!same(value, said.group(1))) {
-                        findings.put(where, "the comment gives its default as " + said.group(1) + ", the code " + value);
-                    }
-                    if (value.isNumber()) {
-                        JsonElement min = bottom.getAsJsonObject(section.getKey()).get(key.getKey());
-                        JsonElement max = top.getAsJsonObject(section.getKey()).get(key.getKey());
-                        if (said.group(2) == null) {
-                            findings.put(where, "the comment gives no range; the code clamps it to " + min + "-" + max);
-                        } else if (!same(min.getAsJsonPrimitive(), said.group(2))
-                                || !same(max.getAsJsonPrimitive(), said.group(3))) {
-                            findings.put(where, "the comment gives its range as " + said.group(2) + "-" + said.group(3)
-                                    + ", the code clamps it to " + min + "-" + max);
-                        }
-                    } else if (said.group(2) != null) {
-                        findings.put(where, "is not a number, but the comment gives it a range");
-                    }
-                }
-            }
+            keys += described(findings, "", defaults, written(path, everyNumber(defaults, -1_000_000_000, -1.0E9)),
+                    written(path, everyNumber(defaults, 1_000_000_000, 1.0E9)));
         } finally {
             write(path, original);
             HempdustryConfig.load();
         }
+        // And the client's own file, read the same way.
+        int[] client = {0};
+        inClientFolder(folder -> {
+            JsonObject defaults = clientWritten(folder, new JsonObject());
+            client[0] = described(findings, ClientConfig.FILE + " ", defaults,
+                    clientWritten(folder, everyNumber(defaults, -1_000_000_000, -1.0E9)),
+                    clientWritten(folder, everyNumber(defaults, 1_000_000_000, 1.0E9)));
+        });
         Sweep.atLeast(context, "config keys described", keys, 35);
+        Sweep.atLeast(context, "client file keys described", client[0], 6);
         Sweep.report(context, "Every config key is described in its comment", findings, Map.of());
         context.succeed();
+    }
+
+    /**
+     * Holds each key of {@code defaults} to its section's comment: named with its default, and a number with the range
+     * {@code bottom} and {@code top} were clamped to. Returns how many keys it read.
+     */
+    private static int described(Map<String, String> findings, String file, JsonObject defaults, JsonObject bottom,
+                                 JsonObject top) {
+        int keys = 0;
+        for (var section : defaults.entrySet()) {
+            JsonObject values = section.getValue().getAsJsonObject();
+            String comment = values.has("_comment") ? values.get("_comment").getAsString() : "";
+            for (var key : values.entrySet()) {
+                if (key.getKey().equals("_comment")) {
+                    continue;
+                }
+                keys++;
+                String where = file + section.getKey() + "." + key.getKey();
+                Matcher said = Pattern.compile("(?<![A-Za-z])" + Pattern.quote(key.getKey())
+                        + " \\(default ([^,;)]+)(?:, ([0-9.]+)-([0-9.]+))?").matcher(comment);
+                if (!said.find()) {
+                    findings.put(where, "is not named in the comment as \"" + key.getKey() + " (default …)\"");
+                    continue;
+                }
+                JsonPrimitive value = key.getValue().getAsJsonPrimitive();
+                if (!same(value, said.group(1))) {
+                    findings.put(where, "the comment gives its default as " + said.group(1) + ", the code " + value);
+                }
+                if (value.isNumber()) {
+                    JsonElement min = bottom.getAsJsonObject(section.getKey()).get(key.getKey());
+                    JsonElement max = top.getAsJsonObject(section.getKey()).get(key.getKey());
+                    if (said.group(2) == null) {
+                        findings.put(where, "the comment gives no range; the code clamps it to " + min + "-" + max);
+                    } else if (!same(min.getAsJsonPrimitive(), said.group(2))
+                            || !same(max.getAsJsonPrimitive(), said.group(3))) {
+                        findings.put(where, "the comment gives its range as " + said.group(2) + "-" + said.group(3)
+                                + ", the code clamps it to " + min + "-" + max);
+                    }
+                } else if (said.group(2) != null) {
+                    findings.put(where, "is not a number, but the comment gives it a range");
+                }
+            }
+        }
+        return keys;
+    }
+
+    /** Loads {@code json} as the client file in {@code folder} and reads back the file the mod wrote for it. */
+    private static JsonObject clientWritten(Path folder, JsonObject json) {
+        Path file = folder.resolve(ClientConfig.FILE);
+        write(file, json.toString());
+        if (!ClientConfig.load(file, folder.resolve(Hempdustry.MOD_ID + ".json"))) {
+            throw new IllegalStateException("the test client file was refused: " + json);
+        }
+        return JsonParser.parseString(new String(read(file), StandardCharsets.UTF_8)).getAsJsonObject();
+    }
+
+    // ----- the client's own file -----
+
+    /**
+     * A game with no {@code hempdustry-client.json} starts one from the {@code client} section of its
+     * {@code hempdustry.json}, once: a section an older build wrote (no puff switches, no animations) is carried over
+     * and the keys it never named come in at their defaults; {@code hempdustry.json} is not touched. From then on the
+     * client file wins: the old section changed afterwards changes nothing, and the client file's own change is read.
+     */
+    public static void anOldClientSectionStartsTheClientFile(GameTestHelper context) {
+        inClientFolder(folder -> {
+            Path file = folder.resolve(ClientConfig.FILE);
+            Path legacy = folder.resolve(Hempdustry.MOD_ID + ".json");
+            String old = "{ \"client\": { \"_comment\": \"an older build's comment\", \"updateCheck\": false,"
+                    + " \"biomeTintStrength\": 0.5, \"ripeAroma\": false }, \"effects\": { \"maxLevel\": 6 } }";
+            write(legacy, old);
+            context.assertTrue(ClientConfig.load(file, legacy), "a game with an old hempdustry.json did not load");
+            HempdustryConfig.Client client = ClientConfig.get();
+            context.assertTrue(!client.updateCheck() && client.biomeTintStrength() == 0.5 && !client.ripeAroma(),
+                    "the old client section was not carried over: " + client);
+            context.assertTrue(client.animations() == HempdustryConfig.Client.Animations.AUTO && client.fanPuffs()
+                    && client.terpenePuffs(), "keys the old section never named are not at their defaults: " + client);
+            context.assertTrue(Files.exists(file), "no " + ClientConfig.FILE + " was written");
+            JsonObject started = JsonParser.parseString(new String(read(file), StandardCharsets.UTF_8)).getAsJsonObject()
+                    .getAsJsonObject("client");
+            context.assertTrue(started.get("updateCheck").getAsBoolean() == false
+                            && started.get("biomeTintStrength").getAsDouble() == 0.5 && started.has("terpenePuffs")
+                            && started.get("_comment").getAsString().contains("updateCheck (default true)"),
+                    "the client file was not written complete with the old values: " + started);
+            context.assertTrue(old.equals(new String(read(legacy), StandardCharsets.UTF_8)),
+                    "starting the client file wrote over hempdustry.json");
+
+            // The client file wins from now on.
+            write(legacy, "{ \"client\": { \"updateCheck\": true, \"biomeTintStrength\": 0.9, \"ripeAroma\": true } }");
+            context.assertTrue(ClientConfig.load(file, legacy), "a game with a client file did not load");
+            client = ClientConfig.get();
+            context.assertTrue(!client.updateCheck() && client.biomeTintStrength() == 0.5 && !client.ripeAroma(),
+                    "the old section was read over an existing client file: " + client);
+            write(file, "{ \"client\": { \"animations\": \"off\", \"updateCheck\": false } }");
+            context.assertTrue(ClientConfig.reload(), "the client file was not re-read");
+            client = ClientConfig.get();
+            context.assertTrue(client.animations() == HempdustryConfig.Client.Animations.OFF && !client.updateCheck()
+                            && client.biomeTintStrength() == 0.35,
+                    "a change to the client file was not read, or a key it left out did not go back to its default: "
+                            + client);
+        });
+        context.succeed();
+    }
+
+    /**
+     * A {@code hempdustry.json} without a {@code client} section, or none at all, still loads: the main file is read
+     * and written back with the section in it, and the client file starts at the defaults.
+     */
+    public static void aConfigWithoutAClientSectionLoads(GameTestHelper context) {
+        withConfig("{ \"effects\": { \"maxLevel\": 6 } }", () -> {
+            context.assertTrue(HempdustryConfig.get().effects().maxLevel() == 6
+                            && HempdustryConfig.get().client().equals(HempdustryConfig.Client.DEFAULT),
+                    "a file without a client section read as " + HempdustryConfig.get());
+            JsonObject rewritten = JsonParser.parseString(new String(read(Services.PLATFORM.configDir()
+                    .resolve(Hempdustry.MOD_ID + ".json")), StandardCharsets.UTF_8)).getAsJsonObject();
+            context.assertTrue(rewritten.has("client") && rewritten.getAsJsonObject("client").has("terpenePuffs"),
+                    "hempdustry.json was not written back with its client section");
+        });
+        inClientFolder(folder -> {
+            Path file = folder.resolve(ClientConfig.FILE);
+            Path legacy = folder.resolve(Hempdustry.MOD_ID + ".json");
+            write(legacy, "{ \"effects\": { \"maxLevel\": 6 } }");
+            context.assertTrue(ClientConfig.load(file, legacy) && ClientConfig.get().equals(HempdustryConfig.Client.DEFAULT),
+                    "a hempdustry.json without a client section started the client file at " + ClientConfig.get());
+            context.assertTrue(Files.exists(file), "no client file was written");
+        });
+        inClientFolder(folder -> {
+            Path file = folder.resolve(ClientConfig.FILE);
+            context.assertTrue(ClientConfig.load(file, folder.resolve(Hempdustry.MOD_ID + ".json"))
+                            && ClientConfig.get().equals(HempdustryConfig.Client.DEFAULT) && Files.exists(file),
+                    "a game with no config at all did not start its client file at the defaults");
+        });
+        context.succeed();
+    }
+
+    /**
+     * A client file the mod cannot read is left alone and the preferences running stay; and a game whose
+     * {@code hempdustry.json} cannot be read writes no client file, so the next load carries the old section over
+     * once the typo is fixed rather than having frozen the defaults in.
+     */
+    public static void aBrokenClientFileIsLeftAlone(GameTestHelper context) {
+        inClientFolder(folder -> {
+            Path file = folder.resolve(ClientConfig.FILE);
+            Path legacy = folder.resolve(Hempdustry.MOD_ID + ".json");
+            write(file, "{ \"client\": { \"biomeTintStrength\": 0.7 } }");
+            context.assertTrue(ClientConfig.load(file, legacy), "a good client file was refused");
+            HempdustryConfig.Client running = ClientConfig.get();
+            for (String broken : new String[] {"{ \"client\": { \"fanPuffs\": false, }",
+                    "{ \"client\": { \"biomeTintStrength\": \"pale\" } }", "{ \"client\": 3 }", "[ \"client\" ]"}) {
+                write(file, broken);
+                context.assertFalse(ClientConfig.load(file, legacy), "load() reported success on: " + broken);
+                context.assertTrue(broken.equals(new String(read(file), StandardCharsets.UTF_8)),
+                        "the client file was written over after failing to read: " + broken);
+                context.assertTrue(ClientConfig.get() == running, "the running preferences changed on: " + broken);
+            }
+        });
+        inClientFolder(folder -> {
+            Path file = folder.resolve(ClientConfig.FILE);
+            Path legacy = folder.resolve(Hempdustry.MOD_ID + ".json");
+            write(legacy, "{ \"client\": { \"updateCheck\": false, } ");
+            context.assertFalse(ClientConfig.load(file, legacy), "a client file was started from an unreadable hempdustry.json");
+            context.assertFalse(Files.exists(file), "a client file was written from an unreadable hempdustry.json");
+            write(legacy, "{ \"client\": { \"updateCheck\": false } }");
+            context.assertTrue(ClientConfig.reload() && !ClientConfig.get().updateCheck(),
+                    "the fixed hempdustry.json was not carried over on the next load: " + ClientConfig.get());
+        });
+        context.succeed();
+    }
+
+    /**
+     * Runs {@code body} in a fresh folder for a client file of its own, and afterwards deletes the folder and puts
+     * back the client preferences that were running (a dedicated server's: the defaults, no file).
+     */
+    static void inClientFolder(java.util.function.Consumer<Path> body) {
+        ClientConfig.State earlier = ClientConfig.state();
+        Path folder;
+        try {
+            folder = Files.createTempDirectory(Hempdustry.MOD_ID + "-client");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        try {
+            body.accept(folder);
+        } finally {
+            ClientConfig.restore(earlier);
+            try (var files = Files.list(folder)) {
+                for (Path left : files.toList()) {
+                    Files.deleteIfExists(left);
+                }
+                Files.deleteIfExists(folder);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    /** Runs {@code body} with {@code json} as this game's client file, in a folder of its own. */
+    static void withClientConfig(String json, Runnable body) {
+        inClientFolder(folder -> {
+            Path file = folder.resolve(ClientConfig.FILE);
+            write(file, json);
+            if (!ClientConfig.load(file, folder.resolve(Hempdustry.MOD_ID + ".json"))) {
+                throw new IllegalStateException("the test client file was refused: " + json);
+            }
+            body.run();
+        });
     }
 
     /** Loads {@code json} as the config and reads back the file the mod wrote for it. */
@@ -282,7 +464,7 @@ public final class ConfigGameTest {
         }
     }
 
-    private static void write(Path path, String text) {
+    static void write(Path path, String text) {
         write(path, text.getBytes(StandardCharsets.UTF_8));
     }
 

@@ -1,6 +1,6 @@
 package com.warlonmhite.hempdustry.block.custom.stash;
 
-import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ClientConfig;
 import com.warlonmhite.hempdustry.strain.internal.Terpenes;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.particle.TerpenePuffOption;
@@ -35,7 +35,7 @@ public final class TerpenePuff {
      * server never asks: it sends the puff to everyone near enough, and each client decides.
      */
     public static boolean drawn() {
-        return HempdustryConfig.get().client().terpenePuffs();
+        return ClientConfig.get().terpenePuffs();
     }
 
     /** The puff a jar of this {@code nose} lets off as {@code out} comes out of it. */

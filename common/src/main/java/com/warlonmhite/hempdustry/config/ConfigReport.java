@@ -2,6 +2,7 @@ package com.warlonmhite.hempdustry.config;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.balance.DeviceStats;
@@ -12,10 +13,12 @@ import com.warlonmhite.hempdustry.balance.Genetics;
 import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.strain.Strain;
 import com.warlonmhite.hempdustry.strain.Terpene;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import net.minecraft.core.RegistrationInfo;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
@@ -30,7 +33,9 @@ import net.minecraft.util.StringRepresentable;
 /**
  * What a server runs with that is not the mod's own default: each config value and where it comes from, and every
  * entry of the mod's datapack registries that a pack other than the mod's own supplied. {@code /hempdustry config}
- * prints it, and the server logs what differs once its world is open ({@link #logDifferences}).
+ * prints it, and the server logs what differs once its world is open ({@link #logDifferences}). In a game that hosts its
+ * own world the client preferences it runs with are told too, from its {@code hempdustry-client.json}; a dedicated
+ * server reads no client file and tells none.
  */
 public final class ConfigReport {
     /** The seven datapack registries, in the order the mod registers them. */
@@ -69,17 +74,38 @@ public final class ConfigReport {
         }
     }
 
-    /** Every value of the running config, section by section and key by key, both in alphabetical order. */
+    /**
+     * Every value the server runs with from {@code hempdustry.json}, section by section and key by key, both in
+     * alphabetical order. The {@code client} section is left out: it only starts a game's own
+     * {@code hempdustry-client.json} ({@link ClientConfig}), and nothing runs with it; see {@link #client()}.
+     */
     public static List<Setting> settings() {
         return settings(HempdustryConfig.get());
     }
 
-    /** Every value of {@code config}, against the defaults. */
+    /** Every value of {@code config} but its {@code client} section, against the defaults. */
     public static List<Setting> settings(HempdustryConfig config) {
-        JsonObject running = encode(config);
-        JsonObject defaults = encode(HempdustryConfig.DEFAULT);
+        return settings(encode(HempdustryConfig.CODEC, config), encode(HempdustryConfig.CODEC, HempdustryConfig.DEFAULT),
+                section -> !section.equals("client"));
+    }
+
+    /** The client preferences a game runs with, and the file they come from. */
+    public record ClientReport(Path file, List<Setting> settings) {
+    }
+
+    /**
+     * The preferences this game runs with, from its own {@code hempdustry-client.json}; nothing on a dedicated server,
+     * which reads no client file — each player's preferences are in their own game.
+     */
+    public static Optional<ClientReport> client() {
+        ClientConfig.State state = ClientConfig.state();
+        return state.file().map(file -> new ClientReport(file, settings(encode(ClientConfig.CODEC, state.client()),
+                encode(ClientConfig.CODEC, HempdustryConfig.Client.DEFAULT), section -> true)));
+    }
+
+    private static List<Setting> settings(JsonObject running, JsonObject defaults, Predicate<String> sections) {
         List<Setting> settings = new ArrayList<>();
-        running.keySet().stream().sorted().forEach(section -> {
+        running.keySet().stream().filter(sections).sorted().forEach(section -> {
             JsonObject values = running.getAsJsonObject(section);
             JsonObject fallback = defaults.getAsJsonObject(section);
             values.keySet().stream().sorted().forEach(key -> {
@@ -92,8 +118,8 @@ public final class ConfigReport {
         return settings;
     }
 
-    private static JsonObject encode(HempdustryConfig config) {
-        return HempdustryConfig.CODEC.encodeStart(JsonOps.INSTANCE, config).getOrThrow().getAsJsonObject();
+    private static <T> JsonObject encode(Codec<T> codec, T config) {
+        return codec.encodeStart(JsonOps.INSTANCE, config).getOrThrow().getAsJsonObject();
     }
 
     private static String text(JsonElement value) {
@@ -172,7 +198,9 @@ public final class ConfigReport {
      * modpack, who reads its log and not its files. Nothing at all when everything is the mod's own default.
      */
     public static void logDifferences(MinecraftServer server) {
-        differences(settings(), registries(server)).ifPresent(Hempdustry.LOGGER::info);
+        List<Setting> settings = new ArrayList<>(settings());
+        client().ifPresent(client -> settings.addAll(client.settings()));
+        differences(settings, registries(server)).ifPresent(Hempdustry.LOGGER::info);
     }
 
     /**

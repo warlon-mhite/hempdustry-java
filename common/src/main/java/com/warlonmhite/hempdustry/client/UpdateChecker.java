@@ -5,6 +5,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.warlonmhite.hempdustry.Hempdustry;
+import com.warlonmhite.hempdustry.config.ClientConfig;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.platform.client.ClientServices;
@@ -136,11 +137,10 @@ public final class UpdateChecker {
      * Starts the check, unless {@code client.updateCheck} is off.
      *
      * <p><b>The switch is read here rather than at the call site</b> so there is exactly one place
-     * that decides, and so nothing about the mod's start-up order has to be remembered: the config
-     * is loaded by {@code Hempdustry.init}, and each loader starts the mod before its client
-     * side. If that ever stopped being true the fallback is
-     * {@link HempdustryConfig#DEFAULT}, which checks — the safe way round for a switch whose only
-     * job is to stop a nag.
+     * that decides: the client's own file ({@link ClientConfig}) is loaded first thing in
+     * {@code HempdustryClient#init}, just before this runs. If that ever stopped being true the
+     * fallback is {@link HempdustryConfig.Client#DEFAULT}, which checks — the safe way round for a
+     * switch whose only job is to stop a nag.
      *
      * <p><b>One switch covers both sources</b>, and a second one is not wanted: a player turning the
      * check off means "stop asking", not "ask somewhere else".
@@ -150,7 +150,7 @@ public final class UpdateChecker {
      * update anyway.
      */
     public static void init() {
-        if (!HempdustryConfig.get().client().updateCheck()) {
+        if (!ClientConfig.get().updateCheck()) {
             return;
         }
         CompletableFuture.runAsync(UpdateChecker::fetchLatest);

@@ -1,7 +1,7 @@
 package com.warlonmhite.hempdustry.block.custom;
 
 import com.warlonmhite.hempdustry.balance.GrowClimate;
-import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ClientConfig;
 import com.warlonmhite.hempdustry.particle.FanPuffOption;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -176,7 +176,7 @@ public class GrowFanBlock extends FaceAttachedHorizontalDirectionalBlock {
      * turned them off ({@code client.fanPuffs}). Read on every animate tick, so a reload takes effect at once.
      */
     public static boolean puffs(BlockState state) {
-        return running(state) && HempdustryConfig.get().client().fanPuffs();
+        return running(state) && ClientConfig.get().fanPuffs();
     }
 
     /** Whether {@code state} is a Grow Fan that is running. */

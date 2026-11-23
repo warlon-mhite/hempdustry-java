@@ -33,12 +33,14 @@ import net.minecraft.world.phys.HitResult;
  * <ul>
  *   <li>{@code reload} re-reads {@code config/hempdustry.json} without a restart. The values a client shows (the machine
  *       timings) go to every player again; a recipe viewer's pages keep the old ones until the recipes are sent again
- *       ({@code /reload} or a rejoin), and the reply says so when one moved.</li>
+ *       ({@code /reload} or a rejoin), and the reply says so when one moved. In a game that hosts its own world it
+ *       re-reads that game's {@code config/hempdustry-client.json} too ({@link ClientConfig}).</li>
  *   <li>{@code inspect [pos]} tells what the plant (or the Stash Jar) at {@code pos}, or at the block looked at,
  *       holds and why it stands as it does ({@link PlantInspection}). At level 2 because it shows the genes a
  *       player is never shown.</li>
  *   <li>{@code config} prints every config value and where it comes from, and which entries of the mod's datapack
- *       registries a pack other than the mod's own supplied ({@link ConfigReport}).</li>
+ *       registries a pack other than the mod's own supplied ({@link ConfigReport}). The client preferences are this
+ *       game's own file's in a game hosting its own world; a dedicated server reads none, and says so.</li>
  * </ul>
  *
  * <p><b>{@code reload} does not reload strains, and nothing can short of a restart.</b> Strains are a dynamic
@@ -79,6 +81,10 @@ public class ModCommands {
                     if (!ServerSettings.of(HempdustryConfig.get()).equals(before)) {
                         context.getSource().sendSuccess(
                                 () -> Component.translatable("commands.hempdustry.reload.viewers"), false);
+                    }
+                    // A game hosting its own world re-reads its own preferences too; a dedicated server has none.
+                    if (!ClientConfig.reload()) {
+                        context.getSource().sendFailure(Component.translatable("commands.hempdustry.reload.client_failed"));
                     }
                     return 1;
                 }))
@@ -145,13 +151,18 @@ public class ModCommands {
         long changed = settings.stream().filter(ConfigReport.Setting::changed).count();
         source.sendSuccess(() -> Component.translatable(CONFIG + "settings",
                 value("config/" + Hempdustry.MOD_ID + ".json"), value(changed)), false);
-        for (ConfigReport.Setting setting : settings) {
-            Component line = setting.changed()
-                    ? Component.translatable(CONFIG + "value." + setting.source().getSerializedName(),
-                            Component.literal(setting.key()), value(setting.value()).withStyle(ChatFormatting.GOLD),
-                            value(setting.defaultValue()))
-                    : Component.translatable(CONFIG + "value.default", Component.literal(setting.key()), value(setting.value()));
-            source.sendSuccess(() -> line, false);
+        values(source, settings);
+        Optional<ConfigReport.ClientReport> client = ConfigReport.client();
+        if (client.isPresent()) {
+            List<ConfigReport.Setting> preferences = client.get().settings();
+            source.sendSuccess(() -> Component.translatable(CONFIG + "client",
+                    value("config/" + client.get().file().getFileName()),
+                    value(preferences.stream().filter(ConfigReport.Setting::changed).count())), false);
+            values(source, preferences);
+            settings = new ArrayList<>(settings);
+            settings.addAll(preferences);
+        } else {
+            source.sendSuccess(() -> Component.translatable(CONFIG + "client.none", value("config/" + ClientConfig.FILE)), false);
         }
         source.sendSuccess(() -> Component.translatable(CONFIG + "registries"), false);
         for (ConfigReport.RegistryReport registry : ConfigReport.registries(source.getServer())) {
@@ -167,6 +178,18 @@ public class ModCommands {
             }
         }
         return settings.size();
+    }
+
+    /** One line per value: where it comes from, and its default beside it when it is not the default. */
+    private static void values(CommandSourceStack source, List<ConfigReport.Setting> settings) {
+        for (ConfigReport.Setting setting : settings) {
+            Component line = setting.changed()
+                    ? Component.translatable(CONFIG + "value." + setting.source().getSerializedName(),
+                            Component.literal(setting.key()), value(setting.value()).withStyle(ChatFormatting.GOLD),
+                            value(setting.defaultValue()))
+                    : Component.translatable(CONFIG + "value.default", Component.literal(setting.key()), value(setting.value()));
+            source.sendSuccess(() -> line, false);
+        }
     }
 
     private static net.minecraft.network.chat.MutableComponent value(Object value) {

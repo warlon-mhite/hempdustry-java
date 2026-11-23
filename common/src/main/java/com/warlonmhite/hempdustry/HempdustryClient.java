@@ -23,7 +23,7 @@ import com.warlonmhite.hempdustry.item.ModItemProperties;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.client.item.StrainModelIndexProperty;
 import com.warlonmhite.hempdustry.client.item.StrainTintSource;
-import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ClientConfig;
 
 import com.warlonmhite.hempdustry.client.UpdateChecker;
 import com.warlonmhite.hempdustry.client.particle.AromaParticle;
@@ -70,6 +70,8 @@ public class HempdustryClient {
     /** Everything the client registers, in order; each loader's client entry point calls it once. */
     public static void init() {
         ClientRegistration client = ClientServices.CLIENT;
+        // The game's own preferences first: the update check right below reads them.
+        ClientConfig.load();
         UpdateChecker.init();
 
         // Which pass a block is drawn in -- solid, cut-out or translucent -- is read off its textures
@@ -324,7 +326,7 @@ public class HempdustryClient {
      */
     private static int biomeTint(int grassColor) {
         return ARGB.srgbLerp(
-                (float) HempdustryConfig.get().client().biomeTintStrength(),
+                (float) ClientConfig.get().biomeTintStrength(),
                 NO_TINT,
                 grassColor);
     }

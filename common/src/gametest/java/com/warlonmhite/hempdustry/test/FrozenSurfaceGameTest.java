@@ -11,6 +11,7 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.JsonOps;
 import com.warlonmhite.hempdustry.Hempdustry;
+import com.warlonmhite.hempdustry.config.ClientConfig;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
 import com.warlonmhite.hempdustry.item.ModItemGroups;
 import com.warlonmhite.hempdustry.item.custom.EdibleScheduler;
@@ -229,6 +230,33 @@ public final class FrozenSurfaceGameTest {
                     findings.put(release + " config", "a config file it wrote now reads as " + now + ", not " + config);
                 }
             });
+            // A game with only that file starts its own client file from the file's client section, whole.
+            JsonElement section = config.getAsJsonObject().get("client");
+            if (section != null) {
+                JsonObject expected = new JsonObject();
+                expected.add("client", section);
+                ConfigGameTest.inClientFolder(folder -> {
+                    Path legacy = folder.resolve(Hempdustry.MOD_ID + ".json");
+                    ConfigGameTest.write(legacy, config.toString());
+                    ClientConfig.load(folder.resolve(ClientConfig.FILE), legacy);
+                    JsonElement now = ClientConfig.CODEC.encodeStart(JsonOps.INSTANCE, ClientConfig.get()).getOrThrow();
+                    if (!contains(now, expected)) {
+                        findings.put(release + " client config", "the client section of a config file it wrote starts a"
+                                + " client file reading " + now + ", not " + expected);
+                    }
+                });
+            }
+            // And a client file it wrote, once a release has written one.
+            JsonElement clientConfig = old.get("clientConfig");
+            if (clientConfig != null) {
+                ConfigGameTest.withClientConfig(clientConfig.toString(), () -> {
+                    JsonElement now = ClientConfig.CODEC.encodeStart(JsonOps.INSTANCE, ClientConfig.get()).getOrThrow();
+                    if (!contains(now, clientConfig)) {
+                        findings.put(release + " client file", "a client file it wrote now reads as " + now + ", not "
+                                + clientConfig);
+                    }
+                });
+            }
         }
         Sweep.atLeast(context, "released data files", files, sameGameReleases > 0 ? 300 : 0);
         Sweep.atLeast(context, "releases in frozen/", releases, 1);
@@ -276,7 +304,8 @@ public final class FrozenSurfaceGameTest {
                 lines.add("asset " + file);
             }
         }
-        keys("", HempdustryConfig.CODEC.encodeStart(JsonOps.INSTANCE, HempdustryConfig.DEFAULT).getOrThrow(), lines);
+        keys("config", "", HempdustryConfig.CODEC.encodeStart(JsonOps.INSTANCE, HempdustryConfig.DEFAULT).getOrThrow(), lines);
+        keys("client_config", "", ClientConfig.CODEC.encodeStart(JsonOps.INSTANCE, HempdustryConfig.Client.DEFAULT).getOrThrow(), lines);
         registries.lookupOrThrow(Strain.REGISTRY_KEY).entrySet().forEach(strain -> {
             if (Sweep.ours(strain.getKey().identifier())) {
                 lines.add("model_index " + strain.getKey().identifier() + " " + strain.getValue().modelIndex());
@@ -293,18 +322,18 @@ public final class FrozenSurfaceGameTest {
         for (T value : property.getPossibleValues()) into.add("state " + block + " " + property.getName() + "=" + property.getName(value));
     }
 
-    private static void keys(String prefix, JsonElement json, SortedSet<String> into) {
+    private static void keys(String kind, String prefix, JsonElement json, SortedSet<String> into) {
         if (json.isJsonObject()) {
-            json.getAsJsonObject().entrySet().forEach(e -> keys(prefix.isEmpty() ? e.getKey() : prefix + "." + e.getKey(), e.getValue(), into));
+            json.getAsJsonObject().entrySet().forEach(e -> keys(kind, prefix.isEmpty() ? e.getKey() : prefix + "." + e.getKey(), e.getValue(), into));
         } else {
-            into.add("config " + prefix);
+            into.add(kind + " " + prefix);
         }
     }
 
     /**
      * What this build wrote, for {@link #oldDataStillLoads} to read back once it is a release: every
      * data file it ships, every stack its creative tab builds, a filled and named block entity of
-     * every block that has one, and its default config.
+     * every block that has one, its default config and its default client file.
      */
     private static JsonObject capture(GameTestHelper context) {
         ServerLevel world = context.getLevel();
@@ -351,6 +380,7 @@ public final class FrozenSurfaceGameTest {
         out.add("blockEntities", blockEntities);
 
         out.add("config", HempdustryConfig.CODEC.encodeStart(JsonOps.INSTANCE, HempdustryConfig.DEFAULT).getOrThrow());
+        out.add("clientConfig", ClientConfig.CODEC.encodeStart(JsonOps.INSTANCE, HempdustryConfig.Client.DEFAULT).getOrThrow());
         return out;
     }
 

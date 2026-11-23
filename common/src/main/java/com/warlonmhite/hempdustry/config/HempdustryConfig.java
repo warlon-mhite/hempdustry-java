@@ -59,6 +59,10 @@ import java.util.Optional;
  * all, and is <b>left exactly as it is</b> so the typo can be fixed; see {@link #load()}.
  *
  * <p>{@code /hempdustry reload} re-reads it in place.
+ *
+ * <p>A client's own preferences moved to a file of their own in 2.2, {@code config/hempdustry-client.json}
+ * ({@link ClientConfig}), so that a modpack update replacing this file keeps each player's choices. The
+ * {@code client} section here stays, read and written, and starts that file the first time there is none.
  */
 public record HempdustryConfig(Client client, Effects effects, World world, Infuser infuser, Loot loot) {
 
@@ -110,31 +114,39 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
      */
     public static boolean load() {
         Path path = Services.PLATFORM.configDir().resolve(Hempdustry.MOD_ID + ".json");
-        HempdustryConfig loaded = DEFAULT;
-        if (Files.exists(path)) {
-            try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-                JsonElement json = new GsonBuilder().create().fromJson(reader, JsonElement.class);
-                if (json != null && !json.isJsonObject()) {
-                    Hempdustry.LOGGER.error("{} is not a JSON object — nothing in it was applied, and it is"
-                            + " left as it is", path);
-                    return false;
-                }
-                Optional<HempdustryConfig> parsed = CODEC.parse(JsonOps.INSTANCE, merge(defaultJson(), json))
-                        .resultOrPartial(error -> Hempdustry.LOGGER.error("Bad value in {}: {} — nothing in it"
-                                + " was applied, and it is left as it is", path, error));
-                if (parsed.isEmpty()) {
-                    return false;
-                }
-                loaded = parsed.get();
-            } catch (IOException | RuntimeException e) {
-                Hempdustry.LOGGER.error("Could not read {} — nothing in it was applied, and it is left as it is",
-                        path, e);
-                return false;
-            }
+        Optional<HempdustryConfig> parsed = read(path, CODEC, defaultJson());
+        if (parsed.isEmpty()) {
+            return false;
         }
-        instance = loaded.clamped();
+        instance = parsed.get().clamped();
         write(path, instance);
         return true;
+    }
+
+    /**
+     * {@code path} decoded by {@code codec} over {@code defaults}: the defaults alone when there is no file, and
+     * nothing — the error logged — when there is one it cannot read. The client's own file is read the same way
+     * ({@link ClientConfig}).
+     */
+    static <T> Optional<T> read(Path path, Codec<T> codec, JsonObject defaults) {
+        if (!Files.exists(path)) {
+            return codec.parse(JsonOps.INSTANCE, defaults).result();
+        }
+        try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+            JsonElement json = new GsonBuilder().create().fromJson(reader, JsonElement.class);
+            if (json != null && !json.isJsonObject()) {
+                Hempdustry.LOGGER.error("{} is not a JSON object — nothing in it was applied, and it is"
+                        + " left as it is", path);
+                return Optional.empty();
+            }
+            return codec.parse(JsonOps.INSTANCE, merge(defaults, json))
+                    .resultOrPartial(error -> Hempdustry.LOGGER.error("Bad value in {}: {} — nothing in it"
+                            + " was applied, and it is left as it is", path, error));
+        } catch (IOException | RuntimeException e) {
+            Hempdustry.LOGGER.error("Could not read {} — nothing in it was applied, and it is left as it is",
+                    path, e);
+            return Optional.empty();
+        }
     }
 
     /** The defaults as JSON, which is the base every file is read on top of. */
@@ -147,7 +159,7 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
      * not mention keeps its default, which is what lets a knob be added in a later version without a
      * migration step.
      */
-    private static JsonObject merge(JsonObject base, JsonElement overrides) {
+    static JsonObject merge(JsonObject base, JsonElement overrides) {
         if (!(overrides instanceof JsonObject object)) {
             return base;
         }
@@ -182,23 +194,7 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
             // Each key is named with its default and, for a number, the range it is clamped to, so a
             // pack maker reading the file needs nothing else. every_config_key_is_described_in_its_comment
             // holds each one to the code.
-            comment(root, "client", "Read by a client, sent to nobody; a dedicated server writes this section out "
-                    + "and ignores it. updateCheck (default true): false stops this client checking for a newer "
-                    + "release on start-up; a dedicated server never asks. Turn it off in a modpack, where the update "
-                    + "it would announce cannot be taken anyway. "
-                    + "biomeTintStrength (default 0.35, 0-1): how far hemp growing in the world is pulled towards the "
-                    + "local grass colour, so a plant does not clash with the biome around it. "
-                    + "0 paints the crops exactly as drawn, 1 is the full tint vanilla gives grass. "
-                    + "ripeAroma (default true): false stops the wisps that drift off ripe plants; vanilla's Particles "
-                    + "setting thins or hides them along with every other particle. "
-                    + "animations (default auto; auto, vanilla or off): how this client animates a player smoking, "
-                    + "coughing, sniffing a jar or kicking a footbag. auto follows whatever animates the rest of the "
-                    + "body (Not Enough Animations, Fresh Animations' player pack, or vanilla), vanilla is always "
-                    + "vanilla's rigid style, off shows none of it. "
-                    + "fanPuffs (default true): false stops the puffs of air a running Grow Fan lets off down the "
-                    + "lane it blows on. terpenePuffs (default true): false stops the puff a Stash Jar lets off when "
-                    + "a hand opens it. Both are this client's alone: the fan still blows, the jar's smell still "
-                    + "gets out, and other players still see the puffs if their own files let them.");
+            comment(root, "client", ClientConfig.LEGACY_COMMENT);
             comment(root, "effects", "enabled (default true): false is 'industrial hemp only': no drug effects anywhere. "
                     + "maxLevel (default 4, 1-10) caps every effect the mod applies; maxBuffLevel (default 2, 1-10) "
                     + "caps only the helpful ones (Speed, Resistance, Absorption...), so a big dose still costs its "
@@ -255,6 +251,15 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
                     + "a change to this section takes effect on the next /reload or restart; /hempdustry reload "
                     + "alone does not rebuild them. Creepers dropping the two discs is the "
                     + "#minecraft:creeper_drop_music_discs tag, not a setting here.");
+            writeJson(path, root);
+        } catch (RuntimeException e) {
+            Hempdustry.LOGGER.error("Could not write {}", path, e);
+        }
+    }
+
+    /** Writes {@code root} to {@code path}, pretty-printed; a failure is logged, never thrown. */
+    static void writeJson(Path path, JsonObject root) {
+        try {
             Files.createDirectories(path.getParent());
             // disableHtmlEscaping, or every "=" and "'" in the comments is written as \u003d and
             // \u0027 — valid JSON, unreadable prose.
@@ -275,7 +280,7 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
      * does, so the whole project's JSON reads the same way. {@code _comment} leads because {@code _}
      * sorts before every lower-case letter.
      */
-    private static void comment(JsonObject root, String section, String text) {
+    static void comment(JsonObject root, String section, String text) {
         if (root.get(section) instanceof JsonObject object) {
             JsonObject commented = new JsonObject();
             commented.addProperty("_comment", text);
@@ -303,12 +308,15 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
     }
 
     /**
-     * The one section a <b>client</b> reads from its own file, and the only one in this file that a
-     * server never applies to anybody.
+     * A <b>client's</b> own preferences. A game reads them from its own {@code config/hempdustry-client.json}
+     * ({@link ClientConfig#get()}), which a modpack update that replaces {@code hempdustry.json} leaves alone.
      *
-     * <p>It is read by the client that owns the file and is sent nowhere, in either direction: a server
-     * never sends a client its preferences, and the values it does send ({@code ServerSettings}) are
-     * held apart from this file. A dedicated server writes the section out and ignores it.
+     * <p>{@code hempdustry.json} keeps this section, read and written as it always was, and it stays so: it is part
+     * of a file every release wrote, and a key of it is never taken away. What it does now is start a game's
+     * {@code hempdustry-client.json} the first time there is none ({@link ClientConfig#load()}); after that it is
+     * read for nothing, and {@link HempdustryConfig#client()} is not what a client runs with. A dedicated server
+     * reads neither. These values are sent nowhere, in either direction: a server never sends a client its
+     * preferences, and the values it does send ({@code ServerSettings}) are held apart from both files.
      *
      * @param updateCheck       whether this client asks Modrinth for a newer release on start-up
      * @param biomeTintStrength  how far the crops and wild flowers are pulled towards the local
