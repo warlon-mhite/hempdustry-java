@@ -4,6 +4,7 @@ import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.IndicaCropBlock;
 import com.warlonmhite.hempdustry.entity.ai.SeekHempCropGoal;
 import com.warlonmhite.hempdustry.util.ModTags;
+import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -212,6 +213,19 @@ public final class CreeperSeeksHempGameTest {
             untagged.discard();
         });
         context.assertTrue(noticed(goal, 2000), "a creeper back in the tag never noticed a grown field in 2000 glances");
+        // A walk under way stops the moment its mob leaves the tag, or finds a target: the tag is asked on every tick
+        // of the walk, and a modded mob whose attack sits under the walk's priority must not lurk with a target.
+        goal.start();
+        context.assertTrue(goal.canContinueToUse(), "a creeper that just started its walk did not keep on");
+        Tagged.without(EntityTypes.CREEPER, ModTags.EntityTypes.DRAWN_TO_HEMP, () -> context.assertFalse(
+                goal.canContinueToUse(), "a creeper taken out of #hempdustry:drawn_to_hemp kept on walking"));
+        Pig target = pig(context, CENTRE.offset(-3, 0, 3));
+        creeper.setTarget(target);
+        context.assertFalse(goal.canContinueToUse(), "a creeper with a target kept on walking into the field");
+        context.assertFalse(noticed(goal, 2000), "a creeper with a target noticed a field");
+        creeper.setTarget(null);
+        target.discard();
+        goal.stop();
         creeper.discard();
 
         Pig[] listed = new Pig[1];
@@ -226,6 +240,16 @@ public final class CreeperSeeksHempGameTest {
         context.assertTrue(goalOf(plain) == null, "a pig no tag lists was given the walk");
         listed[0].discard();
         plain.discard();
+
+        // A mob a Brain walks takes no walk, whatever the tags say: a goat's walk target would fight the goal.
+        Tagged.within(EntityTypes.GOAT, ModTags.EntityTypes.DRAWN_TO_HEMP, () ->
+                Tagged.within(EntityTypes.GOAT, ModTags.EntityTypes.DRAWN_TO_STASH, () -> {
+                    Mob goat = context.spawn(EntityTypes.GOAT, CENTRE.offset(-1, 0, 1));
+                    context.assertTrue(goals(goat).stream().noneMatch(goal1 -> goal1 instanceof SeekHempCropGoal
+                                    || goal1 instanceof com.warlonmhite.hempdustry.entity.ai.SeekStashJarGoal),
+                            "a goat, which a Brain walks, was given a walk by the tags: " + goals(goat));
+                    goat.discard();
+                }));
         context.succeed();
     }
 
@@ -267,6 +291,18 @@ public final class CreeperSeeksHempGameTest {
         creeper.setUUID(new UUID(creeper.getUUID().getMostSignificantBits(), 2L));
         context.assertTrue(SeekHempCropGoal.caresAboutHemp(creeper), "test setup: UUID parity");
         return creeper;
+    }
+
+    /** Every goal {@code mob}'s goal selector holds. */
+    private static List<net.minecraft.world.entity.ai.goal.Goal> goals(Mob mob) {
+        try {
+            var field = Mob.class.getDeclaredField("goalSelector");
+            field.setAccessible(true);
+            return ((GoalSelector) field.get(mob)).getAvailableGoals().stream().map(prioritized -> prioritized.getGoal())
+                    .map(net.minecraft.world.entity.ai.goal.Goal.class::cast).toList();
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private static SeekHempCropGoal goalOf(Mob mob) {

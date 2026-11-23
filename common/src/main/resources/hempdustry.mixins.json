@@ -6,7 +6,6 @@
 		"AbstractContainerMenuMixin",
 		"BeeGrowCropsGoalMixin",
 		"DataFixersMixin",
-		"DrownedMixin",
 		"ItemComponentsSchemaMixin",
 		"ItemStackComponentizationFixMixin",
 		"LivingEntityVisibilityMixin",

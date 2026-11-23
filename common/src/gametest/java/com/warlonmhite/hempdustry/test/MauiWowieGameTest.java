@@ -480,7 +480,7 @@ public final class MauiWowieGameTest {
         BlockPos rootRel = new BlockPos(4, 2, 4);
         Drowned drowned = context.spawn(EntityTypes.DROWNED, new BlockPos(4, 6, 4));
         SeekHempCropGoal goal = goalOf(drowned);
-        context.assertTrue(goal != null, "DrownedMixin did not add the seek goal to a drowned");
+        context.assertTrue(goal != null, "MobGoalsMixin did not add the seek goal to a drowned");
         context.assertTrue(SeekHempCropGoal.findCover(drowned, 2, 256, SeekHempCropGoal::ripeMauiWowie, true) == null,
                 "a drowned found cover on a bare sea floor");
 

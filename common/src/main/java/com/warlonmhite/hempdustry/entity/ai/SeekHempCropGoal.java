@@ -149,6 +149,8 @@ public class SeekHempCropGoal extends RandomStrollGoal {
     private static final int SWIMMER_Y_DIFFERENCE = 8;
     /** {@code RandomStrollGoal}'s speed on a drowned. */
     private static final double DROWNED_SPEED = 1.0;
+    /** {@code WaterAvoidingRandomStrollGoal}'s speed on an enderman. */
+    private static final double ENDERMAN_SPEED = 1.0;
 
     /** Not a plant to stand in. */
     public static final int NO_PULL = 0;
@@ -196,6 +198,11 @@ public class SeekHempCropGoal extends RandomStrollGoal {
         this.strongestPull = strongestPull;
         this.seaFloor = seaFloor;
         this.tagged = tagged;
+    }
+
+    /** An enderman's: Ender Haze, and only Ender Haze, at its wandering pace. */
+    public static SeekHempCropGoal enderman(PathfinderMob enderman) {
+        return new SeekHempCropGoal(enderman, ENDERMAN_SPEED, state -> state.is(ModBlocks.ENDER_HAZE_CROP));
     }
 
     /** A drowned's: a ripe Maui Wowie on the sea floor, at its wandering pace. */
@@ -260,11 +267,14 @@ public class SeekHempCropGoal extends RandomStrollGoal {
      * The config's off switch lives here rather than at the mixin, so
      * {@code /hempdustry reload} takes effect on creepers that already exist. Goals are built in
      * the entity's constructor; a check at the mixin would freeze the setting at spawn time. The tag
-     * is asked here too, so a mob a {@code /reload} takes out of it stops at once.
+     * is asked here too, and on every tick of the walk ({@link #canContinueToUse}), so a mob a {@code /reload}
+     * takes out of it stops at once. A mob with a target never starts: a modded mob whose attack sits below
+     * this goal's priority would otherwise lurk in the crop with a player in its sights.
      */
     @Override
     public boolean canUse() {
         if (!ModGameRules.Switch.MOBS_DRAWN_TO_HEMP.on(mob.level()) || tagged && !drawnToHemp(mob)
+                || mob.getTarget() != null
                 || pullNeeded(mob) > strongestPull || mob.level().getGameTime() < restingUntil) {
             return false;
         }
@@ -273,12 +283,14 @@ public class SeekHempCropGoal extends RandomStrollGoal {
     }
 
     /**
-     * Walking, then lurking where the walk ended. A creeper with a target never gets here: the
-     * attack goal at priority 4 takes the movement control from this one, lurk or no lurk.
+     * Walking, then lurking where the walk ended, until the mob finds a target, leaves the tag or the switch goes
+     * off. A creeper's attack goal at priority 4 takes the movement control from this one anyway; a mob in the tag
+     * whose attack sits lower (a modded one at 5 or more) is stopped here instead.
      */
     @Override
     public boolean canContinueToUse() {
-        if (!ModGameRules.Switch.MOBS_DRAWN_TO_HEMP.on(mob.level()) || mob.hasControllingPassenger()) {
+        if (!ModGameRules.Switch.MOBS_DRAWN_TO_HEMP.on(mob.level()) || mob.hasControllingPassenger()
+                || tagged && !drawnToHemp(mob) || mob.getTarget() != null) {
             return false;
         }
         if (!mob.getNavigation().isDone()) {

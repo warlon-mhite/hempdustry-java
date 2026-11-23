@@ -80,11 +80,11 @@ public class SeekStashJarGoal extends Goal {
         return jar != null;
     }
 
-    /** While the jar still smells, and only while. */
+    /** While the jar still smells, and only while; a target found on the way ends it. */
     @Override
     public boolean canContinueToUse() {
         return jar != null && ModGameRules.Switch.MOBS_DRAWN_TO_HEMP.on(mob.level()) && StashSmell.drawnToStash(mob)
-                && !mob.hasControllingPassenger() && StashSmell.smellsOpen(mob.level(), jar);
+                && !mob.hasControllingPassenger() && mob.getTarget() == null && StashSmell.smellsOpen(mob.level(), jar);
     }
 
     @Override
