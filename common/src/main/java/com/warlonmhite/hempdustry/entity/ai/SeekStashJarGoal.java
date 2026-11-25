@@ -5,6 +5,8 @@ import java.util.EnumSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.level.pathfinder.Node;
+import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,7 +30,9 @@ import org.jetbrains.annotations.Nullable;
  * </ul>
  *
  * <p>No open-sky rule: the creeper walks toward the jar as far as it can find a path and waits there, at the
- * door or under the window.
+ * door or under the window. It asks for a new path only once the last one is walked, and while each new one ends
+ * nearer the jar; once one does not, it waits {@link #WAIT_TICKS} before asking again, so a jar behind a wall
+ * costs a path every few seconds, not one a tick.
  *
  * <h2>What is kept</h2>
  *
@@ -46,15 +50,21 @@ public class SeekStashJarGoal extends Goal {
     private static final double SPEED = 0.8;
     /** A creeper asks whether it smells an opened jar once a second. */
     public static final int CHECK_TICKS = 20;
-    /** Within this many blocks of the jar it stands; further, it walks back. */
+    /** Within this many blocks of the jar across, and {@link #BY_THE_JAR_UP} up or down, it stands; further, it walks back. */
     private static final double BY_THE_JAR = 2.5;
-    /** How often a walking creeper asks for a new path, in this goal's ticks: a far jar is out of one path's reach. */
+    /** A jar on a shelf or a table is still the jar it stands by. */
+    private static final double BY_THE_JAR_UP = 3.0;
+    /** How often a walking creeper looks whether its path is walked, in this goal's ticks: a far jar is out of one path's reach. */
     private static final int REPATH_TICKS = 10;
+    /** How long a creeper whose last path came no nearer waits before it asks again: the door may open. */
+    private static final int WAIT_TICKS = 100;
 
     private final PathfinderMob mob;
     private @Nullable BlockPos jar;
     private long nextCheck;
     private int repathIn;
+    /** How far across from the jar the last path ended, squared; a new path must end nearer to be walked. */
+    private double closest;
 
     public SeekStashJarGoal(PathfinderMob mob) {
         this.mob = mob;
@@ -90,6 +100,7 @@ public class SeekStashJarGoal extends Goal {
     @Override
     public void start() {
         repathIn = 0;
+        closest = Double.MAX_VALUE;
     }
 
     @Override
@@ -98,15 +109,36 @@ public class SeekStashJarGoal extends Goal {
             return;
         }
         Vec3 at = Vec3.atBottomCenterOf(jar);
-        if (mob.position().distanceToSqr(at) <= BY_THE_JAR * BY_THE_JAR) {
+        if (across(mob.getX(), mob.getZ(), at) <= BY_THE_JAR * BY_THE_JAR && Math.abs(mob.getY() - at.y) <= BY_THE_JAR_UP) {
             mob.getNavigation().stop();
             return;
         }
-        if (--repathIn <= 0 || mob.getNavigation().isDone()) {
-            // As far as a path goes: a jar behind a wall is waited for at the wall.
-            mob.getNavigation().moveTo(at.x, at.y, at.z, SPEED);
-            repathIn = REPATH_TICKS;
+        if (--repathIn > 0) {
+            return;
         }
+        repathIn = REPATH_TICKS;
+        if (!mob.getNavigation().isDone()) {
+            return;
+        }
+        // As far as a path goes: a jar behind a wall is waited for at the wall.
+        Path path = mob.getNavigation().createPath(jar, 1);
+        Node end = path == null ? null : path.getEndNode();
+        double reach = end == null ? Double.MAX_VALUE : across(end.x + 0.5, end.z + 0.5, at);
+        if (reach < closest - 1.0) {
+            closest = reach;
+            mob.getNavigation().moveTo(path, SPEED);
+        } else {
+            // No nearer than the last: wait, then ask afresh.
+            repathIn = WAIT_TICKS;
+            closest = Double.MAX_VALUE;
+        }
+    }
+
+    /** The distance across, squared, from {@code x}, {@code z} to {@code at}. */
+    private static double across(double x, double z, Vec3 at) {
+        double dx = x - at.x;
+        double dz = z - at.z;
+        return dx * dx + dz * dz;
     }
 
     @Override
