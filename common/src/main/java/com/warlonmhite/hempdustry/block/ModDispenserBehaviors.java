@@ -107,7 +107,9 @@ public final class ModDispenserBehaviors {
         // A hand trims with anything in #c:tools/shear, so another mod's shears work too. A dispenser's behaviours
         // are keyed by item, and the tag is known only once a world's data is loaded, after every mod has
         // registered its own: so each pair in the tag that a dispenser already uses is wrapped then. A pair a
-        // dispenser only throws out shears no sheep in vanilla either, and is left as it is.
+        // dispenser only throws out shears no sheep in vanilla either, and is left as it is. Vanilla's shears are
+        // asked again too: a mod that registered its own behaviour for them after this one replaced the wrapper,
+        // and it is wrapped again over theirs. A pair a /reload adds to the tag is wrapped at the next start.
         Services.EVENTS.onServerStarted(server -> BuiltInRegistries.ITEM.getTagOrEmpty(ModTags.Conventional.SHEAR_TOOLS)
                 .forEach(shears -> {
                     if (DispenserBlock.DISPENSER_REGISTRY.containsKey(shears.value())) {
@@ -118,25 +120,30 @@ public final class ModDispenserBehaviors {
 
     /**
      * Wraps the dispenser behaviour of {@code shears} (vanilla's shears sheep, harvests beehives and cuts leashes),
-     * once, so only a hemp plant in a trim window it has not used is ours, and everything else is sheared as before.
+     * so only a hemp plant in a trim window it has not used is ours, and everything else is sheared as before.
+     * Once: a behaviour that is already one of these wrappers is left alone, so asking twice never wraps twice.
      */
     private static void trimWith(Item shears) {
-        if (!TRIMMING.add(shears)) {
+        if (trimsWith(shears)) {
             return;
         }
         DispenseItemBehavior previous = DispenserBlock.DISPENSER_REGISTRY.getOrDefault(shears, new DefaultDispenseItemBehavior());
-        DispenserBlock.registerBehavior(shears, (pointer, stack) -> stack.is(ModTags.Conventional.SHEAR_TOOLS)
+        DispenseItemBehavior wrapper = (pointer, stack) -> stack.is(ModTags.Conventional.SHEAR_TOOLS)
                 && Defoliation.dispenserCanTrim(pointer.level(), pointer.pos().relative(pointer.state().getValue(DispenserBlock.FACING)))
                 ? TRIM_HEMP.dispense(pointer, stack)
-                : previous.dispense(pointer, stack));
+                : previous.dispense(pointer, stack);
+        WRAPPERS.add(wrapper);
+        DispenserBlock.registerBehavior(shears, wrapper);
     }
 
-    /** Whether a dispenser holding {@code shears} trims hemp: a pair whose behaviour is wrapped. */
+    /** Whether a dispenser holding {@code shears} trims hemp: a pair whose behaviour now is one of the wrappers. */
     public static boolean trimsWith(Item shears) {
-        return TRIMMING.contains(shears);
+        DispenseItemBehavior now = DispenserBlock.DISPENSER_REGISTRY.get(shears);
+        return now != null && WRAPPERS.contains(now);
     }
 
-    private static final Set<Item> TRIMMING = Collections.newSetFromMap(new IdentityHashMap<>());
+    /** Every wrapper made, by identity: the behaviour a pair has now is asked whether it is one of them. */
+    private static final Set<DispenseItemBehavior> WRAPPERS = Collections.newSetFromMap(new IdentityHashMap<>());
 
     /** A trim, as a player's shears give it: the dispenser's click, and a shearing for the sculk to hear. */
     private static final OptionalDispenseItemBehavior TRIM_HEMP = new OptionalDispenseItemBehavior() {
