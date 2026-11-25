@@ -8,6 +8,8 @@ import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider;
 import net.fabricmc.fabric.api.tag.convention.v2.ConventionalBlockTags;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
@@ -219,6 +221,13 @@ public class ModBlockTagProvider extends FabricTagsProvider.BlockTagsProvider {
                         .filter(flower -> !(flower instanceof LiquidBlockContainer)));
         valueLookupBuilder(BlockTags.FLOWER_POTS)
                 .addAll(ModCrops.wilds().flatMap(wild -> wild.potted().stream()));
+
+        // Carry On lifts any block that keeps a block entity, unless it is listed here; of the rest it refuses
+        // only a door's half. Every three- and five-tall plant keeps its record on the root, so the root came away
+        // from under its other blocks, genetics and all. A tag in another mod's namespace loads as nothing where
+        // that mod is not installed. The Stash Jar stays liftable: carrying a full jar is what Carry On is for.
+        valueLookupBuilder(TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("carryon", "block_blacklist")))
+                .forceAddTag(ModTags.Blocks.HEMP_CROPS);
 
         // HEMP_LEAVES joins the vanilla leaves tag, which is the only route to shears' 15x mining
         // rule — that rule names this tag rather than a block list (ShearsItem#createToolComponent).

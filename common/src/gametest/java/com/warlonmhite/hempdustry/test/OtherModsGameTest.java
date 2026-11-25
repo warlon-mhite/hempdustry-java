@@ -17,7 +17,9 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -433,6 +435,31 @@ public final class OtherModsGameTest {
         }
         Sweep.report(context, "every seed a villager plants stands on farmland, and every farmland seed is planted",
                 findings, Map.of());
+        context.succeed();
+    }
+
+    /**
+     * Carry On lifts any block that keeps a block entity, with an empty sneaking hand, unless the block is in its
+     * {@code carryon:block_blacklist} tag; it refuses only a block with a door's half. A three- or five-tall plant
+     * keeps its record on the root, so its root came away from under its other blocks, genetics and all. Every
+     * crop of ours is in the tag, which loads as nothing where Carry On is not installed.
+     */
+    public static void carryOnNeverLiftsAPlant(GameTestHelper context) {
+        TagKey<Block> blacklist = TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("carryon", "block_blacklist"));
+        Map<String, String> findings = new TreeMap<>();
+        int seen = 0;
+        for (Block block : BuiltInRegistries.BLOCK) {
+            Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+            if (!Sweep.ours(id) || !(block instanceof CropBlock)) {
+                continue;
+            }
+            seen++;
+            if (!block.defaultBlockState().is(blacklist)) {
+                findings.put(id.toString(), "a crop, and not in #carryon:block_blacklist");
+            }
+        }
+        Sweep.atLeast(context, "crops of ours", seen, 13);
+        Sweep.report(context, "Carry On never lifts a plant of ours", findings, Map.of());
         context.succeed();
     }
 }
