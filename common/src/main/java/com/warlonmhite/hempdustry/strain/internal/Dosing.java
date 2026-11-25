@@ -75,7 +75,7 @@ public final class Dosing {
      * or the hit's odds.
      */
     public static boolean untiered(Entry entry) {
-        return entry.strain().is(ModStrains.SCHWAG);
+        return ModStrains.isSchwag(entry.strain());
     }
 
     private static boolean isPlant(Entry entry) {

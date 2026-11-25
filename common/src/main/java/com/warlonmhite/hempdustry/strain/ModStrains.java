@@ -221,7 +221,16 @@ public class ModStrains {
      * none of them.
      */
     public static boolean isPlantMatter(Holder<Strain> strain) {
-        return strain.value().wildFlower().isPresent() || strain.is(SCHWAG);
+        return strain.value().wildFlower().isPresent() || isSchwag(strain);
+    }
+
+    /**
+     * Whether {@code strain} is schwag: by its id when it has one, and by its buds when it has none, so a load of a
+     * strain with no id (a bred one) is schwag exactly when its registered twin is. Asking the id alone answered no
+     * for every such load, and an id-less schwag smoked as a tiered Dank bud and burnt to nothing.
+     */
+    public static boolean isSchwag(Holder<Strain> strain) {
+        return strain.unwrapKey().map(SCHWAG::equals).orElseGet(() -> strain.value().buds() == ModItems.SCHWAG);
     }
 
     /** The art index a built-in strain gets. Datagen and the bootstrap both read this. */

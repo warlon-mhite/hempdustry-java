@@ -82,7 +82,7 @@ public final class ApiBridgeGameTest {
     public static void aStrainWithNoIdSmokesLikeItsTwin(GameTestHelper context) {
         Registry<Strain> strains = context.getLevel().registryAccess().lookupOrThrow(Strain.REGISTRY_KEY);
         for (ResourceKey<Strain> key : List.of(ModStrains.SATIVA, ModStrains.BELDIA, ModStrains.CHERRY_WINE,
-                ModStrains.HASHISH)) {
+                ModStrains.HASHISH, ModStrains.SCHWAG)) {
             Holder<Strain> named = strains.getOrThrow(key);
             Holder<Strain> unnamed = Holder.direct(named.value());
             context.assertTrue(unnamed.unwrapKey().isEmpty(), "a direct holder has an id");
@@ -98,6 +98,8 @@ public final class ApiBridgeGameTest {
             context.assertValueEqual(bred.color(), twin.color(), key.identifier() + "'s colour with no id");
             context.assertValueEqual(bred.entries().getFirst().chemotype(), twin.entries().getFirst().chemotype(),
                     key.identifier() + "'s chemotype with no id");
+            context.assertValueEqual(ModStrains.isPlantMatter(unnamed), ModStrains.isPlantMatter(named),
+                    key.identifier() + " is plant matter with no id");
         }
         context.succeed();
     }
