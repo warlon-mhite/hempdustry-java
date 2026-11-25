@@ -49,7 +49,6 @@ import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.entries.LootPoolEntryContainer;
 import net.minecraft.world.level.storage.loot.entries.UniformContainerBase;
 import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount;
-import net.minecraft.world.level.storage.loot.functions.ApplyExplosionDecay;
 import net.minecraft.world.level.storage.loot.functions.CopyBlockState;
 import net.minecraft.world.level.storage.loot.functions.CopyComponentsFunction;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
@@ -361,7 +360,8 @@ public class ModLootTableProvider extends FabricBlockLootSubProvider {
         return LootPool.lootPool()
                 .when(MatchBlock.blockMatches(this.blocks, crop, root))
                 .when(VentilatedCondition.ventilated())
-                .add(LootItem.lootTableItem(ModItems.HEMP_STEM).apply(ApplyExplosionDecay.explosionDecay()));
+                // No decay of its own: the whole table already decays (applyExplosionDecay), and twice would be (1/r)².
+                .add(LootItem.lootTableItem(ModItems.HEMP_STEM));
     }
 
     /**

@@ -647,6 +647,82 @@ public final class SweepGameTest {
     }
 
     /**
+     * No loot of ours decays in an explosion twice. A table that applies {@code explosion_decay} to everything it drops
+     * already decays each entry once; a pool or an entry inside it that decays as well survives an explosion of radius
+     * r at (1/r)^2 instead of 1/r. The fan's extra stem did, in every crop's table.
+     */
+    public static void noLootOfOursDecaysTwice(GameTestHelper context) {
+        Map<String, String> findings = new TreeMap<>();
+        int checked = 0;
+        for (Map.Entry<String, java.nio.file.Path> file : Sweep.modFiles().entrySet()) {
+            if (!file.getKey().matches("data/hempdustry/loot_table/.+\\.json")) {
+                continue;
+            }
+            com.google.gson.JsonObject table;
+            try {
+                table = com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(file.getValue())).getAsJsonObject();
+            } catch (java.io.IOException e) {
+                throw new IllegalStateException(e);
+            }
+            if (!decays(table)) {
+                continue;
+            }
+            checked++;
+            if (table.has("pools")) {
+                for (com.google.gson.JsonElement pool : table.getAsJsonArray("pools")) {
+                    if (decaysInside(pool)) {
+                        findings.put(file.getKey(), "the table decays, and a pool or an entry in it decays again");
+                    }
+                }
+            }
+        }
+        Sweep.atLeast(context, "loot tables that decay", checked, 11);
+        Sweep.report(context, "No loot of ours decays twice", findings, Map.of());
+        context.succeed();
+    }
+
+    /** Whether {@code node}'s own modifiers (one, or a list) hold an explosion decay. */
+    private static boolean decays(com.google.gson.JsonObject node) {
+        com.google.gson.JsonElement modifier = node.get("modifier");
+        if (modifier == null) {
+            return false;
+        }
+        Iterable<com.google.gson.JsonElement> all = modifier.isJsonArray() ? modifier.getAsJsonArray() : List.of(modifier);
+        for (com.google.gson.JsonElement one : all) {
+            if (one.isJsonObject() && "minecraft:explosion_decay".equals(
+                    one.getAsJsonObject().has("type") ? one.getAsJsonObject().get("type").getAsString() : null)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Whether anything nested in {@code node} (its entries, their children, every modifier on the way) decays. */
+    private static boolean decaysInside(com.google.gson.JsonElement node) {
+        if (node.isJsonArray()) {
+            for (com.google.gson.JsonElement each : node.getAsJsonArray()) {
+                if (decaysInside(each)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if (!node.isJsonObject()) {
+            return false;
+        }
+        com.google.gson.JsonObject object = node.getAsJsonObject();
+        if (decays(object)) {
+            return true;
+        }
+        for (Map.Entry<String, com.google.gson.JsonElement> value : object.entrySet()) {
+            if (decaysInside(value.getValue())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Every vanilla tag we add to is one vanilla has: it holds something of vanilla's besides ours. A file
      * under {@code data/minecraft/tags} that names a tag vanilla does not have makes a new, empty-but-ours
      * tag that nothing reads, without a word (26.2 renamed {@code concrete_powder} to

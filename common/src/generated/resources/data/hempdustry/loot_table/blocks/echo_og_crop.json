@@ -1156,9 +1156,6 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "modifier": {
-            "type": "minecraft:explosion_decay"
-          },
           "name": "hempdustry:hemp_stem"
         }
       ],
