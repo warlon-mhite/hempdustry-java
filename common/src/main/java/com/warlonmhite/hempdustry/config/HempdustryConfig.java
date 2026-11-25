@@ -345,12 +345,13 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
                     + "creepersSeekHemp (default true): false stops every mob hemp draws: creepers now and then "
                     + "wandering into grown, open-sky hemp fields, endermen into Ender Haze and drowned to ripe Maui "
                     + "Wowie; a harvested Ender Haze plant provoking the endermen nearby; an opened Stash Jar drawing "
-                    + "creepers; and loose buds in a player's inventory letting creepers notice them from further "
-                    + "away. Which mobs come to the fields and to a stash is the entity tags "
+                    + "creepers; and the smell of loose buds in a player's inventory giving them away to creepers, "
+                    + "even sneaking. Which mobs come to the fields and to a stash is the entity tags "
                     + "#hempdustry:drawn_to_hemp and #hempdustry:drawn_to_stash (creepers alone by default). The goals "
                     + "are still added to the mobs, they simply never start, so it takes effect on the next "
                     + "/hempdustry reload. "
-                    + "mildew (default true): false keeps powdery mildew out of roofed grows: no plant catches it, "
+                    + "mildew (default true): hemp catches powdery mildew rarely in the open, more often under glass "
+                    + "or a roof; false keeps it off: no plant catches it, "
                     + "and a plant that has it is clean again on its next random tick. "
                     + "plantStress (default true): false stops flowering hemp being stressed into seeding its own "
                     + "buds: no overfeeding, overwatering, dry bed, stagnant tray, bone-dry field or lost light does it, "
@@ -610,10 +611,11 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
      * @param creepersSeekHemp         whether hemp draws mobs at all: creepers (any mob in {@code #hempdustry:drawn_to_hemp})
      *                                 now and then wander into open hemp fields, endermen into Ender Haze and drowned to
      *                                 ripe Maui Wowie, harvesting Ender Haze provokes the endermen, an opened Stash Jar
-     *                                 draws creepers (any mob in {@code #hempdustry:drawn_to_stash}), and they notice a
-     *                                 player carrying loose buds from further away. The name is 2.1's and frozen with
+     *                                 draws creepers (any mob in {@code #hempdustry:drawn_to_stash}), and the smell of
+     *                                 loose buds gives a player away to them, even sneaking. The name is 2.1's and frozen with
      *                                 the file; the world's game rule beside it is {@code hempdustry:mobs_drawn_to_hemp}
-     * @param mildew                   whether hemp under a roof can catch powdery mildew. A switch for
+     * @param mildew                   whether hemp can catch powdery mildew: rarely in the open, more often under
+     *                                 glass or a roof. A switch for
      *                                 the same reason as the creepers: it is behaviour in code, with no
      *                                 tag or table a datapack could empty instead
      * @param plantStress              whether a flowering plant can be stressed, by its ground, its feeding or a
