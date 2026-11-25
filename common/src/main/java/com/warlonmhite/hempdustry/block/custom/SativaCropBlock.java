@@ -417,7 +417,7 @@ public class SativaCropBlock extends CropBlock implements Mildew.Host, RecordOnT
         if (raw && !isLower(old) || TallHemp.isAgeWrittenAboveTheRoot(this, state, old)) {
             boolean raised = TallHemp.isRaisedAboveTheRoot(this, state, old);
             TallHemp.ownWrite(() -> world.setBlock(pos, old, Block.UPDATE_CLIENTS));
-            RecordOnTheRoot.dropStrayRecord(world, pos, this);
+            RecordOnTheRoot.dropStrayRecord(world, pos);
             BlockPos rootPos = raised ? TallHemp.rootOf(this, world, pos, old) : null;
             if (rootPos != null) {
                 BlockState root = world.getBlockState(rootPos);

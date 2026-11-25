@@ -29,17 +29,26 @@ public interface RecordOnTheRoot extends EntityBlock {
      * Nothing ever reads such a record (every loot pool and lookup goes through the root); left, it would sit in
      * the save for ever.
      */
-    static void dropStrayRecord(Level world, BlockPos pos, RecordOnTheRoot plant) {
+    static void dropStrayRecord(Level world, BlockPos pos) {
         if (world instanceof ServerLevel server) {
             // Scheduled, never executed: on the server thread execute() runs the task in place, before the record
             // it is meant to take away exists.
             BlockPos at = pos.immutable();
             server.getServer().schedule(new TickTask(server.getServer().getTickCount(), () -> {
                 if (server.isLoaded(at) && server.getBlockEntity(at) instanceof PlantRecordBlockEntity
-                        && !plant.holdsRecord(server.getBlockState(at))) {
+                        && !holdsRecordNow(server.getBlockState(at))) {
                     server.removeBlockEntity(at);
                 }
             }));
         }
+    }
+
+    /**
+     * Whether the block now in {@code state} keeps a record there, asked of that block itself: by the time the task
+     * runs, up to a tick later, another plant or no plant may stand there, and a crop reads its own properties
+     * (another crop's state would throw).
+     */
+    private static boolean holdsRecordNow(BlockState state) {
+        return state.getBlock() instanceof RecordOnTheRoot holder && holder.holdsRecord(state);
     }
 }
