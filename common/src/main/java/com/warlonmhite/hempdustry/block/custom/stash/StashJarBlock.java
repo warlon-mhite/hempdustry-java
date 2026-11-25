@@ -209,7 +209,13 @@ public class StashJarBlock extends BaseEntityBlock implements SimpleWaterloggedB
                 ? signal(jar.contents().count(), jar.capacity()) : 0;
     }
 
-    /** {@code count} items of {@code capacity} as a comparator reads them. */
+    /**
+     * {@code count} items of {@code capacity} as a comparator reads them. Items, not slots, as vanilla reads a chest
+     * ({@code AbstractContainerMenu#getRedstoneSignalFromContainer}: each slot's count over its stack size, averaged
+     * over the slots, which for 64-stacks is this): a jar with every slot taken by a bud or two reads low, as a chest
+     * with an item in each slot does, though it takes no new strain. The fill shown on the block ({@link StashFill})
+     * and the item's red bar count the same way.
+     */
     public static int signal(int count, int capacity) {
         return Mth.lerpDiscrete(capacity <= 0 ? 0.0F : Math.min(1.0F, (float) count / capacity), 0, 15);
     }

@@ -5,6 +5,7 @@ import com.warlonmhite.hempdustry.Hempdustry;
 import com.warlonmhite.hempdustry.block.ModBlocks;
 import com.warlonmhite.hempdustry.block.custom.stash.StashNose;
 import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -20,11 +21,16 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
+import java.lang.ref.WeakReference;
+import java.util.IdentityHashMap;
+import java.util.Map;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -48,6 +54,13 @@ public class StashJarLidRenderer implements BlockEntityRenderer<StashJarBlockEnt
     private static final float PIVOT_Y = 11.75F / 16.0F - 0.5F;
 
     private final ItemModelResolver itemModels;
+    /**
+     * One stack per lid, made in the world it is drawn in and made again in the next: the frame used to make one per
+     * jar. Never made before a world binds the items' components, so not in a field initialiser.
+     */
+    private final Map<ItemStackTemplate, ItemStack> stacks = new IdentityHashMap<>();
+    /** The world {@link #stacks} were made in, held weakly so a world left is not kept for them. */
+    private WeakReference<Level> stacksFor = new WeakReference<>(null);
 
     public StashJarLidRenderer(BlockEntityRendererProvider.Context context) {
         this.itemModels = context.itemModelResolver();
@@ -86,8 +99,8 @@ public class StashJarLidRenderer implements BlockEntityRenderer<StashJarBlockEnt
     public void extractRenderState(StashJarBlockEntity jar, State state, float partialTick, Vec3 cameraPos,
                                    @Nullable ModelFeatureRenderer.CrumblingOverlay crumblingOverlay) {
         BlockEntityRenderer.super.extractRenderState(jar, state, partialTick, cameraPos, crumblingOverlay);
-        itemModels.updateForTopItem(state.lid, lidOf(jar.getBlockState().getBlock()).create(), ItemDisplayContext.NONE,
-                jar.getLevel(), null, 0);
+        itemModels.updateForTopItem(state.lid, stackOf(jar.getLevel(), lidOf(jar.getBlockState().getBlock())),
+                ItemDisplayContext.NONE, jar.getLevel(), null, 0);
         int event = jar.lidMotion();
         Motion motion = Motion.of(event & 7);
         state.toward = Direction.from2DDataValue(event >> 3);
@@ -97,6 +110,14 @@ public class StashJarLidRenderer implements BlockEntityRenderer<StashJarBlockEnt
         state.tip = up * motion.tip * Mth.DEG_TO_RAD;
         state.rock = motion.rattles && t >= 0 && t < motion.length()
                 ? Mth.sin(t * 2.8F) * 7.0F * Mth.DEG_TO_RAD * Math.min(1.0F, up * 2.0F) : 0.0F;
+    }
+
+    private ItemStack stackOf(@Nullable Level level, ItemStackTemplate lid) {
+        if (level != stacksFor.get()) {
+            stacks.clear();
+            stacksFor = new WeakReference<>(level);
+        }
+        return stacks.computeIfAbsent(lid, ItemStackTemplate::create);
     }
 
     @Override
@@ -117,8 +138,11 @@ public class StashJarLidRenderer implements BlockEntityRenderer<StashJarBlockEnt
 
     @Override
     public int getViewDistance() {
-        // Twice a chest's 64: a jar without its lid would show from further off than a chest without its own.
-        return 128;
+        // The jar's body is a block model, drawn as far as the chunks are; a lid drawn only to the 64 blocks a block
+        // entity renderer takes by default (BlockEntityRenderer#getViewDistance) left lidless jars past it. A chest
+        // vanishes whole at 64: its renderer draws all of it.
+        Minecraft client = Minecraft.getInstance();
+        return Math.max(64, client.options.getEffectiveRenderDistance() * 16);
     }
 
     /**
