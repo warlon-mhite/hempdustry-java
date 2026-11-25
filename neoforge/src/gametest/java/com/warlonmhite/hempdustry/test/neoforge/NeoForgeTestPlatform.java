@@ -169,6 +169,7 @@ public final class NeoForgeTestPlatform implements TestPlatform {
                 root.commit();
             }
         }
-        return (int) (taken * 3 / 1000);
+        // 333 mB is a bottle as much as 1000 is three: rounded, not cut.
+        return (int) Math.round(taken * 3 / 1000.0);
     }
 }

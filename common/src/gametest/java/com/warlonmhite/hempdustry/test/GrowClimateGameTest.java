@@ -441,8 +441,8 @@ public final class GrowClimateGameTest {
     }
 
     /**
-     * A pipe takes its water through the loader's own fluid API, as it takes a water cauldron's: on Fabric a bottle a
-     * level, on NeoForge a whole bucket once the tank is full. Nothing goes in. A rolled-back transaction leaves the
+     * A pipe takes its water through the loader's own fluid API a level at a time, on either loader: a bottle on
+     * Fabric, 333 mB on NeoForge, the whole bucket for a full tank. Nothing goes in. A rolled-back transaction leaves the
      * tank as it was, two lookups in one transaction take the water once, and a comparator beside the tank sees
      * what the pipe took.
      */
@@ -450,7 +450,6 @@ public final class GrowClimateGameTest {
         ServerLevel world = context.getLevel();
         BlockPos drier = new BlockPos(3, 2, 3);
         BlockPos at = context.absolutePos(drier);
-        boolean fabric = TestPlatform.INSTANCE.loaderName().equals("fabric");
         BlockPos comparator = drier.north();
         context.setBlock(comparator.below(), Blocks.STONE);
         context.setBlock(comparator, Blocks.COMPARATOR.defaultBlockState().setValue(ComparatorBlock.FACING, Direction.SOUTH));
@@ -460,8 +459,8 @@ public final class GrowClimateGameTest {
                 .thenWaitUntil(() -> compared(context, comparator, DehumidifierBlock.MAX_LEVEL, "with a full tank"))
                 .thenExecute(() -> {
                     int one = TestPlatform.INSTANCE.extractWater(world, at, Direction.UP, 1, 1, false);
-                    context.assertTrue(one == (fabric ? 1 : 0), "a pipe asking a full tank for a bottle took " + one);
-                    context.assertTrue(context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == (fabric ? 2 : 3),
+                    context.assertTrue(one == 1, "a pipe asking a full tank for a bottle took " + one);
+                    context.assertTrue(context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 2,
                             "the tank after a pipe asked for a bottle: " + context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL));
                 })
                 .thenExecute(() -> dehumidifier(context, drier, DehumidifierBlock.MAX_LEVEL, false))

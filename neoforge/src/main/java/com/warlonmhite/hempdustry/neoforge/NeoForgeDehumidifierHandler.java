@@ -9,8 +9,10 @@ import net.neoforged.neoforge.transfer.transaction.SnapshotJournal;
 import net.neoforged.neoforge.transfer.transaction.TransactionContext;
 
 /**
- * A Dehumidifier's tank as NeoForge's transfer API sees it: a bucket of water a pipe may take out once the tank is
- * full, three levels to the bucket as a water cauldron's. Nothing goes in: its water comes from the plants it dries.
+ * A Dehumidifier's tank as NeoForge's transfer API sees it: water a pipe may take out a level at a time, three levels
+ * to the bucket as a water cauldron's, so 333 mB a level and the whole bucket for all three. A pipe that asked for a
+ * full bucket only could never empty a tank whose pull is smaller, and a full tank stops drying; Fabric's side takes
+ * a bottle a level the same way. Nothing goes in: its water comes from the plants it dries.
  * One per tank, kept by the block entity. Outside a transaction it reads the block's levels; inside one it keeps
  * what the transaction has left, and writes it to the block when the root transaction commits.
  */
@@ -36,14 +38,19 @@ final class NeoForgeDehumidifierHandler extends SnapshotJournal<Integer> impleme
         return 1;
     }
 
+    /** The water in {@code levels} levels: 333 mB each, the whole bucket for a full tank. */
+    private static int amountOf(int levels) {
+        return levels * BUCKET / DehumidifierBlock.MAX_LEVEL;
+    }
+
     @Override
     public FluidResource getResource(int index) {
-        return levels() == DehumidifierBlock.MAX_LEVEL ? WATER : FluidResource.EMPTY;
+        return levels() > 0 ? WATER : FluidResource.EMPTY;
     }
 
     @Override
     public long getAmountAsLong(int index) {
-        return levels() == DehumidifierBlock.MAX_LEVEL ? BUCKET : 0;
+        return amountOf(levels());
     }
 
     @Override
@@ -63,12 +70,20 @@ final class NeoForgeDehumidifierHandler extends SnapshotJournal<Integer> impleme
 
     @Override
     public int extract(int index, FluidResource resource, int amount, TransactionContext transaction) {
-        if (index != 0 || !resource.equals(WATER) || amount < BUCKET || levels() < DehumidifierBlock.MAX_LEVEL) {
+        if (index != 0 || !resource.equals(WATER)) {
+            return 0;
+        }
+        int now = levels();
+        int taken = now;
+        while (taken > 0 && amountOf(taken) > amount) {
+            taken--;
+        }
+        if (taken == 0) {
             return 0;
         }
         updateSnapshots(transaction);
-        pending = 0;
-        return BUCKET;
+        pending = now - taken;
+        return amountOf(taken);
     }
 
     @Override
