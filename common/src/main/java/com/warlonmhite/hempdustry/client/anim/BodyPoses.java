@@ -1,6 +1,5 @@
 package com.warlonmhite.hempdustry.client.anim;
 
-import com.warlonmhite.hempdustry.client.anim.compat.ModelFeatures;
 import com.warlonmhite.hempdustry.item.custom.Draw;
 import com.warlonmhite.hempdustry.item.custom.SmokingDeviceItem;
 import com.warlonmhite.hempdustry.network.PlayerGesture;
@@ -93,7 +92,7 @@ public final class BodyPoses {
      * parts from a pack that animates the model after it is posed.
      */
     public static void apply(HumanoidModel<?> model, HumanoidRenderState state) {
-        boolean pack = Style.modelFeatures() && ModelFeatures.animates(model);
+        boolean pack = Style.modelFeaturesAnimate(model);
         Style style = Style.now(pack);
         if (style == null) {
             return;

@@ -1,7 +1,10 @@
 package com.warlonmhite.hempdustry.client.anim;
 
+import com.warlonmhite.hempdustry.Hempdustry;
+import com.warlonmhite.hempdustry.client.anim.compat.ModelFeatures;
 import com.warlonmhite.hempdustry.config.ClientConfig;
 import com.warlonmhite.hempdustry.platform.Services;
+import net.minecraft.client.model.EntityModel;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -19,14 +22,18 @@ import org.jetbrains.annotations.Nullable;
  *       at the end of a move. With both mods, the style is Not Enough Animations', as the bridge
  *       between them gives eating to it.</li>
  * </ul>
+ *
+ * <p>Both mods are compiled against one build and found at run time by their id only, so another build of
+ * either may lack what this one calls. Such a call fails with a {@link LinkageError}; the mod's style is then
+ * left off until the game restarts, with one warning, and the animations play as if it were not installed.
  */
 public enum Style {
     VANILLA,
     EASED,
     FRESH;
 
-    private static final boolean NOT_ENOUGH_ANIMATIONS = Services.PLATFORM.isModLoaded("notenoughanimations");
-    private static final boolean MODEL_FEATURES = Services.PLATFORM.isModLoaded("entity_model_features");
+    private static volatile boolean NOT_ENOUGH_ANIMATIONS = Services.PLATFORM.isModLoaded("notenoughanimations");
+    private static volatile boolean MODEL_FEATURES = Services.PLATFORM.isModLoaded("entity_model_features");
 
     /**
      * The style this client animates a body in, or {@code null} when the player turned the
@@ -53,5 +60,36 @@ public enum Style {
 
     public static boolean modelFeatures() {
         return MODEL_FEATURES;
+    }
+
+    /** Whether Entity Model Features animates {@code model}; never, once a call into it has failed. */
+    public static boolean modelFeaturesAnimate(EntityModel<?> model) {
+        if (!MODEL_FEATURES) {
+            return false;
+        }
+        try {
+            return ModelFeatures.animates(model);
+        } catch (LinkageError | RuntimeException e) {
+            modelFeaturesFailed(e);
+            return false;
+        }
+    }
+
+    /** A call into Not Enough Animations failed: its style is left off from now on. */
+    public static void notEnoughAnimationsFailed(Throwable e) {
+        if (NOT_ENOUGH_ANIMATIONS) {
+            NOT_ENOUGH_ANIMATIONS = false;
+            Hempdustry.LOGGER.warn("This build of Not Enough Animations is not the one the mod knows; "
+                    + "smoking is animated as without it", e);
+        }
+    }
+
+    /** A call into Entity Model Features failed: its style is left off from now on. */
+    public static void modelFeaturesFailed(Throwable e) {
+        if (MODEL_FEATURES) {
+            MODEL_FEATURES = false;
+            Hempdustry.LOGGER.warn("This build of Entity Model Features is not the one the mod knows; "
+                    + "smoking is animated as without it", e);
+        }
     }
 }

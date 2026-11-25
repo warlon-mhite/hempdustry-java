@@ -159,11 +159,20 @@ public class HempdustryClient {
             // Enough Animations has made the instance its API registers with.
             if (!animationModsHooked) {
                 animationModsHooked = true;
+                // Each mod's own build may lack what this one calls: its style is then left off, not the game.
                 if (Style.notEnoughAnimations()) {
-                    NotEnoughAnimations.register();
+                    try {
+                        NotEnoughAnimations.register();
+                    } catch (LinkageError | RuntimeException e) {
+                        Style.notEnoughAnimationsFailed(e);
+                    }
                 }
                 if (Style.modelFeatures()) {
-                    ModelFeatures.register();
+                    try {
+                        ModelFeatures.register();
+                    } catch (LinkageError | RuntimeException e) {
+                        Style.modelFeaturesFailed(e);
+                    }
                 }
             }
         });
