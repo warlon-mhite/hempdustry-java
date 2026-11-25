@@ -19,8 +19,10 @@ import java.util.List;
  * through this when the block is no container) and to every pipe. In: only what
  * {@code #hempdustry:stash_jar_storable} takes, as many as the jar has room for, blended into its
  * strain. Out: newest strain first and its best buds first, the order an empty hand takes them, so the
- * views list the stacks each strain would give back in that order, then one blank view for the room
- * left: the views' capacities add up to the jar's, never more.
+ * views list the stacks each strain would give back in that order, each with the room its kind has left
+ * in its own slots, then one blank view for the room a new kind has: the free slots, 64 items each. A jar takes a new kind only into a free slot, so a jar
+ * with every slot taken shows no blank view, however few items it holds, and a network stops routing a
+ * new strain to it. The views' capacities add up to no more than the jar's.
  *
  * <p>The jar's contents are one immutable value, so the snapshot is that value and a rollback puts it
  * back; the world hears of a change once the outermost transaction commits.
@@ -52,10 +54,13 @@ final class FabricStashJarStorage extends SnapshotParticipant<StashContents> imp
     @Override
     public Iterator<StorageView<ItemVariant>> iterator() {
         List<StorageView<ItemVariant>> views = new ArrayList<>();
-        for (ItemStack part : jar.contents().parts()) {
-            views.add(new Entry(ItemVariant.of(part), part.getCount(), part.getCount()));
+        List<ItemStack> parts = jar.contents().parts();
+        List<Integer> rooms = jar.contents().partRooms();
+        for (int i = 0; i < parts.size(); i++) {
+            ItemStack part = parts.get(i);
+            views.add(new Entry(ItemVariant.of(part), part.getCount(), part.getCount() + rooms.get(i)));
         }
-        int room = jar.capacity() - jar.contents().count();
+        int room = jar.contents().freeSlots(jar.capacity()) * StashContents.SLOT;
         if (room > 0) {
             views.add(new Entry(ItemVariant.blank(), 0, room));
         }

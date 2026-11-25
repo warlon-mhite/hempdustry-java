@@ -128,6 +128,20 @@ public final class NeoForgeTestPlatform implements TestPlatform {
     }
 
     @Override
+    public long emptyRoom(ServerLevel level, BlockPos pos, Direction side) {
+        ResourceHandler<ItemResource> handler = level.getCapability(Capabilities.Item.BLOCK, pos, side);
+        long room = 0;
+        if (handler != null) {
+            for (int index = 0; index < handler.size(); index++) {
+                if (handler.getResource(index).isEmpty()) {
+                    room += handler.getCapacityAsLong(index, ItemResource.EMPTY) - handler.getAmountAsLong(index);
+                }
+            }
+        }
+        return room;
+    }
+
+    @Override
     public int[] insertThroughTwoLookupsAndAbort(ServerLevel level, BlockPos pos, Direction side, ItemStack first,
                                                  ItemStack second, boolean nested) {
         // Closing the root without a commit rolls it back.

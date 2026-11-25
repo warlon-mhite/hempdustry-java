@@ -152,6 +152,13 @@ public interface TestPlatform {
      * transaction that commits into it, then rolls the root back, as a storage network that looks a block
      * up twice in one move and gives up would. Answers how many items each lookup took.
      */
+    /**
+     * The room the item storage at {@code pos} shows on {@code side} for a kind it does not hold yet, as a pipe or a
+     * storage network reads it: on Fabric the blank views' capacities, on NeoForge the empty indices' capacities for
+     * no resource in particular.
+     */
+    long emptyRoom(ServerLevel level, BlockPos pos, Direction side);
+
     int[] insertThroughTwoLookupsAndAbort(ServerLevel level, BlockPos pos, Direction side, ItemStack first,
                                           ItemStack second, boolean nested);
 

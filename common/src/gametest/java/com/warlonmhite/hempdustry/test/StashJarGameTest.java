@@ -173,6 +173,14 @@ public final class StashJarGameTest {
         ServerLevel level = context.getLevel();
         BlockPos jarPos = place(context, new BlockPos(2, 2, 2), ModBlocks.STASH_JAR,
                 stash(ModItems.INDICA_BUDS, 1, ModItems.SATIVA_BUDS, 1));
+        // A pipe or a storage network reads the same: no room for a new kind, however few items are in (each strain's
+        // own room is told on its own stack: 63 each here).
+        long room = TestPlatform.INSTANCE.emptyRoom(level, context.absolutePos(jarPos), Direction.UP);
+        context.assertTrue(room == 0, "a pipe reads room for " + room + " of a new kind in a jar with no free slot");
+        BlockPos halfPos = place(context, new BlockPos(5, 2, 5), ModBlocks.GILDED_STASH_JAR, stash(ModItems.INDICA_BUDS, 1));
+        long half = TestPlatform.INSTANCE.emptyRoom(level, context.absolutePos(halfPos), Direction.UP);
+        context.assertTrue(half == 3 * StashContents.SLOT,
+                "a pipe reads room for " + half + " of a new kind in a four-slot jar with one slot taken");
         context.setBlock(jarPos.above(), Blocks.HOPPER.defaultBlockState().setValue(HopperBlock.FACING, Direction.DOWN));
         HopperBlockEntity hopper = (HopperBlockEntity) level.getBlockEntity(context.absolutePos(jarPos.above()));
         hopper.setItem(0, new ItemStack(ModItems.SCHWAG, 2));

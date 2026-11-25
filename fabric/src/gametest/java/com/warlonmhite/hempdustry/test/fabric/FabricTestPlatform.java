@@ -128,6 +128,20 @@ public final class FabricTestPlatform implements TestPlatform {
     }
 
     @Override
+    public long emptyRoom(ServerLevel level, BlockPos pos, Direction side) {
+        Storage<ItemVariant> storage = ItemStorage.SIDED.find(level, pos, side);
+        long room = 0;
+        if (storage != null) {
+            for (var view : storage) {
+                if (view.isResourceBlank()) {
+                    room += view.getCapacity() - view.getAmount();
+                }
+            }
+        }
+        return room;
+    }
+
+    @Override
     public int extractWater(ServerLevel level, BlockPos pos, Direction side, int bottles, int lookups, boolean abort) {
         long taken = 0;
         try (Transaction outer = Transaction.openOuter()) {

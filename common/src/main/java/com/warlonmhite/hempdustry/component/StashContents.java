@@ -113,6 +113,23 @@ public final class StashContents {
         return parts;
     }
 
+    /**
+     * Beside each of {@link #parts()}, the room its kind has left in the slots it already fills: the whole of an
+     * entry's own room on its first part, nothing on the rest. With the free slots, it is what a pipe is told each
+     * stack can still take, and every room told adds up to the jar's slots.
+     */
+    public List<Integer> partRooms() {
+        List<Integer> rooms = new ArrayList<>();
+        for (Entry entry : entries) {
+            int parts = entry.parts().size();
+            rooms.add(slotsOf(entry.count()) * SLOT - entry.count());
+            for (int more = 1; more < parts; more++) {
+                rooms.add(0);
+            }
+        }
+        return rooms;
+    }
+
     /** Every stack that would come out, cut to stack size: what a jar destroyed as an item lets out. */
     public List<ItemStack> spill() {
         List<ItemStack> out = new ArrayList<>();

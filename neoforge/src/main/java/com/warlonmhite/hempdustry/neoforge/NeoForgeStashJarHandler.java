@@ -18,8 +18,12 @@ import java.util.List;
  * strain. Out: newest strain first and its best buds first, the order an empty hand takes them.
  *
  * <p>The handler's indices are the stacks each strain would give back, newest strain first, plus one
- * empty index past them holding the room left: each stack's index holds just what it has, so the
- * capacities add up to the jar's and never more. An insert lands wherever the jar puts it, whatever
+ * empty index past them holding the room left: each stack's index holds what it has, and its kind's room
+ * left in the slots it fills (on the kind's first stack). The empty
+ * index's room is a new kind's, its free slots of 64, or, asked about one resource, what the jar would
+ * take of it (a strain's own slot first): a jar takes a new kind only into a free slot, so one with every
+ * slot taken has no room for a third strain however few items it holds. The capacities add up to no
+ * more than the jar's. An insert lands wherever the jar puts it, whatever
  * index it names: the jar keeps its own order, and the API allows a handler to accept into another
  * index than the one asked. The snapshot is
  * the contents, one immutable value; the world hears of a change once the root transaction commits.
@@ -30,6 +34,7 @@ final class NeoForgeStashJarHandler extends SnapshotJournal<StashContents> imple
     // and the value never changes, only gets replaced, so one layout serves the whole scan.
     private StashContents laidOut;
     private List<ItemStack> parts = List.of();
+    private List<Integer> rooms = List.of();
 
     NeoForgeStashJarHandler(StashJarBlockEntity jar) {
         this.jar = jar;
@@ -39,6 +44,7 @@ final class NeoForgeStashJarHandler extends SnapshotJournal<StashContents> imple
         StashContents contents = jar.contents();
         if (contents != laidOut) {
             parts = contents.parts();
+            rooms = contents.partRooms();
             laidOut = contents;
         }
         return parts;
@@ -63,8 +69,14 @@ final class NeoForgeStashJarHandler extends SnapshotJournal<StashContents> imple
 
     @Override
     public long getCapacityAsLong(int index, ItemResource resource) {
-        // A stack's index holds what it has; the last, empty one holds the room left.
-        return index == parts().size() ? Math.max(0, jar.capacity() - jar.contents().count()) : getAmountAsLong(index);
+        // A stack's index holds what it has and the room its kind has left in its own slots; the last, empty one
+        // the room a new kind has, in slots.
+        List<ItemStack> parts = parts();
+        if (index >= 0 && index < parts.size()) {
+            return getAmountAsLong(index) + rooms.get(index);
+        }
+        return resource.isEmpty() ? (long) jar.contents().freeSlots(jar.capacity()) * StashContents.SLOT
+                : jar.contents().mutable().room(resource.toStack(), jar.capacity());
     }
 
     @Override
