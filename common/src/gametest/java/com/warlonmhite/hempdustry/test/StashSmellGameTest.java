@@ -168,6 +168,44 @@ public final class StashSmellGameTest {
     }
 
     /**
+     * A bag is read wherever it keeps its buds on the stack: in its bundle contents, in a container component as a
+     * shulker box keeps its own, or in another mod's component of that shape (Traveler's Backpack keeps a carried
+     * backpack's inventory in one), each counted with the others; and through the loader's item API when it keeps
+     * none there. A bag of nothing gives nothing away.
+     */
+    public static void aBagIsReadWhereverItKeepsItsBuds(GameTestHelper context) {
+        ServerPlayer player = Players.survival(context);
+        ItemStack bag = new ItemStack(Items.BUNDLE);
+        give(player, bag);
+        expect(context, player, "an empty bundle", 1.0);
+        bag.set(DataComponents.CONTAINER, net.minecraft.world.item.component.ItemContainerContents.fromItems(
+                List.of(new ItemStack(ModItems.INDICA_BUDS, 63))));
+        give(player, bag);
+        expect(context, player, "a bag keeping 63 buds in a container component", StashSmell.SOME_BUDS);
+        bag.set(DataComponents.BUNDLE_CONTENTS, new BundleContents(List.of(new ItemStackTemplate(ModItems.SCHWAG, 1))));
+        give(player, bag);
+        expect(context, player, "a bag keeping 63 buds in one component and a schwag in another", StashSmell.A_STACK);
+
+        // A backpack mod keeping its contents on the stack in a component of its own, when it is there to ask.
+        net.minecraft.resources.Identifier travelers = net.minecraft.resources.Identifier.fromNamespaceAndPath(
+                "travelersbackpack", "standard");
+        if (net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(travelers)) {
+            ItemStack backpack = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.getValue(travelers));
+            context.assertTrue(backpack.is(ModTags.Items.LEAKS_THE_SMELL), "Traveler's Backpack is not listed as a bag");
+            @SuppressWarnings("unchecked")
+            var inventory = (net.minecraft.core.component.DataComponentType<net.minecraft.world.item.component.ItemContainerContents>)
+                    net.minecraft.core.registries.BuiltInRegistries.DATA_COMPONENT_TYPE.getValue(
+                            net.minecraft.resources.Identifier.fromNamespaceAndPath("travelersbackpack", "backpack_container"));
+            context.assertTrue(inventory != null, "Traveler's Backpack keeps no travelersbackpack:backpack_container");
+            backpack.set(inventory, net.minecraft.world.item.component.ItemContainerContents.fromItems(
+                    List.of(new ItemStack(ModItems.SATIVA_BUDS, 64))));
+            give(player, backpack);
+            expect(context, player, "a Traveler's Backpack of 64 buds", StashSmell.A_STACK);
+        }
+        context.succeed();
+    }
+
+    /**
      * The smell gives away a player vanilla sees less of, and never takes a creeper's reach past its follow range:
      * a creeper with a 4-block reach notices a sneaking player (3.2) 3.5 off only with a bud on them, at the full 4
      * with a bud or a stack, never 4.5 off whatever they carry, and never through a wall. Behind a creeper head

@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.component.TypedDataComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -21,8 +21,7 @@ import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ItemStackTemplate;
-import net.minecraft.world.item.component.BundleContents;
+import net.minecraft.world.item.component.ContainerComponent;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -45,12 +44,12 @@ import org.jetbrains.annotations.Nullable;
  * Buds and schwag, the things a Stash Jar takes ({@link StashContents#storable}), anywhere in a player's
  * inventory: the hotbar, the offhand, the armour slots, the stack on the cursor, and inside a carried bag
  * ({@code #hempdustry:leaks_the_smell}): a bundle, which is cloth, or another mod's backpack, read one level deep
- * through the loader's item API. Bags are listed, never guessed: anything else carried that holds items holds the
- * smell in, a chest, a barrel or a shulker box carried as an item, or a crate of a mod no one listed. A Stash Jar's
- * glass holds it in too, but its contents count while it is open, for {@link #OPEN_TICKS} after a hand last took
- * buds out of it from the player's own inventory or cursor, and then with the loose buds. A jar in a bag stays shut:
- * only the buds loose in the bag leak. Putting buds in opens nothing. Packed smokeables, hash, kief and edibles are
- * none of these and never count.
+ * off the stack or through the loader's item API ({@link #budsIn}). Bags are listed, never guessed: anything else
+ * carried that holds items holds the smell in, a chest, a barrel or a shulker box carried as an item, or a crate of
+ * a mod no one listed. A Stash Jar's glass holds it in too, but its contents count while it is open, for
+ * {@link #OPEN_TICKS} after a hand last took buds out of it from the player's own inventory or cursor, and then
+ * with the loose buds. A jar in a bag stays shut: only the buds loose in the bag leak. Putting buds in opens
+ * nothing. Packed smokeables, hash, kief and edibles are none of these and never count.
  *
  * <h2>How far</h2>
  *
@@ -177,20 +176,28 @@ public final class StashSmell {
         if (!stack.is(ModTags.Items.LEAKS_THE_SMELL)) {
             return 0;
         }
+        return budsIn(stack);
+    }
+
+    /**
+     * The buds loose inside {@code bag}, one level deep: a jar inside it keeps its own smell. Read off any component
+     * of the stack that holds items, as vanilla's bundle and container ones do ({@link ContainerComponent}, which
+     * is also what another mod's backpack keeps its contents in when it keeps them on the stack); a bag with none
+     * is asked through its loader's item API, as a backpack keeping its contents elsewhere answers.
+     */
+    private static int budsIn(ItemStack bag) {
         int buds = 0;
-        BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
-        if (bundle != null) {
-            for (ItemStackTemplate inside : bundle.items()) {
-                ItemStack copy = inside.create();
-                if (StashContents.storable(copy)) {
-                    buds += copy.getCount();
-                }
+        boolean onTheStack = false;
+        for (TypedDataComponent<?> component : bag.getComponents()) {
+            if (component.value() instanceof ContainerComponent<?> inside) {
+                onTheStack = true;
+                buds += inside.itemCopies().filter(StashContents::storable).mapToInt(ItemStack::getCount).sum();
             }
+        }
+        if (onTheStack) {
             return buds;
         }
-        // Any other bag, as its loader's item API shows it, one level deep: a jar inside it keeps its own smell,
-        // the buds loose in it do not.
-        for (ItemStack inside : Services.TRANSFER.contents(stack)) {
+        for (ItemStack inside : Services.TRANSFER.contents(bag)) {
             if (StashContents.storable(inside)) {
                 buds += inside.getCount();
             }
