@@ -44,6 +44,11 @@ dependencies {
 	compileOnly "maven.modrinth:not-enough-animations:${nea_fabric_version}"
 	compileOnly "maven.modrinth:entity-model-features:${emf_fabric_version}"
 	compileOnly "maven.modrinth:entitytexturefeatures:${etf_fabric_version}"
+
+	// The accessory slots a worn backpack is read from (entity/ai/compat), compile-only the same way: Trinkets
+	// Updated's API, one jar for both loaders, and Traveler's Backpack's own back slot, the same on each loader.
+	compileOnly "maven.modrinth:trinkets-updated:${trinkets_updated_version}"
+	compileOnly "maven.modrinth:travelersbackpack:${travelers_backpack_fabric_version}"
 }
 
 // What the loaders' projects take from here: the sources, and the resources -- hand-written and

@@ -67,6 +67,17 @@ dependencies {
 	// EntryIngredients) and cloth's basic-math (me.shedaniel.math), at the versions REI depends on.
 	compileOnly "dev.architectury:architectury-fabric:${architectury_version}"
 	compileOnly "me.shedaniel.cloth:basic-math:${basic_math_version}"
+	// The accessory slots a worn backpack is read from, for common's entity/ai/compat (compile-only).
+	compileOnly "maven.modrinth:trinkets-updated:${trinkets_updated_version}"
+	compileOnly "maven.modrinth:travelersbackpack:${travelers_backpack_fabric_version}"
+
+	//   ./gradlew :fabric:runClient -Pbackpacks      # ...and Trinkets Updated with Traveler's Backpack
+	//   ./gradlew :fabric:runGametest -Pbackpacks    # the game tests with them, so the worn-bag test reads them
+	if (project.hasProperty("backpacks")) {
+		localRuntime "maven.modrinth:trinkets-updated:${trinkets_updated_version}"
+		localRuntime "maven.modrinth:travelersbackpack:${travelers_backpack_fabric_version}"
+		localRuntime "maven.modrinth:forge-config-api-port:${forge_config_api_port_fabric_version}"
+	}
 
 	//   ./gradlew :fabric:runClient                  # JEI on the runtime (default)
 	//   ./gradlew :fabric:runClient -Pviewer=rei     # REI instead
@@ -162,6 +173,14 @@ def expectedGametestLog = [
 	// modifiers, and Mixin says once that the class is missing when Amecs is not installed
 	~/\(FabricLoader\/Mixin\) Error loading class: de\/siphalor\/amecs\//,
 ]
+if (project.hasProperty("backpacks")) {
+	expectedGametestLog += [
+		// Forge Config API Port, which Traveler's Backpack needs, recommends Mod Menu, which the run leaves out
+		~/\(FabricLoader\/Resolution\) Warnings were found!/,
+		// Fabric API's note on the other mods' item tags: every one of ours is named (lang_coverage.py)
+		~/\(TranslationConventionLogWarnings\) $/,
+	]
+}
 def gametestLog = file("build/gametest/logs/latest.log")
 tasks.matching { it.name == "runGametest" }.configureEach {
 	doLast {

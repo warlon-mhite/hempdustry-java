@@ -87,6 +87,16 @@ public final class NeoForgeTestPlatform implements TestPlatform {
     }
 
     @Override
+    public boolean wearOnTheBack(ServerPlayer player, ItemStack stack) {
+        if (!ModList.get().isLoaded("curios")) {
+            return false;
+        }
+        top.theillusivec4.curios.api.CuriosApi.getCuriosInventory(player).orElseThrow()
+                .setEquippedCurio("back", 0, stack);
+        return true;
+    }
+
+    @Override
     public synchronized AddonProbe addonProbe() {
         if (probe == null) {
             AddonProbe p = new AddonProbe();

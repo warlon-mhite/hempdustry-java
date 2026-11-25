@@ -66,6 +66,13 @@ public interface TestPlatform {
      */
     ServerPlayer fakePlayer(ServerLevel level, GameProfile profile);
 
+    /**
+     * Puts {@code stack} in {@code player}'s back slot of the accessory mod only this loader has (Curios on
+     * NeoForge), for the worn-bag test; false when there is none to put it in. Trinkets Updated, on both loaders,
+     * the test equips itself.
+     */
+    boolean wearOnTheBack(ServerPlayer player, ItemStack stack);
+
     /** What the addon events carried, as another mod's listener would have heard it. */
     final class AddonProbe {
         private final List<Heard> heard = new ArrayList<>();

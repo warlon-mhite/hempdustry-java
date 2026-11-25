@@ -8,6 +8,7 @@ import net.minecraft.server.packs.repository.KnownPack;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
@@ -15,6 +16,7 @@ import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.nio.file.Path;
+import java.util.function.Consumer;
 
 public final class FabricPlatform implements Platform {
     @Override
@@ -69,6 +71,12 @@ public final class FabricPlatform implements Platform {
         // Fabric API files every mod's pack under the namespace "vanilla" (not the game's own, "minecraft"), by the
         // mod's id.
         return pack.namespace().equals("vanilla") && pack.id().equals(Hempdustry.MOD_ID);
+    }
+
+    @Override
+    public void wornAccessories(Player player, Consumer<ItemStack> out) {
+        // No accessory mod of Fabric's own: Trinkets Updated, the one there is, runs on both loaders and is asked
+        // by common code.
     }
 
     /** Never made: a crop only for the right to call vanilla's protected growth odds. */

@@ -4,12 +4,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.packs.repository.KnownPack;
 import net.minecraft.world.entity.monster.Enderman;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.nio.file.Path;
+import java.util.function.Consumer;
 
 /** Facts about the running game that only the loader knows. */
 public interface Platform {
@@ -71,4 +73,11 @@ public interface Platform {
      * {@code mod/} and the ids of every mod in the jar.
      */
     boolean isOwnPack(KnownPack pack);
+
+    /**
+     * Hands {@code out} what {@code player} wears in the accessory slots only this loader has a mod for: Curios on
+     * NeoForge, nothing on Fabric. Read for the smell of a worn backpack ({@code WornSlots}, which asks the mods
+     * both loaders share itself).
+     */
+    void wornAccessories(Player player, Consumer<ItemStack> out);
 }

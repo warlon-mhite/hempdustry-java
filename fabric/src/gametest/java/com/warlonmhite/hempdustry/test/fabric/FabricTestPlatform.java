@@ -75,6 +75,12 @@ public final class FabricTestPlatform implements TestPlatform {
     }
 
     @Override
+    public boolean wearOnTheBack(ServerPlayer player, ItemStack stack) {
+        // No accessory mod of Fabric's own: Trinkets Updated runs on both loaders.
+        return false;
+    }
+
+    @Override
     public synchronized AddonProbe addonProbe() {
         if (probe == null) {
             AddonProbe p = new AddonProbe();

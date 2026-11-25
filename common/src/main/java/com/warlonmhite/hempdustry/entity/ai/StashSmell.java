@@ -42,7 +42,8 @@ import org.jetbrains.annotations.Nullable;
  * <h2>Loose buds: what counts</h2>
  *
  * Buds and schwag, the things a Stash Jar takes ({@link StashContents#storable}), anywhere in a player's
- * inventory: the hotbar, the offhand, the armour slots, the stack on the cursor, and inside a carried bag
+ * inventory: the hotbar, the offhand, the armour slots, the stack on the cursor, a slot another mod adds for a
+ * backpack on the back ({@link WornSlots}: Curios, Trinkets Updated, Traveler's Backpack's own), and inside a bag
  * ({@code #hempdustry:leaks_the_smell}): a bundle, which is cloth, or another mod's backpack, read one level deep
  * off the stack or through the loader's item API ({@link #budsIn}). Bags are listed, never guessed: anything else
  * carried that holds items holds the smell in, a chest, a barrel or a shulker box carried as an item, or a crate of
@@ -155,6 +156,9 @@ public final class StashSmell {
         int buds = count(player.containerMenu == null ? ItemStack.EMPTY : player.containerMenu.getCarried(), jarsOpen);
         for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
             buds += count(inventory.getItem(slot), jarsOpen);
+        }
+        for (ItemStack worn : WornSlots.of(player)) {
+            buds += count(worn, jarsOpen);
         }
         if (player instanceof Carrier carrier) {
             carrier.hempdustry$setBudsCounted(now, buds);

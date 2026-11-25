@@ -206,6 +206,56 @@ public final class StashSmellGameTest {
     }
 
     /**
+     * A bag worn on the back, in another mod's slot, gives its buds away as one carried in the hotbar does, and a
+     * box worn there holds them in: Trinkets Updated on either loader, Curios on NeoForge, and Traveler's Backpack's
+     * own back slot, each asked where its mod is loaded (the game tests load them with {@code -Pbackpacks}). 40 buds
+     * are a bud, not a stack: a backpack read twice, by its own slot and by the accessory slot it sits in, would
+     * make 80. With none of the mods, nothing is worn outside the inventory.
+     */
+    public static void aWornBagGivesItsBudsAway(GameTestHelper context) {
+        ServerPlayer player = Players.survival(context);
+        context.assertTrue(com.warlonmhite.hempdustry.entity.ai.WornSlots.of(player).isEmpty(),
+                "a fresh player wears something outside the inventory");
+        ItemStack bag = new ItemStack(Items.BUNDLE);
+        bag.set(DataComponents.BUNDLE_CONTENTS,
+                new BundleContents(List.of(new ItemStackTemplate(ModItems.INDICA_BUDS, 40))));
+        ItemStack box = new ItemStack(Items.SHULKER_BOX);
+        box.set(DataComponents.CONTAINER, net.minecraft.world.item.component.ItemContainerContents.fromItems(
+                List.of(new ItemStack(ModItems.INDICA_BUDS, 64))));
+        StringBuilder asked = new StringBuilder();
+
+        if (com.warlonmhite.hempdustry.platform.Services.PLATFORM.isModLoaded("trinkets_updated")) {
+            asked.append(" Trinkets");
+            var back = eu.pb4.trinkets.api.TrinketsApi.getAttachment(player)
+                    .getInventory(eu.pb4.trinkets.api.DefaultTrinketSlots.CHEST_BACK);
+            context.assertTrue(back != null, "a player has no Trinkets back slot");
+            back.setItem(0, box.copy());
+            expect(context, player, "a shulker box of 64 buds worn in a Trinkets slot", 1.0);
+            back.setItem(0, bag.copy());
+            expect(context, player, "a bundle of 40 buds worn in a Trinkets slot", StashSmell.SOME_BUDS);
+            back.setItem(0, ItemStack.EMPTY);
+        }
+        if (TestPlatform.INSTANCE.wearOnTheBack(player, box.copy())) {
+            asked.append(" Curios");
+            expect(context, player, "a shulker box of 64 buds worn in a Curios slot", 1.0);
+            TestPlatform.INSTANCE.wearOnTheBack(player, bag.copy());
+            expect(context, player, "a bundle of 40 buds worn in a Curios slot", StashSmell.SOME_BUDS);
+            TestPlatform.INSTANCE.wearOnTheBack(player, ItemStack.EMPTY);
+        }
+        if (com.warlonmhite.hempdustry.platform.Services.PLATFORM.isModLoaded("travelersbackpack")) {
+            asked.append(" Traveler's");
+            var own = com.tiviacz.travelersbackpack.attachment.AttachmentUtils.getAttachment(player).orElseThrow();
+            own.backpack = bag.copy();
+            expect(context, player, "a bundle of 40 buds worn in Traveler's Backpack's own slot", StashSmell.SOME_BUDS);
+            own.backpack = ItemStack.EMPTY;
+        }
+        expect(context, player, "nothing worn any more", 1.0);
+        context.getLevel().getServer().sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                "a_worn_bag_gives_its_buds_away asked:" + (asked.isEmpty() ? " no accessory mod" : asked)));
+        context.succeed();
+    }
+
+    /**
      * The smell gives away a player vanilla sees less of, and never takes a creeper's reach past its follow range:
      * a creeper with a 4-block reach notices a sneaking player (3.2) 3.5 off only with a bud on them, at the full 4
      * with a bud or a stack, never 4.5 off whatever they carry, and never through a wall. Behind a creeper head

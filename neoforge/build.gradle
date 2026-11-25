@@ -84,6 +84,29 @@ dependencies {
 	compileOnly "maven.modrinth:not-enough-animations:${nea_neoforge_version}"
 	compileOnly "maven.modrinth:entity-model-features:${emf_neoforge_version}"
 	compileOnly "maven.modrinth:entitytexturefeatures:${etf_neoforge_version}"
+	// The accessory slots a worn backpack is read from (compile-only): Curios for neoforge/compat, and for
+	// common's entity/ai/compat Trinkets Updated and Traveler's Backpack's own back slot.
+	compileOnly "maven.modrinth:curios:${curios_version}"
+	compileOnly "maven.modrinth:trinkets-updated:${trinkets_updated_version}"
+	compileOnly "maven.modrinth:travelersbackpack:${travelers_backpack_neoforge_version}"
+	// ...and the worn-bag game test equips through them
+	gametestCompileOnly "maven.modrinth:curios:${curios_version}"
+	gametestCompileOnly "maven.modrinth:trinkets-updated:${trinkets_updated_version}"
+	gametestCompileOnly "maven.modrinth:travelersbackpack:${travelers_backpack_neoforge_version}"
+
+	//   ./gradlew :neoforge:runClient -Pbackpacks   # ...and Curios, Trinkets Updated and the backpack mods
+	// The client only: each of them sends every player it sees a payload, and NeoForge throws on one sent to a game
+	// test's player, which has no connection to take it (99 tests failed so). Fabric's game tests take Trinkets
+	// Updated and Traveler's Backpack; the NeoForge slots are read in a client.
+	if (project.hasProperty("backpacks")) {
+		for (def mod : ["maven.modrinth:curios:${curios_version}",
+				"maven.modrinth:trinkets-updated:${trinkets_updated_version}",
+				"maven.modrinth:travelersbackpack:${travelers_backpack_neoforge_version}",
+				"maven.modrinth:sophisticated-backpacks:${sophisticated_backpacks_version}",
+				"maven.modrinth:sophisticated-core:${sophisticated_core_version}"]) {
+			localRuntime mod
+		}
+	}
 
 	//   ./gradlew :neoforge:runClient                  # JEI on the runtime (default)
 	//   ./gradlew :neoforge:runClient -Pviewer=rei     # REI instead
