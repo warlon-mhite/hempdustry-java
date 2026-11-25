@@ -21,8 +21,14 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
+import it.unimi.dsi.fastutil.longs.Long2ByteMap;
+import it.unimi.dsi.fastutil.longs.Long2ByteOpenHashMap;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  * The Hygrometer: a dial on a wall, a hemp fibre behind its needle swelling in damp air as the hair of a hair
@@ -36,6 +42,11 @@ import java.util.List;
  * normal or dry air, {@value #DAMP_SIGNAL} when damp, 15 when soaked. Read after the Dehumidifier, a dial wired
  * to one would switch it off the moment it dried the room and on again the moment it stopped, every second; read
  * before, a plain wire from the dial runs a Dehumidifier exactly while the room needs it.
+ *
+ * <p>A read walks the dial's box once for both answers, and looks for running Dehumidifiers only where a chunk
+ * section's palette holds one. Comparators are told only when what they read has changed, as vanilla's own
+ * blocks tell them ({@code Level#updateNeighbourForOutputSignal} from a block's state or contents changing);
+ * a dial in a steady room costs its one read a second and nothing more.
  */
 public class HygrometerBlock extends HorizontalDirectionalBlock {
     /** The air as the needle shows it. */
@@ -50,6 +61,12 @@ public class HygrometerBlock extends HorizontalDirectionalBlock {
     private static final VoxelShape SOUTH = Block.box(2.0D, 2.0D, 0.0D, 14.0D, 14.0D, 2.0D);
     private static final VoxelShape EAST = Block.box(0.0D, 2.0D, 2.0D, 2.0D, 14.0D, 14.0D);
     private static final VoxelShape WEST = Block.box(14.0D, 2.0D, 2.0D, 16.0D, 14.0D, 14.0D);
+
+    /**
+     * Each world's dials, by position, and the comparator signal each gave at its last read: what tells a read
+     * whether its comparators need waking. Kept nowhere: after a restart a dial's first read wakes them once.
+     */
+    private static final Map<Level, Long2ByteMap> LAST_SIGNAL = Collections.synchronizedMap(new WeakHashMap<>());
 
     public HygrometerBlock(Properties settings) {
         super(settings);
@@ -107,37 +124,58 @@ public class HygrometerBlock extends HorizontalDirectionalBlock {
         }
     }
 
-    /** Looks at the air again, and again a second later. */
+    /** Looks at the air again, and again a second later; wakes its comparators only if their signal moved. */
     @Override
     protected void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
-        Humidity now = feltAt(world, pos);
-        if (now != state.getValue(HUMIDITY)) {
-            world.setBlock(pos, state.setValue(HUMIDITY, now), Block.UPDATE_ALL);
+        Reading now = read(world, pos);
+        if (now.felt() != state.getValue(HUMIDITY)) {
+            world.setBlock(pos, state.setValue(HUMIDITY, now.felt()), Block.UPDATE_ALL);
         }
-        world.updateNeighbourForOutputSignal(pos, this);
+        byte signal = (byte) signalOf(now.own());
+        Long2ByteMap last = LAST_SIGNAL.computeIfAbsent(world, level -> new Long2ByteOpenHashMap());
+        long key = pos.asLong();
+        if (!last.containsKey(key) || last.get(key) != signal) {
+            last.put(key, signal);
+            world.updateNeighbourForOutputSignal(pos, this);
+        }
         world.scheduleTick(pos, this, READ_EVERY);
+    }
+
+    @Override
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel world, BlockPos pos, boolean movedByPiston) {
+        Long2ByteMap last = LAST_SIGNAL.get(world);
+        if (last != null) {
+            last.remove(pos.asLong());
+        }
+        super.affectNeighborsAfterRemoval(state, world, pos, movedByPiston);
     }
 
     /** The needle of a dial at {@code pos}: the dampest plant around it, any Dehumidifier drying it counted. */
     public static Humidity feltAt(Level world, BlockPos pos) {
-        return read(world, pos, true);
+        return read(world, pos).felt();
     }
 
     /** What a comparator reads off a dial at {@code pos}: the same plants' air, before any Dehumidifier dries it. */
     public static Humidity ownAt(Level world, BlockPos pos) {
-        return read(world, pos, false);
+        return read(world, pos).own();
+    }
+
+    /** One read of a dial: the needle's air ({@code felt}) and the comparator's ({@code own}). */
+    private record Reading(Humidity felt, Humidity own) {
     }
 
     /**
      * The air of the dampest plant out of water that a Dehumidifier standing at {@code dial} would reach, each plant
-     * read at its root as the mildew roll reads it (its roof, its tray, the water near it), and dried by any running
-     * Dehumidifier that reaches it if {@code driers}; the dial's own spot when no plant stands there.
+     * read at its root as the mildew roll reads it (its roof, its tray, the water near it): dried by any running
+     * Dehumidifier that reaches it for the needle, as it is for the comparator; the dial's own spot when no plant
+     * stands there. One walk of the box gives both.
      */
-    private static Humidity read(Level world, BlockPos dial, boolean driers) {
+    private static Reading read(Level world, BlockPos dial) {
         GrowClimate climate = GrowClimate.of(world.registryAccess());
         GrowClimate.Drier box = climate.dehumidifier();
-        List<BlockPos> running = driers ? runningAround(world, dial, box) : List.of();
+        List<BlockPos> running = runningAround(world, dial, box);
         int dampest = Integer.MIN_VALUE;
+        int dampestOwn = Integer.MIN_VALUE;
         BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
         for (int dy = -box.below(); dy <= box.above(); dy++) {
             for (int dx = -box.reach(); dx <= box.reach(); dx++) {
@@ -149,27 +187,33 @@ public class HygrometerBlock extends HorizontalDirectionalBlock {
                         continue;
                     }
                     boolean roofed = Mildew.roofed(world, at);
-                    int steps = Climate.ownSteps(world, at, roofed, Climate.onTray(world, at), climate);
-                    if (roofed && dries(running, at, box)) {
-                        steps -= box.dries();
-                    }
-                    dampest = Math.max(dampest, steps);
+                    int own = Climate.ownSteps(world, at, roofed, Climate.onTray(world, at), climate);
+                    dampestOwn = Math.max(dampestOwn, own);
+                    dampest = Math.max(dampest, roofed && dries(running, at, box) ? own - box.dries() : own);
                 }
             }
         }
-        return dampest == Integer.MIN_VALUE
-                ? Climate.humidity(world, dial, Mildew.roofed(world, dial), false, driers)
-                : Humidity.fromNormal(dampest);
+        if (dampest == Integer.MIN_VALUE) {
+            boolean roofed = Mildew.roofed(world, dial);
+            return new Reading(Climate.humidity(world, dial, roofed, false, true),
+                    Climate.humidity(world, dial, roofed, false, false));
+        }
+        return new Reading(Humidity.fromNormal(dampest), Humidity.fromNormal(dampestOwn));
     }
 
     /**
      * Every working Dehumidifier that could dry a plant in the box a Dehumidifier standing at {@code dial} reaches:
-     * that box grown by a Dehumidifier's own reach. Found once a read, so no plant walks the box again.
+     * that box grown by a Dehumidifier's own reach. Found once a read, so no plant walks the box again, and walked
+     * only where a section's palette holds a Dehumidifier at all: most dials have none so near.
      */
     private static List<BlockPos> runningAround(Level world, BlockPos dial, GrowClimate.Drier box) {
         List<BlockPos> found = new ArrayList<>();
         int across = 2 * box.reach();
         int up = box.above() + box.below();
+        if (!Climate.mayHold(world, dial.offset(-across, -up, -across), dial.offset(across, up, across),
+                state -> state.getBlock() instanceof DehumidifierBlock)) {
+            return found;
+        }
         BlockPos.MutableBlockPos at = new BlockPos.MutableBlockPos();
         for (int dy = -up; dy <= up; dy++) {
             for (int dx = -across; dx <= across; dx++) {
@@ -203,7 +247,11 @@ public class HygrometerBlock extends HorizontalDirectionalBlock {
 
     @Override
     protected int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos, Direction direction) {
-        return switch (ownAt(world, pos)) {
+        return signalOf(ownAt(world, pos));
+    }
+
+    private static int signalOf(Humidity own) {
+        return switch (own) {
             case DRY, NORMAL -> 0;
             case DAMP -> DAMP_SIGNAL;
             case SOAKED -> 15;
