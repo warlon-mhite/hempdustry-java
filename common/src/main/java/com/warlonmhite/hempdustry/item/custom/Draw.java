@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
  * syncs; nothing here sends it.
  */
 public final class Draw {
-    /** The spliff's draw: a quick drag, the length of a bite of dried kelp. */
+    /** The spliff's draw: a quick drag, the length of a bite of dried kelp (0.8 seconds, {@code Consumables#DRIED_KELP}). */
     public static final int SPLIFF_TICKS = 16;
 
     private static final int WISP_EVERY_TICKS = 5;

@@ -2,6 +2,7 @@ package com.warlonmhite.hempdustry.client.anim.compat;
 
 import com.warlonmhite.hempdustry.client.anim.BodyPoses;
 import com.warlonmhite.hempdustry.client.anim.Gestures;
+import com.warlonmhite.hempdustry.client.anim.Style;
 import com.warlonmhite.hempdustry.network.PlayerGesture;
 import dev.tr7zw.notenoughanimations.access.PlayerData;
 import dev.tr7zw.notenoughanimations.api.BasicAnimation;
@@ -47,6 +48,13 @@ public final class NotEnoughAnimations {
 
         @Override
         public boolean isValid(AbstractClientPlayer player, PlayerData data) {
+            // Only what the mod poses is claimed: nothing with the animations off, and the cupping and coughing
+            // hands only in a style that draws them. A part claimed and left unposed froze Not Enough Animations'
+            // own sway on it.
+            Style style = Style.now(false);
+            if (style == null) {
+                return false;
+            }
             BodyPoses.Hold hold = player.isUsingItem() ? BodyPoses.Hold.of(player.getUseItem()) : null;
             boolean kick = Gestures.progress(player.getId(), PlayerGesture.Kind.KICK, player.tickCount) >= 0.0F;
             boolean cough = Gestures.progress(player.getId(), PlayerGesture.Kind.COUGH, player.tickCount) >= 0.0F;
@@ -62,11 +70,11 @@ public final class NotEnoughAnimations {
                 // The bong takes both hands; an empty hand cups a pipe's bowl.
                 ItemStack other = player.getItemInHand(player.getUsedItemHand() == InteractionHand.MAIN_HAND
                         ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND);
-                if (hold == BodyPoses.Hold.BONG || hold == BodyPoses.Hold.PIPE && other.isEmpty()) {
+                if (hold == BodyPoses.Hold.BONG || hold == BodyPoses.Hold.PIPE && style.rich() && other.isEmpty()) {
                     claimed.add(part(drawing.getOpposite()));
                 }
             }
-            if (cough) {
+            if (cough && style.rich()) {
                 // The free hand comes to the mouth, as BodyPoses picks it.
                 HumanoidArm free = player.getOffhandItem().isEmpty() ? main.getOpposite()
                         : player.getMainHandItem().isEmpty() ? main : null;

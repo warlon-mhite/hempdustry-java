@@ -12,11 +12,11 @@ import org.jetbrains.annotations.Nullable;
  * freezes with it.
  */
 public final class Gestures {
-    /** Two jolts of the head, 3 ticks each, with a beat between them: the panda's sneeze is vanilla's precedent. */
+    /** Two jolts of the head, 3 ticks each, with a beat between them. */
     public static final int COUGH_TICKS = 9;
     /** The head dips to the jar and comes back. */
     public static final int SNIFF_TICKS = 8;
-    /** The knee comes up and down over the length of vanilla's arm swing. */
+    /** The knee comes up and down over the length of vanilla's arm swing (6 ticks, {@code SwingAnimation#DEFAULT}). */
     public static final int KICK_TICKS = 6;
 
     private static final Int2ObjectOpenHashMap<Running> RUNNING = new Int2ObjectOpenHashMap<>();

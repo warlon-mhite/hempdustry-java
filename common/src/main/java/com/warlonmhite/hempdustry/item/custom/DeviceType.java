@@ -144,8 +144,9 @@ public enum DeviceType {
     /**
      * How long the use key is held for one hit. Every device draws: the hit lands on the last tick
      * and letting go early spends nothing, as with a potion put down half-drunk. The bong's 30 ticks
-     * came first; the pipe's 24 and the vaporizer's 32 joined it, both under eating a steak, so that
-     * the mouth has time to meet the device. Instant use was only vanilla's habit for items with no
+     * came first; the pipe's 24 and the vaporizer's 32 joined it, none longer than eating a steak (1.6 seconds,
+     * 32 ticks: {@code Consumable#DEFAULT_CONSUME_SECONDS}, which a steak's {@code Consumables#DEFAULT_FOOD} keeps),
+     * so that the mouth has time to meet the device. Instant use was only vanilla's habit for items with no
      * use animation, never a choice made for these. The spliff's 16 is {@code SpliffItem}'s.
      *
      * <p>A draw is a cost as well as a picture: a player taking a hit is a player slowed to a walk
