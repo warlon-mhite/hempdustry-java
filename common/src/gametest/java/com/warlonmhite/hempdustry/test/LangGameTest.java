@@ -3,6 +3,9 @@ package com.warlonmhite.hempdustry.test;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.warlonmhite.hempdustry.Hempdustry;
+import com.warlonmhite.hempdustry.block.custom.Climate;
+import com.warlonmhite.hempdustry.block.custom.GrowClimateLine;
+import com.warlonmhite.hempdustry.block.custom.Mildew;
 import com.warlonmhite.hempdustry.item.ModItemGroups;
 import com.warlonmhite.hempdustry.item.custom.Quality;
 import com.warlonmhite.hempdustry.strain.Strain;
@@ -127,6 +130,19 @@ public final class LangGameTest {
                 read.add(rule.getDescriptionId() + ".description");
                 keys(rule.category().label(), read);
             }
+        }
+
+        // The grow climate line a block-info overlay shows under a plant, every one it can show, and its switch in each
+        // overlay's settings, which Jade and WTHIT name from the line's id ("config.<mod>.plugin_<namespace>.<path>").
+        for (Climate.Air air : Climate.Air.values()) {
+            for (Climate.Humidity humidity : Climate.Humidity.values()) {
+                for (Mildew mildew : Mildew.values()) {
+                    GrowClimateLine.lines(new GrowClimateLine.Reading(air, humidity, mildew)).forEach(line -> keys(line, read));
+                }
+            }
+        }
+        for (String overlay : List.of("jade", "waila")) {
+            read.add("config." + overlay + ".plugin_" + Hempdustry.MOD_ID + "." + GrowClimateLine.ID);
         }
 
         Set<String> literals = new HashSet<>();

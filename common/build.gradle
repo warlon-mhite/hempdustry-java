@@ -49,6 +49,11 @@ dependencies {
 	// Updated's API, one jar for both loaders, and Traveler's Backpack's own back slot, the same on each loader.
 	compileOnly "maven.modrinth:trinkets-updated:${trinkets_updated_version}"
 	compileOnly "maven.modrinth:travelersbackpack:${travelers_backpack_fabric_version}"
+
+	// The block-info overlays a plant's grow climate is shown in (compat/jade, compat/wthit), compile-only the same
+	// way: each finds its plugin on its own, and a player with neither never loads a line of it.
+	compileOnly "maven.modrinth:jade:${jade_fabric_version}"
+	compileOnly "maven.modrinth:wthit:${wthit_fabric_version}"
 }
 
 // What the loaders' projects take from here: the sources, and the resources -- hand-written and

@@ -11,6 +11,10 @@ import com.warlonmhite.hempdustry.block.custom.FanWind;
 import com.warlonmhite.hempdustry.block.custom.HydroTrayBlock;
 import com.warlonmhite.hempdustry.block.custom.HygrometerBlock;
 import com.warlonmhite.hempdustry.block.custom.GrowFanBlock;
+import com.warlonmhite.hempdustry.block.custom.GrowClimateLine;
+import com.warlonmhite.hempdustry.block.custom.SativaCropBlock;
+import com.warlonmhite.hempdustry.block.custom.TriplePlantSegment;
+import net.minecraft.core.registries.BuiltInRegistries;
 import com.warlonmhite.hempdustry.block.custom.IndicaCropBlock;
 import com.warlonmhite.hempdustry.block.custom.Mildew;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
@@ -938,6 +942,73 @@ public final class GrowClimateGameTest {
     private static void plant(GameTestHelper context, BlockPos root) {
         context.setBlock(root, Defoliation.unworked(ModBlocks.INDICA_CROP.defaultBlockState()).setValue(BlockStateProperties.AGE_7, 2));
         context.assertTrue(context.getBlockState(root).is(ModBlocks.INDICA_CROP), "test setup: no plant came up at " + root);
+    }
+
+    /**
+     * The line a block-info overlay shows under a plant ({@link GrowClimateLine}) reads the plant's climate as its mildew
+     * does: the air and humidity of its root, whichever block of it is looked at, and its mildew when it has any. A
+     * three-block sativa under glass reads stirred air; a running fan blowing on it, the open's; water beside it, damp;
+     * a stone roof, once the light has settled, still air. A crop with no mildew state, ours or vanilla's, has no line.
+     */
+    public static void aPlantsClimateLineReadsItsRoot(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        fillBiome(context, CROP, "minecraft:plains");
+        context.setBlock(SOIL, Blocks.FARMLAND.defaultBlockState().setValue(FarmlandBlock.MOISTURE, FarmlandBlock.MAX_MOISTURE));
+        BlockState ripe = Defoliation.unworked(ModBlocks.SATIVA_CROP.defaultBlockState()).setValue(BlockStateProperties.AGE_7, 7);
+        context.setBlock(CROP, ripe.setValue(SativaCropBlock.SEGMENT, TriplePlantSegment.LOWER));
+        context.setBlock(CROP.above(), ripe.setValue(SativaCropBlock.SEGMENT, TriplePlantSegment.MIDDLE));
+        context.setBlock(CROP.above(2), ripe.setValue(SativaCropBlock.SEGMENT, TriplePlantSegment.UPPER));
+        context.setBlock(ROOF, Blocks.GLASS);
+        BlockPos root = context.absolutePos(CROP);
+        Mildew.write(world, root, Mildew.CLEAN);
+
+        line(context, Climate.Air.STIRRED, Humidity.NORMAL, Mildew.CLEAN, "a sativa under glass");
+        fan(context, CROP.east(4), Direction.WEST, AttachFace.FLOOR, true);
+        line(context, Climate.Air.OPEN, Humidity.NORMAL, Mildew.CLEAN, "a sativa under glass with a running fan on it");
+        clearFan(context, CROP.east(4));
+        pool(context, CROP.east().south());
+        line(context, Climate.Air.STIRRED, Humidity.DAMP, Mildew.CLEAN, "a sativa under glass beside water");
+        Mildew.write(world, root, Mildew.MILDEWED);
+        line(context, Climate.Air.STIRRED, Humidity.DAMP, Mildew.MILDEWED, "a mildewed sativa under glass beside water");
+        List<net.minecraft.network.chat.Component> lines = GrowClimateLine.lines(GrowClimateLine.of(world, root).orElseThrow());
+        context.assertTrue(lines.size() == 2, "a mildewed plant's line names its mildew on a line of its own: " + lines);
+        Mildew.write(world, root, Mildew.CLEAN);
+        context.assertTrue(GrowClimateLine.lines(GrowClimateLine.of(world, root).orElseThrow()).size() == 1,
+                "a clean plant's line names mildew it does not have");
+
+        // Neither a crop of ours without a mildew state nor vanilla's wheat has a line.
+        BlockPos other = new BlockPos(5, 3, 5);
+        context.setBlock(other.below(), Blocks.FARMLAND);
+        for (Block crop : List.of(ModBlocks.RUDERALIS_CROP, Blocks.WHEAT)) {
+            context.setBlock(other, crop);
+            context.assertTrue(GrowClimateLine.of(world, context.absolutePos(other)).isEmpty(),
+                    BuiltInRegistries.BLOCK.getKey(crop) + " has a grow climate line");
+        }
+
+        // A roof the sun does not reach: the top block's sky light moves a tick or two after the stone is set.
+        context.setBlock(ROOF, Blocks.STONE);
+        context.runAfterDelay(4, () -> {
+            line(context, Climate.Air.STILL, Humidity.DAMP, Mildew.CLEAN, "a sativa under stone beside water");
+            context.succeed();
+        });
+    }
+
+    /**
+     * The line on every block of the plant at {@link #CROP} is {@code air}, {@code humidity} and {@code mildew}, and is
+     * what the plant's own rules read at its root.
+     */
+    private static void line(GameTestHelper context, Climate.Air air, Humidity humidity, Mildew mildew, String where) {
+        ServerLevel world = context.getLevel();
+        BlockPos root = context.absolutePos(CROP);
+        boolean roofed = Mildew.roofed(world, root);
+        GrowClimateLine.Reading rules = new GrowClimateLine.Reading(Climate.air(world, root, 3, roofed),
+                Climate.humidity(world, root, roofed, Climate.onTray(world, root)), world.getBlockState(root).getValue(Mildew.PROPERTY));
+        GrowClimateLine.Reading expected = new GrowClimateLine.Reading(air, humidity, mildew);
+        context.assertTrue(rules.equals(expected), "test setup: " + where + " reads " + rules + " by its own rules, not " + expected);
+        for (int y = 0; y < 3; y++) {
+            GrowClimateLine.Reading shown = GrowClimateLine.of(world, root.above(y)).orElse(null);
+            context.assertTrue(expected.equals(shown), where + ": its block " + y + " up shows " + shown + ", not " + expected);
+        }
     }
 
     // ----- helpers -----

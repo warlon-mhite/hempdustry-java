@@ -70,6 +70,19 @@ dependencies {
 	// The accessory slots a worn backpack is read from, for common's entity/ai/compat (compile-only).
 	compileOnly "maven.modrinth:trinkets-updated:${trinkets_updated_version}"
 	compileOnly "maven.modrinth:travelersbackpack:${travelers_backpack_fabric_version}"
+	// The block-info overlays, for common's compat/jade and compat/wthit (compile-only).
+	compileOnly "maven.modrinth:jade:${jade_fabric_version}"
+	compileOnly "maven.modrinth:wthit:${wthit_fabric_version}"
+
+	//   ./gradlew :fabric:runClient -Pjade           # ...and Jade, to read a plant's grow climate under the crosshair
+	//   ./gradlew :fabric:runClient -Pwthit          # ...or WTHIT (with Bad Packets, which it needs)
+	if (project.hasProperty("jade")) {
+		localRuntime "maven.modrinth:jade:${jade_fabric_version}"
+	}
+	if (project.hasProperty("wthit")) {
+		localRuntime "maven.modrinth:wthit:${wthit_fabric_version}"
+		localRuntime "maven.modrinth:badpackets:${badpackets_fabric_version}"
+	}
 
 	//   ./gradlew :fabric:runClient -Pbackpacks      # ...and Trinkets Updated with Traveler's Backpack
 	//   ./gradlew :fabric:runGametest -Pbackpacks    # the game tests with them, so the worn-bag test reads them

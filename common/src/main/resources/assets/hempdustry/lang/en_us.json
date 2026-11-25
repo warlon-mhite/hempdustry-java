@@ -542,5 +542,17 @@
   "gamerule.hempdustry.mildew": "Powdery mildew",
   "gamerule.hempdustry.mildew.description": "Whether hemp can catch powdery mildew: rarely in the open, more often under glass or a roof. Off, a plant that has it is clean on its next random tick. Can only turn off what the server's config leaves on.",
   "gamerule.hempdustry.plant_stress": "Plant stress",
-  "gamerule.hempdustry.plant_stress.description": "Whether flowering hemp can be stressed into seeding its own buds: overfed, overwatered, a dry bed, still water, a lost light. Off, a stressed plant heals on its next random tick. Can only turn off what the server's config leaves on."
+  "gamerule.hempdustry.plant_stress.description": "Whether flowering hemp can be stressed into seeding its own buds: overfed, overwatered, a dry bed, still water, a lost light. Off, a stressed plant heals on its next random tick. Can only turn off what the server's config leaves on.",
+  "hempdustry.grow_climate.line": "Air: %1$s · Humidity: %2$s",
+  "hempdustry.grow_climate.air.open": "Open",
+  "hempdustry.grow_climate.air.stirred": "Stirred",
+  "hempdustry.grow_climate.air.still": "Still",
+  "hempdustry.grow_climate.humidity.dry": "Dry",
+  "hempdustry.grow_climate.humidity.normal": "Normal",
+  "hempdustry.grow_climate.humidity.damp": "Damp",
+  "hempdustry.grow_climate.humidity.soaked": "Soaked",
+  "hempdustry.grow_climate.mildew.sulfured": "Sulfured",
+  "hempdustry.grow_climate.mildew.mildewed": "Powdery Mildew",
+  "config.jade.plugin_hempdustry.grow_climate": "Grow Climate",
+  "config.waila.plugin_hempdustry.grow_climate": "Grow Climate"
 }

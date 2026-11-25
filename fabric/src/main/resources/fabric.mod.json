@@ -39,6 +39,9 @@
 		],
 		"rei_common": [
 			"com.warlonmhite.hempdustry.compat.rei.HempdustryReiCommonPlugin"
+		],
+		"jade": [
+			"com.warlonmhite.hempdustry.compat.jade.HempdustryJadePlugin"
 		]
 	},
 	"accessWidener": "hempdustry.accesswidener",

@@ -542,5 +542,17 @@
   "gamerule.hempdustry.mildew": "Moisissure blanche",
   "gamerule.hempdustry.mildew.description": "Le chanvre peut attraper la moisissure blanche : rarement en plein air, plus souvent sous verre ou sous un toit. Désactivé, un plant atteint est sain à son prochain tick aléatoire. Ne peut désactiver que ce que la configuration du serveur laisse activé.",
   "gamerule.hempdustry.plant_stress": "Stress des plants",
-  "gamerule.hempdustry.plant_stress.description": "Le chanvre en fleur peut être stressé au point de faire des graines dans ses fleurs : trop d'engrais, trop d'eau, un lit sec, une eau stagnante, une lumière perdue. Désactivé, un plant stressé guérit à son prochain tick aléatoire. Ne peut désactiver que ce que la configuration du serveur laisse activé."
+  "gamerule.hempdustry.plant_stress.description": "Le chanvre en fleur peut être stressé au point de faire des graines dans ses fleurs : trop d'engrais, trop d'eau, un lit sec, une eau stagnante, une lumière perdue. Désactivé, un plant stressé guérit à son prochain tick aléatoire. Ne peut désactiver que ce que la configuration du serveur laisse activé.",
+  "hempdustry.grow_climate.line": "Air : %1$s · Humidité : %2$s",
+  "hempdustry.grow_climate.air.open": "libre",
+  "hempdustry.grow_climate.air.stirred": "brassé",
+  "hempdustry.grow_climate.air.still": "stagnant",
+  "hempdustry.grow_climate.humidity.dry": "sec",
+  "hempdustry.grow_climate.humidity.normal": "normal",
+  "hempdustry.grow_climate.humidity.damp": "humide",
+  "hempdustry.grow_climate.humidity.soaked": "détrempé",
+  "hempdustry.grow_climate.mildew.sulfured": "Soufré",
+  "hempdustry.grow_climate.mildew.mildewed": "Moisissure blanche",
+  "config.jade.plugin_hempdustry.grow_climate": "Climat de culture",
+  "config.waila.plugin_hempdustry.grow_climate": "Climat de culture"
 }

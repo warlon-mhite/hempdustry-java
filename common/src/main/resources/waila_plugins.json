@@ -1,0 +1,10 @@
+{
+  "hempdustry:grow_climate": {
+    "entrypoints": {
+      "common": "com.warlonmhite.hempdustry.compat.wthit.HempdustryWthitPlugin",
+      "client": "com.warlonmhite.hempdustry.compat.wthit.HempdustryWthitPlugin"
+    },
+    "side": "*",
+    "required": []
+  }
+}

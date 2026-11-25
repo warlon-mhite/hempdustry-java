@@ -93,6 +93,19 @@ dependencies {
 	gametestCompileOnly "maven.modrinth:curios:${curios_version}"
 	gametestCompileOnly "maven.modrinth:trinkets-updated:${trinkets_updated_version}"
 	gametestCompileOnly "maven.modrinth:travelersbackpack:${travelers_backpack_neoforge_version}"
+	// The block-info overlays, for common's compat/jade and compat/wthit (compile-only).
+	compileOnly "maven.modrinth:jade:${jade_neoforge_version}"
+	compileOnly "maven.modrinth:wthit:${wthit_neoforge_version}"
+
+	//   ./gradlew :neoforge:runClient -Pjade        # ...and Jade, to read a plant's grow climate under the crosshair
+	//   ./gradlew :neoforge:runClient -Pwthit       # ...or WTHIT (with Bad Packets, which it needs)
+	if (project.hasProperty("jade")) {
+		localRuntime "maven.modrinth:jade:${jade_neoforge_version}"
+	}
+	if (project.hasProperty("wthit")) {
+		localRuntime "maven.modrinth:wthit:${wthit_neoforge_version}"
+		localRuntime "maven.modrinth:badpackets:${badpackets_neoforge_version}"
+	}
 
 	//   ./gradlew :neoforge:runClient -Pbackpacks   # ...and Curios, Trinkets Updated and the backpack mods
 	// The client only: each of them sends every player it sees a payload, and NeoForge throws on one sent to a game
