@@ -104,9 +104,10 @@ public final class StashSmellGameTest {
     }
 
     /**
-     * The smell multiplies vanilla's reach and leaves its line of sight alone: a creeper with a 4-block reach
-     * notices a player 4.5 off only with a bud on them, one 5.5 off only with a stack, never through a wall;
-     * and it keeps a target as far as it noticed it.
+     * The smell gives away a player vanilla sees less of, and never takes a creeper's reach past its follow range:
+     * a creeper with a 4-block reach notices a sneaking player (3.2) 3.5 off only with a bud on them, at the full 4
+     * with a bud or a stack, never 4.5 off whatever they carry, and never through a wall. Behind a creeper head
+     * (0.5, 2 blocks) a bud makes 2.5 and a stack 3. A creeper drops a target past its follow range, as vanilla does.
      */
     public static void aCreeperSmellsBudsButStillNeedsToSeeThem(GameTestHelper context) {
         for (int x = 0; x < 8; x++) {
@@ -119,35 +120,36 @@ public final class StashSmellGameTest {
         Vec3 from = creeper.position();
         TargetingConditions reach4 = TargetingConditions.forCombat().range(4.0);
 
-        player.setPos(from.add(4.5, 0.0, 0.0));
+        player.setShiftKeyDown(true);
+        player.setPos(from.add(3.5, 0.0, 0.0));
         context.assertFalse(reach4.test(context.getLevel(), creeper, player),
-                "a creeper with a 4-block reach noticed a player 4.5 off carrying nothing");
+                "a creeper with a 4-block reach noticed a sneaking player 3.5 off carrying nothing; 4 × 0.8 is 3.2");
         give(player, new ItemStack(ModItems.INDICA_BUDS, 1));
         context.assertTrue(reach4.test(context.getLevel(), creeper, player),
-                "a creeper with a 4-block reach (5 with the smell) missed a player 4.5 off carrying a bud");
+                "a creeper with a 4-block reach missed a sneaking player 3.5 off carrying a bud; 4 × 0.8 × 1.25 is 4");
 
-        player.setPos(from.add(5.5, 0.0, 0.0));
-        context.assertFalse(reach4.test(context.getLevel(), creeper, player),
-                "a bud lengthened a creeper's reach past 1.25");
+        player.setPos(from.add(4.5, 0.0, 0.0));
         give(player, new ItemStack(ModItems.INDICA_BUDS, 64));
-        context.assertTrue(reach4.test(context.getLevel(), creeper, player),
-                "a creeper with a 4-block reach (6 with a stack) missed a player 5.5 off carrying 64 buds");
-
-        // Vanilla's factors still apply: sneaking takes 6 down to 4.8.
-        player.setShiftKeyDown(true);
         context.assertFalse(reach4.test(context.getLevel(), creeper, player),
-                "a sneaking player carrying a stack was noticed 5.5 off; 4 × 1.5 × 0.8 is 4.8");
+                "a stack took a creeper's 4-block reach past 4, sneaking");
         player.setShiftKeyDown(false);
+        context.assertFalse(reach4.test(context.getLevel(), creeper, player),
+                "a stack took a creeper's 4-block reach past 4, standing");
+        context.assertTrue(StashSmell.visibility(1.0, player) == 1.0 && StashSmell.visibility(0.5, player) == 0.75,
+                "a stack's visibility is " + StashSmell.visibility(1.0, player) + " in plain sight and "
+                        + StashSmell.visibility(0.5, player) + " behind a head, not 1 and 0.75");
+        give(player, new ItemStack(ModItems.INDICA_BUDS, 1));
+        context.assertTrue(StashSmell.visibility(0.5, player) == 0.625,
+                "a bud's visibility behind a head is " + StashSmell.visibility(0.5, player) + ", not 0.625");
 
-        // A creeper keeps a target as far as it noticed it: its follow range set to 4 here.
+        // A creeper drops a target past its follow range, set to 4 here, whatever the target carries.
+        player.setPos(from.add(5.5, 0.0, 0.0));
+        give(player, new ItemStack(ModItems.INDICA_BUDS, 64));
         creeper.getAttribute(Attributes.FOLLOW_RANGE).setBaseValue(4.0);
         NearestAttackableTargetGoal<?> targeting = targetGoal(creeper);
         creeper.setTarget(player);
-        context.assertTrue(targeting.canContinueToUse(),
-                "a creeper gave up a player 5.5 off carrying a stack; its reach on them is 6");
-        give(player, ItemStack.EMPTY);
         context.assertFalse(targeting.canContinueToUse(),
-                "a creeper kept a player 5.5 off carrying nothing past its follow range of 4");
+                "a creeper kept a player 5.5 off carrying a stack past its follow range of 4");
         targeting.stop();
 
         // A wall between them hides a player whatever they carry. Another creeper, as each one keeps what it
@@ -330,19 +332,20 @@ public final class StashSmellGameTest {
         opener.setGameMode(net.minecraft.world.level.GameType.CREATIVE);
         context.assertTrue(StashSmell.smellsOpen(context.getLevel(), at), "the take-out did not open the jar");
 
-        // A creeper with a 4-block reach notices a player 5.5 off only by a stack's smell (×1.5).
+        // A creeper with a 4-block reach notices a sneaking player (3.2) 3.5 off only by a stack's smell.
         TargetingConditions reach4 = TargetingConditions.forCombat().range(4.0);
         ServerPlayer carrier = Players.survival(context);
+        carrier.setShiftKeyDown(true);
         give(carrier, new ItemStack(ModItems.INDICA_BUDS, 64));
         Creeper near = creeper(context, new BlockPos(1, 1, 6));
         SeekStashJarGoal goal = jarGoalOf(near);
         context.assertTrue(goal != null, "a creeper, which the tag lists by default, was made without the jar goal");
-        carrier.setPos(near.position().add(5.5, 0.0, 0.0));
+        carrier.setPos(near.position().add(3.5, 0.0, 0.0));
         context.assertTrue(reach4.test(context.getLevel(), near, carrier),
-                "a creeper in the tag missed a player 5.5 off carrying a stack");
+                "a creeper in the tag missed a sneaking player 3.5 off carrying a stack");
         Tagged.without(EntityTypes.CREEPER, ModTags.EntityTypes.DRAWN_TO_STASH, () -> {
             context.assertFalse(reach4.test(context.getLevel(), near, carrier),
-                    "a creeper out of #hempdustry:drawn_to_stash noticed a player 5.5 off by the smell of a stack");
+                    "a creeper out of #hempdustry:drawn_to_stash noticed a sneaking player 3.5 off by the smell of a stack");
             context.assertFalse(notices(goal, at, 500), "a creeper out of #hempdustry:drawn_to_stash went for an opened jar");
             Creeper untagged = creeper(context, new BlockPos(3, 1, 3));
             context.assertTrue(jarGoalOf(untagged) == null, "a creeper made while out of the tag was given the jar goal");
@@ -358,9 +361,9 @@ public final class StashSmellGameTest {
             SeekStashJarGoal pigGoal = jarGoalOf(listed[0]);
             context.assertTrue(pigGoal != null, "a pig the tag lists was made without the jar goal");
             context.assertTrue(notices(pigGoal, at, 500), "a pig the tag lists never went for the opened jar in 500 checks");
-            carrier.setPos(listed[0].position().add(5.5, 0.0, 0.0));
+            carrier.setPos(listed[0].position().add(3.5, 0.0, 0.0));
             context.assertTrue(reach4.test(context.getLevel(), listed[0], carrier),
-                    "a pig the tag lists missed a player 5.5 off carrying a stack");
+                    "a pig the tag lists missed a sneaking player 3.5 off carrying a stack");
         });
         context.assertFalse(reach4.test(context.getLevel(), listed[0], carrier),
                 "a pig the tag no longer lists noticed a player by the smell of a stack");

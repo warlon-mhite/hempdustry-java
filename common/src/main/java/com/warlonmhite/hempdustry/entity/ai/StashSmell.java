@@ -28,8 +28,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Creepers (the mobs of {@code #hempdustry:drawn_to_stash}) smell a stash: a Stash Jar a hand has just opened
- * draws them ({@link SeekStashJarGoal}), and buds carried loose let a creeper notice their carrier from further
- * away.
+ * draws them ({@link SeekStashJarGoal}), and buds carried loose give their carrier away to a creeper that would
+ * otherwise see less of them.
  *
  * <h2>An opened jar</h2>
  *
@@ -39,9 +39,7 @@ import org.jetbrains.annotations.Nullable;
  * (a full Stash Jar 16, a full Gilded jar or anything larger 24), and each check goes for it at
  * {@link #draws} buds in 256, a sure thing from four stacks. Schwag counts as buds: it reeks.
  *
- * <h2>Loose buds</h2>
- *
- * <h2>What counts</h2>
+ * <h2>Loose buds: what counts</h2>
  *
  * Buds and schwag, the things a Stash Jar takes ({@link StashContents#storable}), anywhere in a player's
  * inventory: the hotbar, the offhand, the armour slots, the stack on the cursor, and inside a bundle,
@@ -52,14 +50,17 @@ import org.jetbrains.annotations.Nullable;
  *
  * <h2>How far</h2>
  *
- * A creeper notices a player out to its follow range (16 blocks) times the player's visibility, which
- * vanilla already scales: 0.8 sneaking, less invisible, 0.5 behind a creeper head. Loose buds multiply it
- * by {@link #SOME_BUDS} (any bud: 20 blocks) or {@link #A_STACK} (64 or more: 24), with every vanilla
- * factor still applying, so a sneaking player with a stack is noticed at 19.2 and with a creeper head on
- * too at 9.6. The creeper still needs to see the player: the smell lengthens its reach and never lets it
- * target through a wall. A creeper keeps a target as far as it noticed it, so the same factor widens the
- * distance at which it gives up the chase; otherwise it would notice a player at 20 blocks and drop them
- * at the next tick, being past its 16.
+ * A creeper notices a player out to its follow range times the player's visibility
+ * ({@code TargetingConditions#test}); its follow range is 16 blocks ({@code Mob#createMobAttributes}), and
+ * vanilla scales the visibility ({@code LivingEntity#getVisibilityPercent}): 0.8 sneaking, less invisible,
+ * 0.5 behind a creeper head. Loose buds multiply that visibility by {@link #SOME_BUDS} (any bud) or
+ * {@link #A_STACK} (64 or more), held at full visibility ({@link #visibility}): they never take a creeper's
+ * reach past its follow range. Vanilla keeps 8 blocks between the 16 at which a creeper notices a player and
+ * the 24 within which no monster spawns ({@code NaturalSpawner}, {@code 576.0} = 24²), and the smell keeps
+ * them. What it does is give away a player vanilla sees less of: sneaking, a player carrying any bud is
+ * noticed at the full 16; behind a creeper head, at 10 with a bud and 12 with a stack. The creeper still
+ * needs to see the player: the smell never lets it target through a wall. Since it never notices a player
+ * past its follow range, vanilla's chase, which ends there, needs nothing of it.
  *
  * <p>All of it sits under {@code world.creepersSeekHemp}, the switch that already decides whether hemp
  * draws creepers, and is read at each check, so {@code /hempdustry reload} takes effect at once.
@@ -71,9 +72,9 @@ public final class StashSmell {
 
     /** How long a jar stays open after a hand last took buds out of it: two minutes. */
     public static final int OPEN_TICKS = 2 * 60 * 20;
-    /** A creeper's reach on a player carrying any loose bud. */
+    /** How much more of a player carrying any loose bud a creeper sees, up to all of them. */
     public static final double SOME_BUDS = 1.25;
-    /** A creeper's reach on a player carrying a stack of loose buds or more. */
+    /** How much more of a player carrying a stack of loose buds or more a creeper sees, up to all of them. */
     public static final double A_STACK = 1.5;
     /** How many loose buds count as a stack. */
     public static final int STACK = 64;
@@ -120,8 +121,8 @@ public final class StashSmell {
     }
 
     /**
-     * How much further a creeper notices {@code player}: 1 with no loose buds or with the switch off,
-     * {@link #SOME_BUDS} with any, {@link #A_STACK} with a stack or more.
+     * How much more of {@code player} a creeper sees: 1 with no loose buds or with the switch off,
+     * {@link #SOME_BUDS} with any, {@link #A_STACK} with a stack or more; {@link #visibility} holds the result.
      */
     public static double reachFactor(Player player) {
         if (!ModGameRules.Switch.MOBS_DRAWN_TO_HEMP.on(player.level())) {
@@ -129,6 +130,15 @@ public final class StashSmell {
         }
         int buds = looseBuds(player);
         return buds >= STACK ? A_STACK : buds > 0 ? SOME_BUDS : 1.0;
+    }
+
+    /**
+     * The visibility a creeper reads off {@code player}: vanilla's ({@code vanilla}) times the loose buds'
+     * {@link #reachFactor}, held at full visibility so the reach never passes the creeper's follow range, and
+     * never below vanilla's own (a loader's hook may have raised it).
+     */
+    public static double visibility(double vanilla, Player player) {
+        return Math.max(vanilla, Math.min(1.0, vanilla * reachFactor(player)));
     }
 
     /** How many buds {@code player} carries where the air reaches them (see the class comment). */

@@ -20,7 +20,6 @@
 		"SculkBlockMixin",
 		"SniffingMixin",
 		"SpongeBlockMixin",
-		"TargetGoalMixin",
 		"VibrationListenerMixin",
 		"WorldGenRegionMixin"
 	],
