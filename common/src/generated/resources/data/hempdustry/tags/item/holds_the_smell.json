@@ -1,0 +1,28 @@
+{
+  "values": [
+    "hempdustry:stash_jar",
+    "hempdustry:gilded_stash_jar",
+    "hempdustry:diamond_stash_jar",
+    "hempdustry:netherite_stash_jar",
+    "minecraft:chest",
+    "minecraft:trapped_chest",
+    "minecraft:barrel",
+    "minecraft:copper_chest",
+    "minecraft:exposed_copper_chest",
+    "minecraft:weathered_copper_chest",
+    "minecraft:oxidized_copper_chest",
+    "minecraft:waxed_copper_chest",
+    "minecraft:waxed_exposed_copper_chest",
+    "minecraft:waxed_weathered_copper_chest",
+    "minecraft:waxed_oxidized_copper_chest",
+    "#minecraft:shulker_boxes",
+    {
+      "id": "#c:chests",
+      "required": false
+    },
+    {
+      "id": "#c:barrels",
+      "required": false
+    }
+  ]
+}

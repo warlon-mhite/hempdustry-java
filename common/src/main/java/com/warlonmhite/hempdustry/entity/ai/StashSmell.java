@@ -4,6 +4,7 @@ import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
 import com.warlonmhite.hempdustry.component.StashContents;
 import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.warlonmhite.hempdustry.item.custom.StashJarItem;
+import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.util.ModTags;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -42,11 +43,13 @@ import org.jetbrains.annotations.Nullable;
  * <h2>Loose buds: what counts</h2>
  *
  * Buds and schwag, the things a Stash Jar takes ({@link StashContents#storable}), anywhere in a player's
- * inventory: the hotbar, the offhand, the armour slots, the stack on the cursor, and inside a bundle,
- * which is cloth and holds no smell in. A Stash Jar's glass does: a carried jar's contents count only while
- * it is open, for {@link #OPEN_TICKS} after a hand last took buds out of it, and then with the loose buds.
- * Putting buds in opens nothing. Packed smokeables, hash, kief and edibles are none of these and never
- * count.
+ * inventory: the hotbar, the offhand, the armour slots, the stack on the cursor, and inside anything carried that
+ * holds items and is no box: a bundle, which is cloth, or another mod's backpack, read one level deep through the
+ * loader's item API. A box holds the smell in ({@code #hempdustry:holds_the_smell}): a chest, a barrel or a shulker
+ * box carried as an item, and a Stash Jar's glass, whose contents count only while it is open, for
+ * {@link #OPEN_TICKS} after a hand last took buds out of it from the player's own inventory or cursor, and then
+ * with the loose buds. Putting buds in opens nothing. Packed smokeables, hash, kief and edibles are none of these
+ * and never count.
  *
  * <h2>How far</h2>
  *
@@ -169,15 +172,25 @@ public final class StashSmell {
         if (stack.getItem() instanceof StashJarItem) {
             return jarsOpen ? StashJarItem.contentsOf(stack).count() : 0;
         }
-        BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
-        if (bundle == null) {
+        if (stack.is(ModTags.Items.HOLDS_THE_SMELL)) {
             return 0;
         }
         int buds = 0;
-        for (ItemStackTemplate inside : bundle.items()) {
-            ItemStack copy = inside.create();
-            if (StashContents.storable(copy)) {
-                buds += copy.getCount();
+        BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
+        if (bundle != null) {
+            for (ItemStackTemplate inside : bundle.items()) {
+                ItemStack copy = inside.create();
+                if (StashContents.storable(copy)) {
+                    buds += copy.getCount();
+                }
+            }
+            return buds;
+        }
+        // Any other carrier of items, as its loader's item API shows it, one level deep: a jar inside it keeps
+        // its own smell, the buds loose in it do not.
+        for (ItemStack inside : Services.TRANSFER.contents(stack)) {
+            if (StashContents.storable(inside)) {
+                buds += inside.getCount();
             }
         }
         return buds;

@@ -270,6 +270,20 @@ public class ModItemTagProvider extends FabricTagsProvider.ItemTagsProvider {
         valueLookupBuilder(ModTags.Items.STASH_JAR_STORABLE)
                 .addTag(ModTags.Items.BUDS)
                 .add(ModItems.SCHWAG);
+        // What holds the smell of buds in while carried (StashSmell); every other carrier of items leaks. Vanilla's
+        // boxes by name and by tag, and other mods' chests and barrels through the convention tags, if any.
+        valueLookupBuilder(ModTags.Items.HOLDS_THE_SMELL)
+                .add(ModBlocks.STASH_JAR.asItem())
+                .add(ModBlocks.GILDED_STASH_JAR.asItem())
+                .add(ModBlocks.DIAMOND_STASH_JAR.asItem())
+                .add(ModBlocks.NETHERITE_STASH_JAR.asItem())
+                .add(Items.CHEST)
+                .add(Items.TRAPPED_CHEST)
+                .add(Items.BARREL)
+                .addAll(Items.COPPER_CHEST.asList().stream())
+                .forceAddTag(ItemTags.SHULKER_BOXES)
+                .addOptionalTag(TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("c", "chests")))
+                .addOptionalTag(TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("c", "barrels")));
         valueLookupBuilder(ModTags.Items.SIFTABLE_RESINOUS)
                 .add(ModItems.BELDIA_BUDS);
         valueLookupBuilder(ModTags.Items.SIFTABLE_TRIM)

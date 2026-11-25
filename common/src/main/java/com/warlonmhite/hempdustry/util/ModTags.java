@@ -183,6 +183,12 @@ public class ModTags {
          * a hopper, a pipe).
          */
         public static final TagKey<Item> STASH_JAR_STORABLE = createTag("stash_jar_storable");
+        /**
+         * Containers that hold the smell of the buds inside them while carried: every Stash Jar (until a hand opens
+         * it), the chests, barrels and shulker boxes, and other mods' storage blocks that join {@code #c:chests} or
+         * {@code #c:barrels}. Any other carried item that holds buds (a bundle, a backpack) lets their smell out.
+         */
+        public static final TagKey<Item> HOLDS_THE_SMELL = createTag("holds_the_smell");
         private static TagKey<Item> createTag(String name) {
             return TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name));
         }

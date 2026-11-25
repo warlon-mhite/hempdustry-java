@@ -144,7 +144,10 @@ public class StashJarItem extends BlockItem {
                 if (!out.isEmpty()) {
                     playRemoveOneSound(player);
                     carried.set(out);
-                    StashSmell.openCarriedJar(player);
+                    // Only a jar the player carries: one in a chest's slot opens no jar of theirs.
+                    if (slot.container == player.getInventory()) {
+                        StashSmell.openCarriedJar(player);
+                    }
                 }
             }
             setContents(self, contents.toImmutable());

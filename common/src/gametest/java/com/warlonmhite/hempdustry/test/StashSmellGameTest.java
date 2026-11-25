@@ -104,6 +104,50 @@ public final class StashSmellGameTest {
     }
 
     /**
+     * A box holds the smell in and a bag lets it out: a shulker box, a chest or a barrel carried full of buds hides
+     * them, a bundle does not, and any other item that holds buds is read through its loader's item API, as a
+     * shulker box's contents are. Taking buds out of a jar standing in a chest's slot opens none of the jars the
+     * player carries; out of one in their own inventory, it does.
+     */
+    public static void aBoxHoldsTheSmellInAndABagLetsItOut(GameTestHelper context) {
+        ServerPlayer player = Players.survival(context);
+        List<ItemStack> buds = List.of(new ItemStack(ModItems.INDICA_BUDS, 64));
+        for (net.minecraft.world.item.Item box : List.of(Items.SHULKER_BOX, Items.CHEST, Items.BARREL)) {
+            ItemStack full = new ItemStack(box);
+            full.set(DataComponents.CONTAINER, net.minecraft.world.item.component.ItemContainerContents.fromItems(buds));
+            give(player, full);
+            expect(context, player, "a " + box + " of 64 buds", 1.0);
+        }
+        ItemStack shulker = new ItemStack(Items.SHULKER_BOX);
+        shulker.set(DataComponents.CONTAINER, net.minecraft.world.item.component.ItemContainerContents.fromItems(buds));
+        List<ItemStack> seen = com.warlonmhite.hempdustry.platform.Services.TRANSFER.contents(shulker);
+        context.assertTrue(seen.size() == 1 && seen.getFirst().is(ModItems.INDICA_BUDS) && seen.getFirst().getCount() == 64,
+                "the loader's item API shows " + seen + " in a shulker box of 64 buds: a backpack would not be read");
+
+        // A jar in a chest's slot, right-clicked open: the jar the player carries stays shut.
+        ItemStack carried = new ItemStack(ModBlocks.STASH_JAR);
+        StashContents.Mutable inside = StashContents.EMPTY.mutable();
+        inside.insert(new ItemStack(ModItems.SATIVA_BUDS, 64), 128);
+        StashJarItem.setContents(carried, inside.toImmutable());
+        give(player, carried);
+        ItemStack inTheChest = carried.copy();
+        Slot chestSlot = new Slot(new net.minecraft.world.SimpleContainer(1), 0, 0, 0);
+        chestSlot.set(inTheChest);
+        ItemStack[] cursor = {ItemStack.EMPTY};
+        ((StashJarItem) inTheChest.getItem()).overrideOtherStackedOnMe(inTheChest, ItemStack.EMPTY, chestSlot,
+                ClickAction.SECONDARY, player, net.minecraft.world.entity.SlotAccess.of(() -> cursor[0], stack -> cursor[0] = stack));
+        context.assertTrue(cursor[0].is(ModItems.SATIVA_BUDS), "test setup: nothing came out of the jar in the chest");
+        context.assertFalse(StashSmell.carriedJarOpen(player),
+                "taking buds out of a jar in a chest opened the jar the player carries");
+        cursor[0] = ItemStack.EMPTY;
+        ((StashJarItem) carried.getItem()).overrideOtherStackedOnMe(carried, ItemStack.EMPTY,
+                new Slot(player.getInventory(), 0, 0, 0), ClickAction.SECONDARY, player,
+                net.minecraft.world.entity.SlotAccess.of(() -> cursor[0], stack -> cursor[0] = stack));
+        context.assertTrue(StashSmell.carriedJarOpen(player), "taking buds out of a carried jar did not open it");
+        context.succeed();
+    }
+
+    /**
      * The smell gives away a player vanilla sees less of, and never takes a creeper's reach past its follow range:
      * a creeper with a 4-block reach notices a sneaking player (3.2) 3.5 off only with a bud on them, at the full 4
      * with a bud or a stack, never 4.5 off whatever they carry, and never through a wall. Behind a creeper head

@@ -5,6 +5,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
+import java.util.List;
+
 /**
  * Items moved into a neighbour through the loader's own item-storage API — the only thing a pipe,
  * a storage network's interface or any other storage-only neighbour answers to. Each loader's API
@@ -17,6 +19,13 @@ public interface ItemTransfer {
      * <b>or none of it</b>: a partial insert is rolled back. {@code stack} itself is not changed.
      */
     Result insertWhole(Level level, BlockPos pos, Direction side, ItemStack stack);
+
+    /**
+     * What {@code container}, an item that holds items (a shulker box, a bundle, another mod's backpack), shows
+     * inside it through the loader's item API, one level deep; nothing for an item that holds none. Only read:
+     * nothing is moved.
+     */
+    List<ItemStack> contents(ItemStack container);
 
     enum Result {
         /** All of it went in. */
