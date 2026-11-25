@@ -526,7 +526,7 @@
   "item.hempdustry.stash_jar.part_band": "%s %s (%s)",
   "tag.item.hempdustry.buds": "Buds",
   "tag.item.hempdustry.stash_jar_storable": "Storable in a Stash Jar",
-  "tag.item.hempdustry.holds_the_smell": "Holds the Smell In",
+  "tag.item.hempdustry.leaks_the_smell": "Leaks the Smell",
   "gamerule.category.hempdustry.hempdustry": "Hempdustry",
   "gamerule.hempdustry.effects": "Hemp effects",
   "gamerule.hempdustry.effects.description": "Whether smoking, vaping and eating hemp give their effects. Off is industrial hemp only. Can only turn off what the server's config leaves on.",

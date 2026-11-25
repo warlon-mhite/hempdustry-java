@@ -184,11 +184,11 @@ public class ModTags {
          */
         public static final TagKey<Item> STASH_JAR_STORABLE = createTag("stash_jar_storable");
         /**
-         * Containers that hold the smell of the buds inside them while carried: every Stash Jar (until a hand opens
-         * it), the chests, barrels and shulker boxes, and other mods' storage blocks that join {@code #c:chests} or
-         * {@code #c:barrels}. Any other carried item that holds buds (a bundle, a backpack) lets their smell out.
+         * Carried bags that let the smell of the buds inside them out: vanilla's bundles and other mods'
+         * backpacks, listed by id. Every other carried item that holds items holds the smell in, as a Stash Jar
+         * does until a hand opens it: a chest, a shulker box, a crate no one listed. Packs add their own bags.
          */
-        public static final TagKey<Item> HOLDS_THE_SMELL = createTag("holds_the_smell");
+        public static final TagKey<Item> LEAKS_THE_SMELL = createTag("leaks_the_smell");
         private static TagKey<Item> createTag(String name) {
             return TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name));
         }

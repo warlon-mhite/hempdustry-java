@@ -1,0 +1,53 @@
+{
+  "values": [
+    "#minecraft:bundles",
+    {
+      "id": "sophisticatedbackpacks:backpack",
+      "required": false
+    },
+    {
+      "id": "sophisticatedbackpacks:copper_backpack",
+      "required": false
+    },
+    {
+      "id": "sophisticatedbackpacks:iron_backpack",
+      "required": false
+    },
+    {
+      "id": "sophisticatedbackpacks:gold_backpack",
+      "required": false
+    },
+    {
+      "id": "sophisticatedbackpacks:diamond_backpack",
+      "required": false
+    },
+    {
+      "id": "sophisticatedbackpacks:netherite_backpack",
+      "required": false
+    },
+    {
+      "id": "#travelersbackpack:custom_travelers_backpack",
+      "required": false
+    },
+    {
+      "id": "#nemos_backpacks:backpacks/all",
+      "required": false
+    },
+    {
+      "id": "yyzsbackpack:iron_backpack",
+      "required": false
+    },
+    {
+      "id": "yyzsbackpack:gold_backpack",
+      "required": false
+    },
+    {
+      "id": "yyzsbackpack:diamond_backpack",
+      "required": false
+    },
+    {
+      "id": "yyzsbackpack:netherite_backpack",
+      "required": false
+    }
+  ]
+}

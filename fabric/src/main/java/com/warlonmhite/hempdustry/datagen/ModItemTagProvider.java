@@ -270,20 +270,26 @@ public class ModItemTagProvider extends FabricTagsProvider.ItemTagsProvider {
         valueLookupBuilder(ModTags.Items.STASH_JAR_STORABLE)
                 .addTag(ModTags.Items.BUDS)
                 .add(ModItems.SCHWAG);
-        // What holds the smell of buds in while carried (StashSmell); every other carrier of items leaks. Vanilla's
-        // boxes by name and by tag, and other mods' chests and barrels through the convention tags, if any.
-        valueLookupBuilder(ModTags.Items.HOLDS_THE_SMELL)
-                .add(ModBlocks.STASH_JAR.asItem())
-                .add(ModBlocks.GILDED_STASH_JAR.asItem())
-                .add(ModBlocks.DIAMOND_STASH_JAR.asItem())
-                .add(ModBlocks.NETHERITE_STASH_JAR.asItem())
-                .add(Items.CHEST)
-                .add(Items.TRAPPED_CHEST)
-                .add(Items.BARREL)
-                .addAll(Items.COPPER_CHEST.asList().stream())
-                .forceAddTag(ItemTags.SHULKER_BOXES)
-                .addOptionalTag(TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("c", "chests")))
-                .addOptionalTag(TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath("c", "barrels")));
+        // The carried bags that let the smell of buds out (StashSmell); everything else that holds items holds it in.
+        // Vanilla's bundles, and the backpack mods of Minecraft 26.3 that keep their contents on the stack or behind
+        // the loader's item API, each optional: Sophisticated Backpacks by id, Traveler's Backpack and Nemo's
+        // Backpacks by the tags that list every backpack of theirs, yyz's Backpack by id.
+        builder(ModTags.Items.LEAKS_THE_SMELL)
+                .forceAddTag(ItemTags.BUNDLES)
+                .addOptional(item("sophisticatedbackpacks", "backpack"))
+                .addOptional(item("sophisticatedbackpacks", "copper_backpack"))
+                .addOptional(item("sophisticatedbackpacks", "iron_backpack"))
+                .addOptional(item("sophisticatedbackpacks", "gold_backpack"))
+                .addOptional(item("sophisticatedbackpacks", "diamond_backpack"))
+                .addOptional(item("sophisticatedbackpacks", "netherite_backpack"))
+                .addOptionalTag(TagKey.create(Registries.ITEM,
+                        Identifier.fromNamespaceAndPath("travelersbackpack", "custom_travelers_backpack")))
+                .addOptionalTag(TagKey.create(Registries.ITEM,
+                        Identifier.fromNamespaceAndPath("nemos_backpacks", "backpacks/all")))
+                .addOptional(item("yyzsbackpack", "iron_backpack"))
+                .addOptional(item("yyzsbackpack", "gold_backpack"))
+                .addOptional(item("yyzsbackpack", "diamond_backpack"))
+                .addOptional(item("yyzsbackpack", "netherite_backpack"));
         valueLookupBuilder(ModTags.Items.SIFTABLE_RESINOUS)
                 .add(ModItems.BELDIA_BUDS);
         valueLookupBuilder(ModTags.Items.SIFTABLE_TRIM)
@@ -463,5 +469,10 @@ public class ModItemTagProvider extends FabricTagsProvider.ItemTagsProvider {
         valueLookupBuilder(ItemTags.SULFUR_CUBE_SWALLOWABLE)
                 .addTag(ModTags.Items.FOOTBAG);
         }
+
+    /** Another mod's item, named for an optional tag entry. */
+    private static ResourceKey<Item> item(String namespace, String path) {
+        return ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(namespace, path));
+    }
     }
 

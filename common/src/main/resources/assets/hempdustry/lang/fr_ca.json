@@ -526,7 +526,7 @@
   "item.hempdustry.stash_jar.part_band": "%s %s (%s)",
   "tag.item.hempdustry.buds": "Fleurs",
   "tag.item.hempdustry.stash_jar_storable": "Rangeable dans un bocal à beuh",
-  "tag.item.hempdustry.holds_the_smell": "Garde l'odeur",
+  "tag.item.hempdustry.leaks_the_smell": "Laisse filer l'odeur",
   "gamerule.category.hempdustry.hempdustry": "Hempdustry",
   "gamerule.hempdustry.effects": "Effets du chanvre",
   "gamerule.hempdustry.effects.description": "Fumer, vapoter ou manger du chanvre donne ses effets. Désactivé, c'est du chanvre industriel et rien d'autre. Ne peut désactiver que ce que la configuration du serveur laisse activé.",

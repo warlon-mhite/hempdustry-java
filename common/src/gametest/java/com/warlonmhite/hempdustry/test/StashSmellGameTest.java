@@ -104,25 +104,45 @@ public final class StashSmellGameTest {
     }
 
     /**
-     * A box holds the smell in and a bag lets it out: a shulker box, a chest or a barrel carried full of buds hides
-     * them, a bundle does not, and any other item that holds buds is read through its loader's item API, as a
-     * shulker box's contents are. Taking buds out of a jar standing in a chest's slot opens none of the jars the
-     * player carries; out of one in their own inventory, it does.
+     * Only a bag lets the smell out ({@code #hempdustry:leaks_the_smell}): a bundle of buds gives its carrier away,
+     * and every other carried item full of buds holds them in, listed or not: a shulker box, a chest, a barrel, but
+     * also a dispenser, a hopper or a decorated pot. A shut Stash Jar in a bundle stays shut: only the buds loose
+     * in the bag count. Any bag is read through its loader's item API too, as a shulker box's contents are. Taking
+     * buds out of a jar standing in a chest's slot opens none of the jars the player carries; out of one in their
+     * own inventory, it does.
      */
-    public static void aBoxHoldsTheSmellInAndABagLetsItOut(GameTestHelper context) {
+    public static void onlyABagLetsTheSmellOut(GameTestHelper context) {
         ServerPlayer player = Players.survival(context);
         List<ItemStack> buds = List.of(new ItemStack(ModItems.INDICA_BUDS, 64));
-        for (net.minecraft.world.item.Item box : List.of(Items.SHULKER_BOX, Items.CHEST, Items.BARREL)) {
+        for (net.minecraft.world.item.Item box : List.of(Items.SHULKER_BOX, Items.CHEST, Items.BARREL, Items.DISPENSER,
+                Items.HOPPER, Items.DECORATED_POT)) {
             ItemStack full = new ItemStack(box);
             full.set(DataComponents.CONTAINER, net.minecraft.world.item.component.ItemContainerContents.fromItems(buds));
             give(player, full);
+            context.assertFalse(full.is(ModTags.Items.LEAKS_THE_SMELL), box + " is listed as a bag");
             expect(context, player, "a " + box + " of 64 buds", 1.0);
         }
+
+        ItemStack bag = new ItemStack(Items.BUNDLE);
+        bag.set(DataComponents.BUNDLE_CONTENTS,
+                new BundleContents(List.of(new ItemStackTemplate(ModItems.SATIVA_BUDS, 64))));
+        give(player, bag);
+        expect(context, player, "a bundle of 64 buds", StashSmell.A_STACK);
+        ItemStack sealed = new ItemStack(ModBlocks.STASH_JAR);
+        StashContents.Mutable stash = StashContents.EMPTY.mutable();
+        stash.insert(new ItemStack(ModItems.SATIVA_BUDS, 64), 128);
+        StashJarItem.setContents(sealed, stash.toImmutable());
+        bag.set(DataComponents.BUNDLE_CONTENTS, new BundleContents(List.of(ItemStackTemplate.fromNonEmptyStack(sealed),
+                new ItemStackTemplate(ModItems.INDICA_BUDS, 1))));
+        give(player, bag);
+        expect(context, player, "a bundle holding a shut jar of 64 buds and one bud", StashSmell.SOME_BUDS);
+
         ItemStack shulker = new ItemStack(Items.SHULKER_BOX);
         shulker.set(DataComponents.CONTAINER, net.minecraft.world.item.component.ItemContainerContents.fromItems(buds));
         List<ItemStack> seen = com.warlonmhite.hempdustry.platform.Services.TRANSFER.contents(shulker);
         context.assertTrue(seen.size() == 1 && seen.getFirst().is(ModItems.INDICA_BUDS) && seen.getFirst().getCount() == 64,
                 "the loader's item API shows " + seen + " in a shulker box of 64 buds: a backpack would not be read");
+        give(player, ItemStack.EMPTY);
 
         // A jar in a chest's slot, right-clicked open: the jar the player carries stays shut.
         ItemStack carried = new ItemStack(ModBlocks.STASH_JAR);
