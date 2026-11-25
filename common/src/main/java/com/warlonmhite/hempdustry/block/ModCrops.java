@@ -136,7 +136,7 @@ public final class ModCrops {
         return ALL.stream().map(Crop::crop).toArray(Block[]::new);
     }
 
-    /** Every wild plant, then every potted one, in {@link #ALL}'s order. */
+    /** Every wild plant, in {@link #ALL}'s order; each names its potted twin, if it has one. */
     public static Stream<Wild> wilds() {
         return ALL.stream().flatMap(crop -> crop.wild().stream());
     }

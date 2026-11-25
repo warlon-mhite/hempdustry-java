@@ -189,11 +189,12 @@ public class Hempdustry {
 
 	private static void registerFlammables(Registration registration) {
 		// A crop burns as vanilla's crops do not (they never catch): a field of dry hemp is tinder. Its wild
-		// plant burns as vanilla's flowers. Not the Nether's, the End's or the sea's.
+		// plant burns as vanilla's flowers, 60 to catch and 100 to burn away (FireBlock#bootStrap: the poppy,
+		// the dandelion, the torchflower and every other small flower). Not the Nether's, the End's or the sea's.
 		for (ModCrops.Crop crop : ModCrops.ALL) {
 			if (crop.burns()) {
 				registration.flammable(crop.crop(), 10, 25);
-				crop.wild().ifPresent(wild -> registration.flammable(wild.flower(), 20, 40));
+				crop.wild().ifPresent(wild -> registration.flammable(wild.flower(), 60, 100));
 			}
 		}
 		registration.flammable(ModBlocks.HEMP_BALE, 50, 10);

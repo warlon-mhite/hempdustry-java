@@ -13,6 +13,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
 
 import java.util.Map;
@@ -26,6 +27,34 @@ import java.util.TreeMap;
  */
 public final class ModCropsGameTest {
     private ModCropsGameTest() {
+    }
+
+    /**
+     * The wild plant of every crop that burns burns as vanilla's own flowers do, at the poppy's odds; the rest (the
+     * Nether's, the End's, the sea's) do not burn at all. The 2.1 flowers burnt at a third of the rate, so a burning
+     * cherry grove took its pink petals and left Wild Cherry Wine standing.
+     */
+    public static void aWildPlantBurnsAsAFlower(GameTestHelper context) {
+        TestPlatform.Flammability poppy = TestPlatform.INSTANCE.flammability(Blocks.POPPY);
+        context.assertTrue(poppy.igniteOdds() > 0 && poppy.burnOdds() > 0,
+                "a poppy does not burn here, so the check below proves nothing: " + poppy);
+        Map<String, String> findings = new TreeMap<>();
+        int burning = 0;
+        for (ModCrops.Crop crop : ModCrops.ALL) {
+            if (crop.wild().isEmpty()) {
+                continue;
+            }
+            Block flower = crop.wild().get().flower();
+            TestPlatform.Flammability odds = TestPlatform.INSTANCE.flammability(flower);
+            TestPlatform.Flammability expected = crop.burns() ? poppy : new TestPlatform.Flammability(0, 0);
+            burning += crop.burns() ? 1 : 0;
+            if (!odds.equals(expected)) {
+                findings.put(BuiltInRegistries.BLOCK.getKey(flower).toString(), odds + ", expected " + expected);
+            }
+        }
+        context.assertTrue(burning >= 2, "only " + burning + " wild plants burn: the sweep saw too little");
+        context.assertTrue(findings.isEmpty(), "wild plants that do not burn as a flower: " + findings);
+        context.succeed();
     }
 
     /** Every crop block and seed item of the mod is in the list, once, and each entry agrees with its strain. */
