@@ -207,7 +207,8 @@ public final class ConfigGameTest {
     /**
      * The {@code client} section of {@code hempdustry.json} is still clamped, but says nothing of it: nothing on a
      * server runs with it, and a dedicated server warning about a pack's tint every start would only puzzle its owner.
-     * A game's own client file still says so when it moves a value.
+     * A game's own client file still says so when it moves a value, one started from this section included: the
+     * section is written back as it was read, not clamped.
      */
     public static void theOldClientSectionIsClampedQuietly(GameTestHelper context) {
         List<String> quiet = LogLines.warnings(() -> withConfig("{ \"client\": { \"biomeTintStrength\": 1.0E9 } }",
@@ -215,6 +216,21 @@ public final class ConfigGameTest {
                         "the old client section's tint was not clamped: " + HempdustryConfig.get().client())));
         context.assertTrue(quiet.stream().noneMatch(line -> line.contains("client.biomeTintStrength")),
                 "the old client section warned on a server: " + quiet);
+        withConfig("{ \"client\": { \"biomeTintStrength\": 1.0E9 } }", () -> {
+            // Written back as read, so that a game starting its own client file from this one moves the value
+            // there and says so; written back clamped, the move would already be made and nobody told.
+            Path main = Services.PLATFORM.configDir().resolve(Hempdustry.MOD_ID + ".json");
+            String rewritten = new String(read(main), StandardCharsets.UTF_8);
+            context.assertTrue(rewritten.contains("1.0E9"), "the old client section was written back clamped");
+            inClientFolder(folder -> {
+                Path started = folder.resolve(ClientConfig.FILE);
+                List<String> said = LogLines.warnings(() -> ClientConfig.load(started, main));
+                context.assertTrue(ClientConfig.get().biomeTintStrength() == 1.0
+                                && said.stream().anyMatch(line -> line.contains("client.biomeTintStrength")),
+                        "a client file started from the old section moved its tint without a word: "
+                                + ClientConfig.get() + ", " + said);
+            });
+        });
         inClientFolder(folder -> {
             Path file = folder.resolve(ClientConfig.FILE);
             write(file, "{ \"client\": { \"biomeTintStrength\": 1.0E9 } }");
@@ -381,6 +397,11 @@ public final class ConfigGameTest {
                 JsonPrimitive value = key.getValue().getAsJsonPrimitive();
                 if (!same(value, said.group(1))) {
                     findings.put(where, "the comment gives its default as " + said.group(1) + ", the code " + value);
+                }
+                // The main file's client section is written back as it was read, never clamped (a game starts its own
+                // file from it, and moves a value there); its ranges are held below, on the client's own file.
+                if (file.isEmpty() && section.getKey().equals("client")) {
+                    continue;
                 }
                 if (value.isNumber()) {
                     JsonElement min = bottom.getAsJsonObject(section.getKey()).get(key.getKey());

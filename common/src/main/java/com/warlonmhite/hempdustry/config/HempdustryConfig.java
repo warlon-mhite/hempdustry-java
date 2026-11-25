@@ -158,7 +158,11 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
                 section(path, merged, "loot", Loot.CODEC, running.loot(), kept));
         instance = read.clamped();
         if (kept.isEmpty()) {
-            write(path, instance);
+            // The client section goes back as it was read: a game with no client file of its own yet starts one
+            // from this file, and only there is a value it has to move named. Written back clamped, the value
+            // would already be moved and nobody told.
+            write(path, new HempdustryConfig(read.client(), instance.effects(), instance.world(), instance.infuser(),
+                    instance.loot()));
         } else {
             Hempdustry.LOGGER.error("{}: {} could not be read and kept what was running; everything else in the file"
                     + " was applied, and the file is left as it is so it can be fixed", path, String.join(", ", kept));

@@ -70,8 +70,13 @@ public class ModCommands {
                     HempdustryConfig.Outcome outcome = HempdustryConfig.loadFile();
                     if (!outcome.read()) {
                         // The file could not be read and was left alone; the settings already running
-                        // stay. Say so, or a typo looks exactly like a reload that took.
+                        // stay. Say so, or a typo looks exactly like a reload that took. A game hosting its own
+                        // world still re-reads its own preferences, which live in a file of their own.
                         context.getSource().sendFailure(Component.translatable("commands.hempdustry.reload.failed"));
+                        if (!ClientConfig.reload()) {
+                            context.getSource().sendFailure(
+                                    Component.translatable("commands.hempdustry.reload.client_failed"));
+                        }
                         return 0;
                     }
                     // Sent as a broadcast-to-ops message: a balance change is something the other
