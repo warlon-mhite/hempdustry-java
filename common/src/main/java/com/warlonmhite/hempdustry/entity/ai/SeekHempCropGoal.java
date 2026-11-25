@@ -353,8 +353,9 @@ public class SeekHempCropGoal extends RandomStrollGoal {
     /**
      * Looks at {@code samples} random columns within {@code range} of the creeper and returns the
      * root of the first grown, open-sky plant {@code cover} accepts that no other mob of its kind is
-     * standing by, or null. Whether the mob cares at all is not asked here: its goal asks it before
-     * looking ({@link #caresAboutHemp}).
+     * standing by, or null. Every plant {@code cover} accepts counts, whatever its stage: how hard a plant
+     * must pull for this mob ({@link #pullNeeded}) is asked only by the glance above, and whether the mob
+     * walks at all by its goal ({@link #canUse}).
      */
     public static @Nullable BlockPos findCover(PathfinderMob creeper, int range, int samples,
                                              Predicate<BlockState> cover) {

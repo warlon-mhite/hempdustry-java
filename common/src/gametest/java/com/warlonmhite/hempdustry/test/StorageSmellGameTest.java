@@ -91,6 +91,17 @@ public final class StorageSmellGameTest {
             chest.setItem(10, new ItemStack(ModItems.SATIVA_BUDS, 64));
             context.assertTrue(StashSmellGameTest.notices(goal, at, 500),
                     "a creeper 3 blocks from an opened chest of buds never noticed it in 500 checks");
+            // Emptied for a moment, it draws nobody; filled again inside its two minutes, it smells again.
+            java.util.List<ItemStack> held = new java.util.ArrayList<>();
+            for (int slot = 0; slot < chest.getContainerSize(); slot++) {
+                held.add(chest.removeItemNoUpdate(slot));
+            }
+            context.assertFalse(StashSmellGameTest.notices(goal, at, 50), "a creeper noticed an emptied chest");
+            for (int slot = 0; slot < held.size(); slot++) {
+                chest.setItem(slot, held.get(slot));
+            }
+            context.assertTrue(StashSmellGameTest.notices(goal, at, 500),
+                    "a chest emptied for a moment and filled again inside its two minutes never smelt again");
             StashSmell.letSmellOut(context.getLevel(), at, context.getLevel().getGameTime());
             context.assertFalse(StashSmell.smellsOpen(context.getLevel(), at), "a chest's smell did not fade");
             context.assertFalse(StashSmellGameTest.notices(goal, at, 200), "a creeper noticed a chest whose smell had faded");

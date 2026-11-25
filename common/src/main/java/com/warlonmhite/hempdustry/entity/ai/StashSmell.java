@@ -100,7 +100,7 @@ public final class StashSmell {
     public static final double A_STACK = 1.5;
     /** How many loose buds count as a stack. */
     public static final int STACK = 64;
-    /** How far an opened jar is noticed with nothing in it, and at most, in blocks. */
+    /** How far an opened jar is noticed holding less than a full slot of buds, and at most, in blocks. */
     public static final int NEAREST_REACH = 8;
     public static final int FURTHEST_REACH = 24;
     /** The blocks of reach each full slot of 64 adds. */
@@ -112,7 +112,8 @@ public final class StashSmell {
      * The placed stashes each level holds that a hand opened in the last two minutes, jars and storage blocks, and
      * until when each smells, so a creeper looks at those and never scans the blocks around it. Weakly keyed: a
      * level gone with its server takes its list along. Each position is asked again at every look, and dropped once
-     * its stash is shut, empty, gone or unloaded.
+     * its stash is shut, gone or unloaded; one emptied for a moment is
+     * kept, and smells again if filled before its time runs out.
      */
     private static final Map<Level, Map<BlockPos, Long>> OPENED = new WeakHashMap<>();
 
@@ -399,16 +400,24 @@ public final class StashSmell {
      * minutes, and holding a bud. Never loads a chunk to answer.
      */
     public static boolean smellsOpen(Level level, BlockPos pos) {
+        return stillOpen(level, pos) && budsAt(level, pos) > 0;
+    }
+
+    /**
+     * Whether the stash at {@code pos} is loaded, still there and in its two minutes, buds or not. A stash emptied
+     * for a moment stays open: a hopper or a hand filling it again within the two minutes lets the smell out again.
+     */
+    private static boolean stillOpen(Level level, BlockPos pos) {
         if (!level.isLoaded(pos)) {
             return false;
         }
         long now = level.getGameTime();
         if (level.getBlockEntity(pos) instanceof StashJarBlockEntity jar) {
-            return jar.smells(now) && jar.contents().count() > 0;
+            return jar.smells(now);
         }
         Map<BlockPos, Long> opened = OPENED.get(level);
         Long until = opened == null ? null : opened.get(pos);
-        return until != null && now < until && isStorage(level, pos) && budsAt(level, pos) > 0;
+        return until != null && now < until && isStorage(level, pos);
     }
 
     private static Map<BlockPos, Long> opened(Level level) {
@@ -439,11 +448,14 @@ public final class StashSmell {
         int drawing = 0;
         for (Iterator<BlockPos> it = opened.keySet().iterator(); it.hasNext(); ) {
             BlockPos pos = it.next();
-            if (!smellsOpen(mob.level(), pos)) {
+            if (!stillOpen(mob.level(), pos)) {
                 it.remove();
                 continue;
             }
             int buds = budsAt(mob.level(), pos);
+            if (buds <= 0) {
+                continue;
+            }
             int reach = reach(buds);
             if (mob.position().distanceToSqr(Vec3.atCenterOf(pos)) <= (double) reach * reach
                     && draws(mob.getRandom(), buds) && mob.getRandom().nextInt(++drawing) == 0) {

@@ -38,8 +38,9 @@ import org.jetbrains.annotations.Nullable;
  *
  * <h2>What is kept</h2>
  *
- * Priority 5, beside vanilla's wandering, so a creeper with a target always attacks it first: the attack
- * goal at 4 takes the movement from this one. It attacks only a player it sees, as ever. It walks at its
+ * Priority 5, beside vanilla's wandering ({@code WaterAvoidingRandomStrollGoal} at 5 in {@code Creeper#registerGoals}),
+ * so a creeper with a target always attacks it first: the attack goal ({@code MeleeAttackGoal}, 4 there) takes the
+ * movement from this one. It attacks only a player it sees, as ever. It walks at its
  * wandering pace and does not turn to stare at the jar. Under {@code world.creepersSeekHemp}, read at each
  * check, and only for a mob of {@code #hempdustry:drawn_to_stash} (vanilla's creeper by default), asked at each
  * check too.
@@ -48,7 +49,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public class SeekStashJarGoal extends Goal {
 
-    /** {@code WaterAvoidingRandomStrollGoal}'s speed on a creeper: it comes at its wandering pace. */
+    /** {@code WaterAvoidingRandomStrollGoal}'s speed on a creeper, 0.8 in {@code Creeper#registerGoals}: it comes at its wandering pace. */
     private static final double SPEED = 0.8;
     /** A creeper asks whether it smells an opened jar once a second. */
     public static final int CHECK_TICKS = 20;

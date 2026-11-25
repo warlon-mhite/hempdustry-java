@@ -42,7 +42,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  *
  * <p>The tag is asked here, when the mob is made, and again by each goal every time it could start, so a mob taken
  * out of a tag by a {@code /reload} stops at once; one put in by a {@code /reload} takes the walk once it is made
- * again (a chunk loaded, a new spawn). {@code world.creepersSeekHemp} stays the one switch over both.
+ * again (a chunk loaded, a new spawn). Until then such a mob already notices a player carrying loose buds the way a
+ * creeper does, since that reach is asked of the tag at each look ({@code LivingEntityVisibilityMixin}), but walks to
+ * no opened jar. Giving every mob both goals so that they could start on a tag added later would put two more goals on
+ * every zombie and cow in the world for the sake of a reload; a new spawn is soon enough.
+ * {@code world.creepersSeekHemp} stays the one switch over both.
  *
  * <p>The endermen's walk into Ender Haze and the drowned's to Maui Wowie are added here too, by class, for the same
  * reason: an injection into {@code Enderman#registerGoals} or {@code Drowned#addBehaviourGoals} missed a modded
