@@ -2,7 +2,7 @@ package com.warlonmhite.hempdustry.strain;
 
 import com.mojang.serialization.Codec;
 import com.warlonmhite.hempdustry.component.ModComponents;
-import com.warlonmhite.hempdustry.util.ModTags;
+import com.warlonmhite.hempdustry.strain.internal.Resins;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -53,15 +53,12 @@ public enum ResinStep implements StringRepresentable {
     }
 
     /**
-     * The step a bud reads: the one written on it, else very rich for a bud in {@code #hempdustry:siftable/resinous}
-     * and average for every other, as it sieved before resin.
+     * The step a bud reads: the one written on it, else the one it sieved as before resin (very rich for a bud in
+     * {@code #hempdustry:siftable/resinous}, average for every other; the rule is {@code Resins.legacy}).
      */
     public static ResinStep of(ItemStack stack) {
         ResinStep written = stack.get(ModComponents.RESIN_STEP);
-        if (written != null) {
-            return written;
-        }
-        return stack.is(ModTags.Items.SIFTABLE_RESINOUS) ? VERY_RICH : AVERAGE;
+        return written != null ? written : Resins.legacy(stack);
     }
 
     /** Translation key of the line the player reads, e.g. {@code hempdustry.resin.very_rich}. */

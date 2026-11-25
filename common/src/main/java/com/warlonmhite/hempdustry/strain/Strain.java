@@ -143,7 +143,10 @@ import net.minecraft.world.level.block.Blocks;
  * A strain is a sheet. From the breeding update a cross writes a new one, carried by its seeds and buds,
  * that no registry lists. <b>Never assume a {@code Holder<Strain>} has an id</b>: read the strain off
  * {@code value()}, test a known one with {@code is(key)}, which is false for a strain with none, and never
- * {@code unwrapKey().orElseThrow()}.
+ * {@code unwrapKey().orElseThrow()}. What a load of such a strain does is the same as its registered twin's
+ * already; what cannot be done yet is keep one: a stack writes and sends its strain by id ({@link #ENTRY_CODEC},
+ * {@link #ENTRY_PACKET_CODEC}), and both refuse a strain without. They change with the breeding update, before an
+ * id-less strain can reach a stack.
  *
  * <h2>A strain is a smokeable material, not necessarily a plant</h2>
  *
@@ -462,14 +465,16 @@ public record Strain(String translationKey, int color, int modelIndex,
 
     /**
      * A strain file. Every key of 2.2 is written in full (see {@link FileFields}), but a strain that grows on no
-     * plant (hash, rosin) is written without a {@code plant} object, which it would never read.
+     * plant (hash, rosin, schwag) is written without the two it would never read: the {@code plant} object, and
+     * {@code potency}, which only a plant's buds are weighed by (at the oven and in the bowl). Its {@code chemotype}
+     * stays: hash smokes as its strain's chemotype.
      */
     public static final Codec<Strain> CODEC = Codec.of(new Encoder<>() {
         @Override
         public <T> DataResult<T> encode(Strain strain, DynamicOps<T> ops, T prefix) {
             DataResult<T> written = FILE.encode(strain, ops, prefix);
             boolean plant = strain.seedItem().isPresent() || strain.wildFlower().isPresent();
-            return plant ? written : written.map(file -> ops.remove(file, "plant"));
+            return plant ? written : written.map(file -> ops.remove(ops.remove(file, "plant"), "potency"));
         }
     }, FILE);
 

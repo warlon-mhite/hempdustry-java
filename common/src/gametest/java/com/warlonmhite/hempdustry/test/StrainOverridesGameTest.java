@@ -2,6 +2,8 @@ package com.warlonmhite.hempdustry.test;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.warlonmhite.hempdustry.strain.ModStrains;
+import com.warlonmhite.hempdustry.strain.Strain;
 import com.warlonmhite.hempdustry.strain.StrainOverrides;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.resources.Identifier;
@@ -46,6 +48,17 @@ public final class StrainOverridesGameTest {
         }
         context.assertTrue(kush.getAsJsonObject("plant").has("grow_quality") && kush.getAsJsonObject("potency").has("base"),
                 "Purple Kush's sheets are not written in full: " + kush);
+
+        // The file held against the mod's is the one the running strain came from: a file a load condition turned
+        // off sits on top of the stack but reads as something else, and is passed over; one that loaded is named.
+        var registries = context.getLevel().registryAccess();
+        Strain running = registries.lookupOrThrow(Strain.REGISTRY_KEY).getValue(ModStrains.BELDIA);
+        context.assertTrue(StrainOverrides.loadedFile(List.of(ours, old), running, registries) == 0,
+                "a 2.1 copy turned off by its load condition was taken for the file that loaded");
+        Strain fromOld = Strain.CODEC.parse(net.minecraft.resources.RegistryOps.create(
+                com.mojang.serialization.JsonOps.INSTANCE, registries), old).getOrThrow();
+        context.assertTrue(StrainOverrides.loadedFile(List.of(ours, old), fromOld, registries) == 1,
+                "the 2.1 copy that loaded was not taken for the file that loaded");
         context.succeed();
     }
 
