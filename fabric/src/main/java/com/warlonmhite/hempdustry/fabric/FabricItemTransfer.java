@@ -26,6 +26,15 @@ public final class FabricItemTransfer implements ItemTransfer {
             return List.of();
         }
         Storage<ItemVariant> storage = ItemStorage.ITEM.find(container, ContainerItemContext.withConstant(container));
+        return read(storage);
+    }
+
+    @Override
+    public List<ItemStack> contents(Level level, BlockPos pos) {
+        return read(ItemStorage.SIDED.find(level, pos, null));
+    }
+
+    private static List<ItemStack> read(Storage<ItemVariant> storage) {
         if (storage == null) {
             return List.of();
         }

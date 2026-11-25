@@ -429,6 +429,8 @@ public final class ViewerRecipes {
      * what each one does is a paragraph, not a row of slots.
      * And Dud Weed has no wild plant and no recipe: its seeds say where they come from. Echo OG's say how
      * it grows, since nothing it eats (experience, a catalyst's charge) is an item a row could show.
+     * The Stash Jar says what no row can: that it keeps the smell of buds in until a hand takes some out, and that
+     * taking buds out of any storage lets it out, which nothing in the world shows (no puff, no sound).
      *
      * <p>The Grow Fan's and the Dehumidifier's reach come from the world's grow climate, a synced datapack
      * registry, so a pack that moves them moves the text: whole blocks only, and a width as the blocks it covers
@@ -454,6 +456,10 @@ public final class ViewerRecipes {
         out.put(ModBlocks.DEHUMIDIFIER.asItem(), Component.translatable("hempdustry.info.dehumidifier",
                 2 * drier.reach() + 1, Math.max(drier.above(), drier.below())));
         out.put(ModBlocks.HYGROMETER.asItem(), Component.translatable("hempdustry.info.hygrometer"));
+        for (Block jar : List.of(ModBlocks.STASH_JAR, ModBlocks.GILDED_STASH_JAR, ModBlocks.DIAMOND_STASH_JAR,
+                ModBlocks.NETHERITE_STASH_JAR)) {
+            out.put(jar.asItem(), Component.translatable("hempdustry.info.stash_jar"));
+        }
         out.put(ModItems.DUD_WEED_SEEDS, Component.translatable("hempdustry.info.dud_weed_seeds"));
         out.put(ModItems.ECHO_OG_SEEDS, Component.translatable("hempdustry.info.echo_og_seeds"));
         out.put(ModItems.MAUI_WOWIE_SEEDS, Component.translatable("hempdustry.info.maui_wowie_seeds"));

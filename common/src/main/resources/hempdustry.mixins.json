@@ -18,6 +18,7 @@
 		"ReloadableServerRegistriesMixin",
 		"Schema1460Mixin",
 		"SculkBlockMixin",
+		"ServerPlayerGameModeMixin",
 		"SniffingMixin",
 		"SpongeBlockMixin",
 		"VibrationListenerMixin",

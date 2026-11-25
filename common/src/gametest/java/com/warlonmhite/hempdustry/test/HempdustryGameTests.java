@@ -447,6 +447,8 @@ public final class HempdustryGameTests {
         register("only_a_bag_lets_the_smell_out", StashSmellGameTest::onlyABagLetsTheSmellOut);
         register("a_bag_is_read_wherever_it_keeps_its_buds", StashSmellGameTest::aBagIsReadWhereverItKeepsItsBuds);
         register("a_worn_bag_gives_its_buds_away", StashSmellGameTest::aWornBagGivesItsBudsAway);
+        register("taking_buds_out_of_a_chest_lets_its_smell_out", StorageSmellGameTest::takingBudsOutOfAChestLetsItsSmellOut);
+        register("only_a_hand_lets_storage_smell", StorageSmellGameTest::onlyAHandLetsStorageSmell);
         register("a_creeper_smells_buds_but_still_needs_to_see_them", StashSmellGameTest::aCreeperSmellsBudsButStillNeedsToSeeThem);
         register("an_opened_jars_pull_is_its_buds", StashSmellGameTest::anOpenedJarsPullIsItsBuds);
         register("only_an_opened_jar_draws_creepers", StashSmellGameTest::onlyAnOpenedJarDrawsCreepers);

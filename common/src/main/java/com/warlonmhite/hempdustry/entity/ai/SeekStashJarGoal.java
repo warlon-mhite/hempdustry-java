@@ -11,7 +11,9 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Walks a creeper to a Stash Jar a hand has just opened, and keeps it there while the jar smells.
+ * Walks a creeper to a Stash Jar a hand has just opened, and keeps it there while the jar smells; and the same to
+ * any other storage a hand has just taken buds out of (a chest, a barrel, a shulker box: {@link StashSmell}), which
+ * smells as an opened jar does, with no puff to show it. "The jar" below is either.
  *
  * <h2>The hemp wander, for a jar, with fewer brakes</h2>
  *
@@ -23,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
  *   <li>every creeper in reach cares, not half;</li>
  *   <li>it checks every second ({@link #CHECK_TICKS}), not one glance in twelve seconds: a stack draws a
  *       creeper within seconds, a lone bud about one creeper in three over the two minutes
- *       ({@link StashSmell#noticeOpenedJar});</li>
+ *       ({@link StashSmell#noticeOpenedStash});</li>
  *   <li>no limit on how many come to one jar;</li>
  *   <li>it stays by the jar until the smell fades, then is an ordinary creeper again, with no rest;</li>
  *   <li>any height in reach, wherever it finds a path: a cellar jar draws creepers up out of the caves.</li>
@@ -42,7 +44,7 @@ import org.jetbrains.annotations.Nullable;
  * check, and only for a mob of {@code #hempdustry:drawn_to_stash} (vanilla's creeper by default), asked at each
  * check too.
  *
- * <p>Nothing is saved: the smell is the jar's, in memory, and a chunk reloaded is a jar shut again.
+ * <p>Nothing is saved: the smell is the stash's, in memory, and a chunk reloaded is a stash shut again.
  */
 public class SeekStashJarGoal extends Goal {
 
@@ -73,7 +75,7 @@ public class SeekStashJarGoal extends Goal {
 
     /**
      * Once a second, any opened jar in reach may draw it, at odds that grow with the buds inside
-     * ({@link StashSmell#noticeOpenedJar}). A creeper with a target never gets here.
+     * ({@link StashSmell#noticeOpenedStash}). A creeper with a target never gets here.
      */
     @Override
     public boolean canUse() {
@@ -86,7 +88,7 @@ public class SeekStashJarGoal extends Goal {
             return false;
         }
         nextCheck = now + CHECK_TICKS;
-        jar = StashSmell.noticeOpenedJar(mob);
+        jar = StashSmell.noticeOpenedStash(mob);
         return jar != null;
     }
 

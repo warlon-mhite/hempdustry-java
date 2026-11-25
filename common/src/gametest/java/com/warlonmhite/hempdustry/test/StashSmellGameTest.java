@@ -526,7 +526,7 @@ public final class StashSmellGameTest {
     }
 
     /** Whether {@code goal} goes for the jar at {@code jar} within {@code checks} checks. */
-    private static boolean notices(SeekStashJarGoal goal, BlockPos jar, int checks) {
+    static boolean notices(SeekStashJarGoal goal, BlockPos jar, int checks) {
         for (int check = 0; check < checks; check++) {
             goal.checkNow();
             if (goal.canUse() && jar.equals(goal.jar())) {
@@ -547,7 +547,7 @@ public final class StashSmellGameTest {
         return false;
     }
 
-    private static SeekStashJarGoal jarGoalOf(Mob mob) {
+    static SeekStashJarGoal jarGoalOf(Mob mob) {
         try {
             var field = Mob.class.getDeclaredField("goalSelector");
             field.setAccessible(true);
@@ -561,7 +561,7 @@ public final class StashSmellGameTest {
         }
     }
 
-    private static Creeper creeper(GameTestHelper context, BlockPos at) {
+    static Creeper creeper(GameTestHelper context, BlockPos at) {
         Creeper creeper = context.spawn(EntityTypes.CREEPER, at);
         // Driven by hand: a creeper left thinking would walk off, or swell at the player.
         creeper.setNoAi(true);

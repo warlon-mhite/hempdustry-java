@@ -26,6 +26,15 @@ public final class NeoForgeItemTransfer implements ItemTransfer {
             return List.of();
         }
         ResourceHandler<ItemResource> handler = container.getCapability(Capabilities.Item.ITEM, ItemAccess.forStack(container));
+        return read(handler);
+    }
+
+    @Override
+    public List<ItemStack> contents(Level level, BlockPos pos) {
+        return read(level.getCapability(Capabilities.Item.BLOCK, pos, null));
+    }
+
+    private static List<ItemStack> read(ResourceHandler<ItemResource> handler) {
         if (handler == null) {
             return List.of();
         }

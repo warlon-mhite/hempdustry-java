@@ -27,6 +27,12 @@ public interface ItemTransfer {
      */
     List<ItemStack> contents(ItemStack container);
 
+    /**
+     * What the block at {@code pos} holds, as its loader's item API shows it from no side in particular: the
+     * storage of a mod whose block is no vanilla container. Only read: nothing is moved.
+     */
+    List<ItemStack> contents(Level level, BlockPos pos);
+
     enum Result {
         /** All of it went in. */
         MOVED,

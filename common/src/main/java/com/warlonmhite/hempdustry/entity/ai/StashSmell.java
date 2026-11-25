@@ -6,23 +6,31 @@ import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.warlonmhite.hempdustry.item.custom.StashJarItem;
 import com.warlonmhite.hempdustry.platform.Services;
 import com.warlonmhite.hempdustry.util.ModTags;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.WeakHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.TypedDataComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ContainerComponent;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.EnderChestBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,6 +46,16 @@ import org.jetbrains.annotations.Nullable;
  * While open it is noticed within {@link #reach} of a creeper, 8 blocks plus 4 per full slot of 64 up to 24
  * (a full Stash Jar 16, a full Gilded jar or anything larger 24), and each check goes for it at
  * {@link #draws} buds in 256, a sure thing from four stacks. Schwag counts as buds: it reeks.
+ *
+ * <h2>Opened storage</h2>
+ *
+ * Any other placed block a player opens a menu on lets the smell out the same way, at the jar's numbers, read from
+ * the buds inside it at each look ({@link #budsAt}): a chest (a double one is one stash), a barrel, a shulker box, a
+ * hopper, a furnace, another mod's crate. The trigger is the jar's: a real player's hand taking buds out through the
+ * menu, whichever way they leave the block's slots ({@link #afterClick}); opening, looking and putting buds in let
+ * nothing out, and nor do hoppers, pipes and machines. Nothing in the world shows it, no puff and no sound: the
+ * Stash Jar's information page says so. Out: the ender chest, whose things are its opener's; drawers and other
+ * storage without a menu; a chest on a minecart, a boat or a donkey, opened as an entity.
  *
  * <h2>Loose buds: what counts</h2>
  *
@@ -69,8 +87,8 @@ import org.jetbrains.annotations.Nullable;
  * <p>All of it sits under {@code world.creepersSeekHemp}, the switch that already decides whether hemp
  * draws creepers, and is read at each check, so {@code /hempdustry reload} takes effect at once.
  *
- * <p>Nothing is saved: a carried jar's two minutes are kept on the player and a placed jar's on its block
- * entity, in memory; a rejoin or a chunk reloaded shuts the jar again.
+ * <p>Nothing is saved: a carried jar's two minutes are kept on the player, a placed jar's on its block entity
+ * and other storage's in a list per level, in memory; a rejoin shuts the carried jars, a restart every stash.
  */
 public final class StashSmell {
 
@@ -91,11 +109,12 @@ public final class StashSmell {
     public static final int SURE_DRAW = 256;
 
     /**
-     * The placed jars each level holds that a hand opened in the last two minutes, so a creeper looks at those
-     * and never scans the blocks around it. Weakly keyed: a level gone with its server takes its list along.
-     * Each position is asked again at every look, and dropped once its jar is shut, gone or unloaded.
+     * The placed stashes each level holds that a hand opened in the last two minutes, jars and storage blocks, and
+     * until when each smells, so a creeper looks at those and never scans the blocks around it. Weakly keyed: a
+     * level gone with its server takes its list along. Each position is asked again at every look, and dropped once
+     * its stash is shut, empty, gone or unloaded.
      */
-    private static final Map<Level, Set<BlockPos>> OPENED = new WeakHashMap<>();
+    private static final Map<Level, Map<BlockPos, Long>> OPENED = new WeakHashMap<>();
 
     private StashSmell() {
     }
@@ -114,6 +133,65 @@ public final class StashSmell {
         int hempdustry$budsCounted();
 
         void hempdustry$setBudsCounted(long gameTime, int count);
+
+        /** The menu the player last opened by using a block, and that block; null before any. */
+        @Nullable AbstractContainerMenu hempdustry$blockMenu();
+
+        BlockPos hempdustry$blockMenuAt();
+
+        void hempdustry$setBlockMenu(AbstractContainerMenu menu, BlockPos pos);
+    }
+
+    /**
+     * {@code player} used the block at {@code pos}: a menu that use opened is that block's, so buds a hand takes out
+     * of it later are taken out of that block ({@link #budsInBlockSlots}). A menu opened any other way (an
+     * entity's, an item's, a key's) is no block's and lets no smell out.
+     */
+    public static void usedBlock(ServerPlayer player, BlockPos pos) {
+        AbstractContainerMenu menu = player.containerMenu;
+        if (menu != player.inventoryMenu && player instanceof Carrier carrier && carrier.hempdustry$blockMenu() != menu) {
+            carrier.hempdustry$setBlockMenu(menu, pos.immutable());
+        }
+    }
+
+    /**
+     * Before a click in {@code menu}: a copy of the buds in each of its slots that are the block's and not the
+     * player's, or null when the click can let no smell out (a menu no block opened, a client, a machine's hand).
+     */
+    public static ItemStack @Nullable [] budsInBlockSlots(AbstractContainerMenu menu, Player player) {
+        if (!(player instanceof ServerPlayer) || !(player instanceof Carrier carrier)
+                || carrier.hempdustry$blockMenu() != menu || !isAPlayer(player)) {
+            return null;
+        }
+        ItemStack[] buds = new ItemStack[menu.slots.size()];
+        for (int index = 0; index < buds.length; index++) {
+            Slot slot = menu.slots.get(index);
+            ItemStack stack = slot.getItem();
+            if (slot.container != player.getInventory() && StashContents.storable(stack)) {
+                buds[index] = stack.copy();
+            }
+        }
+        return buds;
+    }
+
+    /**
+     * After a click in {@code menu}: if any buds {@link #budsInBlockSlots} saw left their slot (fewer of them, or
+     * something else in their place), a hand took them out of the block, and its smell is out. Every way a stack
+     * leaves a slot for the player ends here: a click, a shift-click, a number key, a double-click gathering, a
+     * drop with Q, a bundle filled from the slot. Putting buds in takes nothing out.
+     */
+    public static void afterClick(AbstractContainerMenu menu, Player player, ItemStack @Nullable [] before) {
+        if (before == null || !(player instanceof Carrier carrier)) {
+            return;
+        }
+        for (int index = 0; index < before.length && index < menu.slots.size(); index++) {
+            ItemStack was = before[index];
+            ItemStack now = menu.slots.get(index).getItem();
+            if (was != null && (!ItemStack.isSameItemSameComponents(was, now) || now.getCount() < was.getCount())) {
+                openPlacedStorage((ServerLevel) player.level(), carrier.hempdustry$blockMenuAt(), player);
+                return;
+            }
+        }
     }
 
     /**
@@ -238,13 +316,103 @@ public final class StashSmell {
             return;
         }
         jar.letSmellOut(level.getGameTime() + OPEN_TICKS);
-        OPENED.computeIfAbsent(level, key -> new HashSet<>()).add(pos.immutable());
+        opened(level).put(pos.immutable(), level.getGameTime() + OPEN_TICKS);
     }
 
-    /** Whether the placed jar at {@code pos} is open and smells. Never loads a chunk to answer. */
+    /**
+     * A hand took buds out of the placed storage block at {@code pos} (a chest, a barrel, a shulker box, a hopper, a
+     * furnace, another mod's crate: any block container with a menu): it smells for the next two minutes, as an
+     * opened jar does, with no puff and no sound. Only a player the server's list holds lets it out. A double chest
+     * is one stash, kept at one of its halves; an ender chest holds its opener's things, not the block's, and never
+     * smells.
+     */
+    public static void openPlacedStorage(ServerLevel level, BlockPos pos, Player player) {
+        if (!isAPlayer(player) || !isStorage(level, pos)) {
+            return;
+        }
+        letSmellOut(level, stashAt(level, pos), level.getGameTime() + OPEN_TICKS);
+    }
+
+    /**
+     * Lets the smell of the storage block at {@code pos} out until {@code gameTime}, which may be now: a test shuts
+     * it that way, as the two minutes running out would.
+     */
+    public static void letSmellOut(ServerLevel level, BlockPos pos, long gameTime) {
+        opened(level).put(pos.immutable(), gameTime);
+    }
+
+    /** Whether the block at {@code pos} is storage whose smell a hand can let out (see {@link #openPlacedStorage}). */
+    public static boolean isStorage(Level level, BlockPos pos) {
+        BlockEntity entity = level.getBlockEntity(pos);
+        return entity != null && !(entity instanceof StashJarBlockEntity) && !(entity instanceof EnderChestBlockEntity);
+    }
+
+    /** The position a stash at {@code pos} is kept at: the block itself, or for a double chest the lower of its two. */
+    public static BlockPos stashAt(Level level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (state.getBlock() instanceof ChestBlock && state.getValue(ChestBlock.TYPE) != ChestType.SINGLE) {
+            BlockPos other = pos.relative(ChestBlock.getConnectedDirection(state));
+            if (level.getBlockState(other).getBlock() instanceof ChestBlock && other.asLong() < pos.asLong()) {
+                return other;
+            }
+        }
+        return pos;
+    }
+
+    /**
+     * How many buds and schwag the stash at {@code pos} holds: a jar's contents; a chest's, both halves of a double
+     * one; any other container's slots; and a block that is no vanilla container, as its loader's item API shows it
+     * (another mod's storage). Nothing for anything else.
+     */
+    public static int budsAt(Level level, BlockPos pos) {
+        BlockEntity entity = level.getBlockEntity(pos);
+        if (entity == null) {
+            return 0;
+        }
+        if (entity instanceof StashJarBlockEntity jar) {
+            return jar.contents().count();
+        }
+        BlockState state = level.getBlockState(pos);
+        Container container = state.getBlock() instanceof ChestBlock chest
+                ? ChestBlock.getContainer(chest, state, level, pos, true)
+                : entity instanceof Container own ? own : null;
+        int buds = 0;
+        if (container != null) {
+            for (int slot = 0; slot < container.getContainerSize(); slot++) {
+                ItemStack stack = container.getItem(slot);
+                if (StashContents.storable(stack)) {
+                    buds += stack.getCount();
+                }
+            }
+            return buds;
+        }
+        for (ItemStack inside : Services.TRANSFER.contents(level, pos)) {
+            if (StashContents.storable(inside)) {
+                buds += inside.getCount();
+            }
+        }
+        return buds;
+    }
+
+    /**
+     * Whether the stash at {@code pos} (a jar, or storage a hand let the smell out of) is open and smells: in its two
+     * minutes, and holding a bud. Never loads a chunk to answer.
+     */
     public static boolean smellsOpen(Level level, BlockPos pos) {
-        return level.isLoaded(pos) && level.getBlockEntity(pos) instanceof StashJarBlockEntity jar
-                && jar.smells(level.getGameTime()) && jar.contents().count() > 0;
+        if (!level.isLoaded(pos)) {
+            return false;
+        }
+        long now = level.getGameTime();
+        if (level.getBlockEntity(pos) instanceof StashJarBlockEntity jar) {
+            return jar.smells(now) && jar.contents().count() > 0;
+        }
+        Map<BlockPos, Long> opened = OPENED.get(level);
+        Long until = opened == null ? null : opened.get(pos);
+        return until != null && now < until && isStorage(level, pos) && budsAt(level, pos) > 0;
+    }
+
+    private static Map<BlockPos, Long> opened(Level level) {
+        return OPENED.computeIfAbsent(level, key -> new HashMap<>());
     }
 
     /** How far an opened jar holding {@code buds} is noticed: 8 blocks, 4 more per full slot of 64, 24 at most. */
@@ -258,24 +426,24 @@ public final class StashSmell {
     }
 
     /**
-     * One check of {@code mob}'s: an opened jar in reach it goes for, or null. Every jar in reach rolls, at any
-     * height, and of those that draw it one is taken at random, so no jar shadows another by the order they
+     * One check of {@code mob}'s: an opened stash in reach it goes for, or null. Every stash in reach rolls, at any
+     * height, and of those that draw it one is taken at random, so no stash shadows another by the order they
      * were opened in; the walk there finds its own way, or as far as there is one.
      */
-    public static @Nullable BlockPos noticeOpenedJar(PathfinderMob mob) {
-        Set<BlockPos> opened = OPENED.get(mob.level());
+    public static @Nullable BlockPos noticeOpenedStash(PathfinderMob mob) {
+        Map<BlockPos, Long> opened = OPENED.get(mob.level());
         if (opened == null || opened.isEmpty()) {
             return null;
         }
         BlockPos noticed = null;
         int drawing = 0;
-        for (Iterator<BlockPos> it = opened.iterator(); it.hasNext(); ) {
+        for (Iterator<BlockPos> it = opened.keySet().iterator(); it.hasNext(); ) {
             BlockPos pos = it.next();
             if (!smellsOpen(mob.level(), pos)) {
                 it.remove();
                 continue;
             }
-            int buds = ((StashJarBlockEntity) mob.level().getBlockEntity(pos)).contents().count();
+            int buds = budsAt(mob.level(), pos);
             int reach = reach(buds);
             if (mob.position().distanceToSqr(Vec3.atCenterOf(pos)) <= (double) reach * reach
                     && draws(mob.getRandom(), buds) && mob.getRandom().nextInt(++drawing) == 0) {
