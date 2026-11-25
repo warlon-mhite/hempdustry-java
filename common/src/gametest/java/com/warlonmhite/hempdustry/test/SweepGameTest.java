@@ -80,6 +80,9 @@ import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.enchantment.Repairable;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.FlowerPotBlock;
+import net.minecraft.world.level.block.LiquidBlockContainer;
+import net.minecraft.world.level.block.VegetationBlock;
 import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.StairBlock;
@@ -613,6 +616,33 @@ public final class SweepGameTest {
         Sweep.report(context, "Every roof block of ours is solid", loose, Map.of(
                 "hempdustry:hemp_planks_hanging_sign", hanging,
                 "hempdustry:hemp_planks_wall_hanging_sign", hanging));
+        context.succeed();
+    }
+
+    /**
+     * Every plant of ours, and every pot holding one, washes away in flowing water as vanilla's crops, flowers
+     * and pots do. Since 26.3 a fluid flows into a block that is not full only if the block is in
+     * {@code #minecraft:washed_away_by_fluids} or holds a fluid itself ({@code FlowingFluid#canHoldAnyFluid});
+     * a plant left out stops water like a wall, and a water-flush harvest does nothing to it.
+     */
+    public static void everyPlantOfOursWashesAway(GameTestHelper context) {
+        Map<String, String> findings = new TreeMap<>();
+        int checked = 0;
+        for (Block block : BuiltInRegistries.BLOCK) {
+            Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+            if (!Sweep.ours(id) || !(block instanceof VegetationBlock || block instanceof FlowerPotBlock)) {
+                continue;
+            }
+            checked++;
+            boolean washes = block.defaultBlockState().is(BlockTags.WASHED_AWAY_BY_FLUIDS);
+            if (block instanceof LiquidBlockContainer) {
+                if (washes) findings.put(id.toString(), "holds its own water, and is in #washed_away_by_fluids too");
+            } else if (!washes) {
+                findings.put(id.toString(), "a plant, and not in #washed_away_by_fluids");
+            }
+        }
+        Sweep.atLeast(context, "plants and pots", checked, 20);
+        Sweep.report(context, "Every plant of ours washes away", findings, Map.of());
         context.succeed();
     }
 

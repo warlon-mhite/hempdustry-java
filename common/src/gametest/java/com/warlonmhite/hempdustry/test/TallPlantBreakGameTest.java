@@ -20,6 +20,7 @@ import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.ServerExplosion;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.block.FarmlandBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -126,6 +127,64 @@ public final class TallPlantBreakGameTest {
             }
         }
         context.succeed();
+    }
+
+    /**
+     * Water flowing into the root washes the plant away, as it washes wheat (26.3 decides it by
+     * {@code #minecraft:washed_away_by_fluids}, {@code FlowingFluid#canHoldAnyFluid}): the root's harvest falls
+     * once, through the water's own drop ({@code WaterFluid#beforeDestroyingBlock}), the blocks above come down
+     * with it, and no plant record is left in the water. Before the tag held our crops the water stopped at the
+     * plant as at a wall. A source beside the root, on stone so that it spreads sideways, and glass on its other
+     * two sides: water runs towards the nearest drop, and the plant must be its only way.
+     */
+    public static void waterWashesThePlantAwayOnce(GameTestHelper context) {
+        washNext(context, new ArrayList<>(SEEDS.keySet()), 0);
+    }
+
+    private static void washNext(GameTestHelper context, List<Block> crops, int index) {
+        if (index == crops.size()) {
+            context.succeed();
+            return;
+        }
+        Block crop = crops.get(index);
+        ground(context, crop);
+        BlockPos source = CROP.west();
+        for (int up = 0; up < COLUMN; up++) {
+            context.setBlock(source.above(up), Blocks.AIR);
+        }
+        context.setBlock(source.below(), Blocks.STONE);
+        context.setBlock(source.north(), Blocks.GLASS);
+        context.setBlock(source.south(), Blocks.GLASS);
+        place(context, crop);
+        context.setBlock(source, Blocks.WATER);
+        context.runAfterDelay(30, () -> {
+            for (int up = 0; up < COLUMN; up++) {
+                BlockState got = context.getBlockState(CROP.above(up));
+                context.assertTrue(got.isAir() || got.getFluidState().is(FluidTags.WATER),
+                        name(crop) + " in flowing water: block " + up + " above the soil is " + got
+                                + ", expected water or air");
+                var record = context.getLevel().getBlockEntity(context.absolutePos(CROP.above(up)));
+                context.assertTrue(record == null, name(crop) + " washed away left " + record + " " + up
+                        + " block(s) above the soil");
+            }
+            Item seed = SEEDS.get(crop);
+            int seeds = 0;
+            for (ItemEntity item : context.getEntities(EntityTypes.ITEM)) {
+                if (item.getItem().is(seed)) {
+                    seeds += item.getItem().getCount();
+                }
+            }
+            context.assertTrue(seeds >= FEWEST_SEEDS && seeds <= MOST_SEEDS, name(crop) + " washed away dropped "
+                    + seeds + " seeds, where one harvest drops " + FEWEST_SEEDS + " to " + MOST_SEEDS);
+            for (int up = COLUMN - 1; up >= 0; up--) {
+                context.setBlock(source.above(up), Blocks.AIR);
+                context.setBlock(CROP.above(up), Blocks.AIR);
+            }
+            context.setBlock(source.below(), Blocks.AIR);
+            context.setBlock(source.north(), Blocks.AIR);
+            context.setBlock(source.south(), Blocks.AIR);
+            washNext(context, crops, index + 1);
+        });
     }
 
     // ----- helpers -----

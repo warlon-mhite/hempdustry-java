@@ -12,6 +12,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LiquidBlockContainer;
 import java.util.concurrent.CompletableFuture;
 
 public class ModBlockTagProvider extends FabricTagsProvider.BlockTagsProvider {
@@ -203,6 +204,21 @@ public class ModBlockTagProvider extends FabricTagsProvider.BlockTagsProvider {
                 .add(ModBlocks.HYDRO_TRAY)
                 .add(ModBlocks.DEHUMIDIFIER)
                 .add(ModBlocks.SPACE_CAKE);
+
+        // Since 26.3 a fluid flows into a block that is not full only if the block holds a fluid itself
+        // (LiquidBlockContainer) or is in this tag (FlowingFluid#canHoldAnyFluid); vanilla lists its
+        // crops, flowers and #flower_pots by name. Left out, a hemp plant stopped water like a wall, and
+        // a water-flush harvest did nothing to it. Water now breaks it and drops its harvest
+        // (WaterFluid#beforeDestroyingBlock, Block.dropResources with the root's record); lava burns it
+        // to nothing, as it does wheat. Maui Wowie stays out: its crop and its wild plant hold their own
+        // water. The pots join #flower_pots, which this tag includes, as every vanilla pot does.
+        valueLookupBuilder(BlockTags.WASHED_AWAY_BY_FLUIDS)
+                .addAll(ModCrops.ALL.stream().map(ModCrops.Crop::crop)
+                        .filter(crop -> !(crop instanceof LiquidBlockContainer)))
+                .addAll(ModCrops.wilds().map(ModCrops.Wild::flower)
+                        .filter(flower -> !(flower instanceof LiquidBlockContainer)));
+        valueLookupBuilder(BlockTags.FLOWER_POTS)
+                .addAll(ModCrops.wilds().flatMap(wild -> wild.potted().stream()));
 
         // HEMP_LEAVES joins the vanilla leaves tag, which is the only route to shears' 15x mining
         // rule — that rule names this tag rather than a block list (ShearsItem#createToolComponent).

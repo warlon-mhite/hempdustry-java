@@ -294,6 +294,7 @@ public final class HempdustryGameTests {
         register("every_building_piece_holds_like_vanillas", SweepGameTest::everyBuildingPieceHoldsLikeVanillas);
         register("every_building_piece_is_tagged_like_vanillas", SweepGameTest::everyBuildingPieceIsTaggedLikeVanillas);
         register("every_solid_block_is_a_roof", SweepGameTest::everySolidBlockIsARoof);
+        register("every_plant_of_ours_washes_away", SweepGameTest::everyPlantOfOursWashesAway);
         register("every_vanilla_tag_we_add_to_is_vanillas", SweepGameTest::everyVanillaTagWeAddToIsVanillas);
         register("every_sound_is_mono_and_on_disk", SweepGameTest::everySoundIsMonoAndOnDisk);
         register("the_frozen_surface_holds", FrozenSurfaceGameTest::theFrozenSurfaceHolds);
@@ -435,6 +436,7 @@ public final class HempdustryGameTests {
                 TallPlantBreakGameTest::aTopAnExplosionReachesTakesTheRootAsTheExplosion);
         register("a_player_breaking_any_block_harvests_the_plant_once",
                 TallPlantBreakGameTest::aPlayerBreakingAnyBlockHarvestsThePlantOnce);
+        register("water_washes_the_plant_away_once", TallPlantBreakGameTest::waterWashesThePlantAwayOnce);
         register("a_fake_players_smoke_stays_with_it", FakePlayerUseGameTest::aFakePlayersSmokeStaysWithIt);
         register("loose_buds_lengthen_a_creepers_reach", StashSmellGameTest::looseBudsLengthenACreepersReach);
         register("a_creeper_smells_buds_but_still_needs_to_see_them", StashSmellGameTest::aCreeperSmellsBudsButStillNeedsToSeeThem);
