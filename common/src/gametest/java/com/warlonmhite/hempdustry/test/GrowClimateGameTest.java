@@ -101,7 +101,8 @@ public final class GrowClimateGameTest {
      * front of it and 2 blocks to each side, on plants rooted from one block above the fan to three below it. Under
      * glass a plant it blows on has the open's air. Behind it, beside it, facing another way, a block past any edge
      * or still, it does nothing; two fans do no more than one; and fixed to a wall or hung from a ceiling it blows
-     * level the way it faces, as it does standing. Run in a room 16 blocks long, for the lane and a block past it.
+     * level the way it faces, as it does standing. For a plant hanging from a ceiling the window is turned over: from
+     * one block under the fan to three over it. Run in a room 16 blocks long, for the lane and a block past it.
      */
     public static void aGrowFanStirsTheAirInItsReach(GameTestHelper context) {
         ServerLevel world = context.getLevel();
@@ -161,6 +162,20 @@ public final class GrowClimateGameTest {
         reaches(context, root, PLANT.east(4), Direction.WEST, AttachFace.WALL, true);
         reaches(context, root, PLANT.east(4).above(2), Direction.WEST, AttachFace.CEILING, true);
         reaches(context, root, PLANT.east(4).above(2), Direction.EAST, AttachFace.CEILING, false);
+        // A plant that hangs (Crimson Weed) has its root on top: the window is turned over, so a fan on the floor
+        // under it reaches it as one over a standing plant does, and one a block over its root still does.
+        BlockPos hanging = PLANT.above(2);
+        context.setBlock(hanging.above(), Blocks.NETHER_WART_BLOCK);
+        context.setBlock(hanging, ModBlocks.CRIMSON_CROP);
+        BlockPos hangingRoot = context.absolutePos(hanging);
+        for (BlockPos at : List.of(hanging.east(2).below(3), hanging.east(2).above())) {
+            reaches(context, hangingRoot, at, Direction.WEST, AttachFace.FLOOR, true);
+        }
+        for (BlockPos at : List.of(hanging.east(2).below(4), hanging.east(2).above(2))) {
+            reaches(context, hangingRoot, at, Direction.WEST, AttachFace.FLOOR, false);
+        }
+        context.setBlock(hanging, Blocks.AIR);
+        context.setBlock(hanging.above(), Blocks.AIR);
         context.succeed();
     }
 
@@ -643,11 +658,11 @@ public final class GrowClimateGameTest {
         int perLevel = GrowClimate.of(world.registryAccess()).dehumidifier().stepsPerLevel();
         context.assertTrue(perLevel == 64, "a level of condensate is " + perLevel + " dried steps, not 64");
         for (int step = 1; step < perLevel; step++) {
-            Climate.afterStep(world, root, 2);
+            Climate.afterStep(world, root, 2, 3);
         }
         context.assertTrue(context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 0,
                 "63 dried steps already filled a level");
-        Climate.afterStep(world, root, 2);
+        Climate.afterStep(world, root, 2, 3);
         context.assertTrue(context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 1,
                 "64 dried steps filled no level of the tank");
 
@@ -657,7 +672,7 @@ public final class GrowClimateGameTest {
                         && context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 1,
                 "a tray set under a Dehumidifier with a level in it took the level");
         for (int step = 0; step < perLevel; step++) {
-            Climate.afterStep(world, root, 2);
+            Climate.afterStep(world, root, 2, 3);
         }
         context.assertTrue(context.getBlockState(drier.below()).getValue(HydroTrayBlock.LEVEL) == 1
                         && context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 2,
@@ -668,20 +683,26 @@ public final class GrowClimateGameTest {
                         && context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 0,
                 "a cauldron set under a Dehumidifier with two levels in it did not take them");
         for (int step = 0; step < perLevel; step++) {
-            Climate.afterStep(world, root, 2);
+            Climate.afterStep(world, root, 2, 3);
         }
         context.assertTrue(context.getBlockState(drier.below()).getValue(LayeredCauldronBlock.LEVEL) == 3
                         && context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 0,
                 "a level made over a cauldron with room did not drip into it");
+
+        // Bone meal's jump of several ages is that many steps' water, as the same ages grown one by one would be.
+        context.setBlock(drier.below(), Blocks.STONE);
+        Climate.afterStep(world, root, 0, perLevel);
+        context.assertTrue(context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 1,
+                "a jump of " + perLevel + " ages at once filled no level, where as many single steps fill one");
 
         // A field plant gives it nothing.
         context.setBlock(ROOF, Blocks.AIR);
         context.setBlock(new BlockPos(CROP.getX(), 8, CROP.getZ()), Blocks.AIR);
         context.setBlock(drier.below(), Blocks.STONE);
         for (int step = 0; step < perLevel; step++) {
-            Climate.afterStep(world, root, 2);
+            Climate.afterStep(world, root, 2, 3);
         }
-        context.assertTrue(context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 0,
+        context.assertTrue(context.getBlockState(drier).getValue(DehumidifierBlock.LEVEL) == 1,
                 "a plant under open sky filled the Dehumidifier beside it");
         context.succeed();
     }

@@ -130,20 +130,25 @@ public final class Climate {
         return trimmed(plant) ? factor * climate.trimmed() : factor;
     }
 
-    /** The air of the plant whose root is at {@code root}, {@code height} blocks tall once grown. */
+    /**
+     * The air of the plant whose root is at {@code root}, {@code height} blocks tall once grown: its top block seeing
+     * the sky stirs it. A plant that hangs from a ceiling has its root on top.
+     */
     public static Air air(Level world, BlockPos root, int height, boolean roofed) {
         if (!roofed) {
             return Air.OPEN;
         }
-        Air air = world.canSeeSky(root.above(Math.max(0, height - 1))) ? Air.STIRRED : Air.STILL;
+        BlockPos top = hangs(world, root) ? root : root.above(Math.max(0, height - 1));
+        Air air = world.canSeeSky(top) ? Air.STIRRED : Air.STILL;
         return ventilated(world, root) ? air.better() : air;
     }
 
     /**
      * Whether a running Grow Fan blows on the plant whose root is at {@code root}: one facing the plant, from 1 to
      * the climate's {@code ahead} blocks behind it along the way it blows, at most {@code side} blocks off its line,
-     * standing from {@code above} blocks under the root to {@code below} blocks over it. A fan beside a plant or
-     * behind it blows past it.
+     * standing from {@code above} blocks under the root to {@code below} blocks over it — turned over for a plant that
+     * hangs from a ceiling (Crimson Weed), so the window reaches down the plant as it reaches up a standing one. A fan
+     * beside a plant or behind it blows past it.
      *
      * <p>A wall between them stops the wind ({@link FanWind}): the lane is straight lines along the wind, one block
      * wide and high each, and the plant is in the one at its root's height and column. That line, from the block
@@ -153,8 +158,11 @@ public final class Climate {
     public static boolean ventilated(Level world, BlockPos root) {
         GrowClimate.Fan fan = GrowClimate.of(world.registryAccess()).fan();
         int wide = Math.max(fan.ahead(), fan.side());
+        boolean hangs = hangs(world, root);
+        int lowest = hangs ? -fan.below() : -fan.above();
+        int highest = hangs ? fan.above() : fan.below();
         // Most plants have no fan anywhere near: the sections' palettes say so without a block read.
-        if (!mayHold(world, root.offset(-wide, -fan.above(), -wide), root.offset(wide, fan.below(), wide),
+        if (!mayHold(world, root.offset(-wide, lowest, -wide), root.offset(wide, highest, wide),
                 state -> state.getBlock() instanceof GrowFanBlock)) {
             return false;
         }
@@ -174,7 +182,7 @@ public final class Climate {
                     // A fan blowing this way that reaches the root stands this far back against its wind.
                     int x = root.getX() - blows.getStepX() * ahead + across.getStepX() * side;
                     int z = root.getZ() - blows.getStepZ() * ahead + across.getStepZ() * side;
-                    for (int dy = -fan.above(); dy <= fan.below(); dy++) {
+                    for (int dy = lowest; dy <= highest; dy++) {
                         BlockState state = world.getBlockState(at.set(x, root.getY() + dy, z));
                         if (GrowFanBlock.running(state) && GrowFanBlock.blows(state) == blows) {
                             return true;
@@ -187,11 +195,12 @@ public final class Climate {
     }
 
     /**
-     * What a plant's growth step from {@code fromAge} tells its climate: its record keeps whether it grew in a fan's
-     * wind, and a Dehumidifier drying it, under a roof, takes the step's water into its tank. Called from the crops'
-     * own step, before the mildew roll.
+     * What a plant's growth from {@code fromAge} to {@code toAge} tells its climate: its record keeps whether it grew
+     * in a fan's wind, and a Dehumidifier drying it, under a roof, takes the water of every age it gained into its
+     * tank — bone meal's jump of several ages is several steps' water, as the same ages grown one at a time would
+     * be. Called from the crops' own step, before the mildew roll.
      */
-    public static void afterStep(Level world, BlockPos root, int fromAge) {
+    public static void afterStep(Level world, BlockPos root, int fromAge, int toAge) {
         if (world.isClientSide()) {
             return;
         }
@@ -199,7 +208,7 @@ public final class Climate {
         if (!inWater(world, root) && Mildew.roofed(world, root)) {
             BlockPos drier = drier(world, root, GrowClimate.of(world.registryAccess()));
             if (drier != null && world.getBlockEntity(drier) instanceof DehumidifierBlockEntity tank) {
-                tank.collect(world);
+                tank.collect(world, toAge - fromAge);
             }
         }
     }
@@ -356,6 +365,11 @@ public final class Climate {
     public static boolean trimmed(BlockState plant) {
         return plant.hasProperty(Defoliation.TRIMMED_EARLY) && plant.getValue(Defoliation.TRIMMED_EARLY)
                 || plant.hasProperty(Defoliation.TRIMMED_LATE) && plant.getValue(Defoliation.TRIMMED_LATE);
+    }
+
+    /** Whether the plant whose root is at {@code root} hangs from a ceiling and grows down (Crimson Weed). */
+    static boolean hangs(BlockGetter world, BlockPos root) {
+        return TallHemp.growth(world.getBlockState(root).getBlock()) == Direction.DOWN;
     }
 
     /** How tall a plant of {@code plant}'s kind stands once grown: a sativa three blocks, every other host two. */

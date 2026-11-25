@@ -45,11 +45,13 @@ import org.jetbrains.annotations.Nullable;
  * <p>The water it takes out of the air is the plants' own: each growth step of a plant it dries is one step
  * of condensate ({@link DehumidifierBlockEntity}), and enough steps fill a level of its three ({@link #LEVEL},
  * the sight tube). A level drips straight into a cauldron under it, if one stands there with room, as a pointed
- * dripstone's water does. Otherwise it stays in the tank, to be taken out as a cauldron's water is, a bottle a
- * level or a bucket when full, or by a pipe. <b>Full, with nowhere to drip, it stops</b>, and the room goes back
+ * dripstone's water does ({@code PointedDripstoneBlock#maybeTransferFluid}, then the cauldron's
+ * {@code receiveStalactiteDrip}: a level at a time). Otherwise it stays in the tank, to be taken out as a cauldron's
+ * water is ({@code CauldronInteraction}), a bottle a level or a bucket when full, or by a pipe. <b>Full, with nowhere to drip, it stops</b>, and the room goes back
  * to its own air.
  *
- * <p>Every change of the tank tells the comparators around it, as a cauldron's does. No ticking: it fills from
+ * <p>Every change of the tank tells the comparators around it, as a cauldron's does, which reads its level
+ * ({@code LayeredCauldronBlock#getAnalogOutputSignal}). No ticking: it fills from
  * the plants' steps, and drains when its neighbour below changes.
  */
 public class DehumidifierBlock extends Block implements EntityBlock {

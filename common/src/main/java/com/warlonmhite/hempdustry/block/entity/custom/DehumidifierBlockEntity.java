@@ -32,11 +32,18 @@ public class DehumidifierBlockEntity extends BlockEntity {
 
     /** One growth step of a plant this Dehumidifier dried: a level of condensate once enough have gathered. */
     public void collect(Level level) {
+        collect(level, 1);
+    }
+
+    /** {@code count} growth steps of a plant this Dehumidifier dried, each counted as {@link #collect(Level)} counts one. */
+    public void collect(Level level, int count) {
         int perLevel = GrowClimate.of(level.registryAccess()).dehumidifier().stepsPerLevel();
-        steps++;
-        if (steps >= perLevel) {
-            steps = 0;
-            DehumidifierBlock.condense(level, getBlockPos());
+        for (int step = 0; step < count; step++) {
+            steps++;
+            if (steps >= perLevel) {
+                steps = 0;
+                DehumidifierBlock.condense(level, getBlockPos());
+            }
         }
         setChanged();
     }

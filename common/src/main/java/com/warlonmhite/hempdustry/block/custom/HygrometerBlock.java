@@ -182,7 +182,8 @@ public class HygrometerBlock extends HorizontalDirectionalBlock {
                 for (int dz = -box.reach(); dz <= box.reach(); dz++) {
                     at.setWithOffset(dial, dx, dy, dz);
                     BlockState plant = world.getBlockState(at);
-                    if (!plant.hasProperty(Mildew.PROPERTY) || world.getBlockState(at.below()).is(plant.getBlock())
+                    // Each plant read once, at its root: the bottom of a standing plant, the top of a hanging one.
+                    if (!plant.hasProperty(Mildew.PROPERTY) || !TallHemp.isRoot(plant)
                             || Climate.inWater(world, at)) {
                         continue;
                     }

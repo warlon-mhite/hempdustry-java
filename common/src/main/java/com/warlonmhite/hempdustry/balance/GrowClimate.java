@@ -122,8 +122,8 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
     /**
      * A Grow Fan's wind, from where it stands: a lane {@code ahead} blocks long the way its grille faces, from the
      * block in front of it, and {@code side} blocks to each side of the fan's line; the plants it blows on stand at
-     * most {@code below} blocks under it and {@code above} blocks over it (each plant by its root). A box, as every
-     * reach in the game is, laid out ahead of the fan instead of around it.
+     * most {@code below} blocks under it and {@code above} blocks over it (each plant by its root). A box, as the
+     * mod's other reaches are, laid out ahead of the fan instead of around it.
      */
     public record Fan(int ahead, int side, int below, int above) {
         public static final Fan DEFAULT = new Fan(9, 2, 3, 1);
