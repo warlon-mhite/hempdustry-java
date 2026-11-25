@@ -19,9 +19,13 @@ public final class FabricNetwork implements Network {
         }
     }
 
+    /**
+     * Sends to {@code player} if its client listens on the channel. A player with no connection at all (a bare fake
+     * player another mod makes) hears nothing: Fabric's own check reads the connection and would throw.
+     */
     @Override
     public void sendTo(ServerPlayer player, CustomPacketPayload payload) {
-        if (ServerPlayNetworking.canSend(player, payload.type())) {
+        if (player.connection != null && ServerPlayNetworking.canSend(player, payload.type())) {
             ServerPlayNetworking.send(player, payload);
         }
     }

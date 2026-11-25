@@ -440,6 +440,7 @@ public final class HempdustryGameTests {
                 TallPlantBreakGameTest::aPlayerBreakingAnyBlockHarvestsThePlantOnce);
         register("water_washes_the_plant_away_once", TallPlantBreakGameTest::waterWashesThePlantAwayOnce);
         register("a_fake_players_smoke_stays_with_it", FakePlayerUseGameTest::aFakePlayersSmokeStaysWithIt);
+        register("a_player_with_no_connection_opens_a_jar", FakePlayerUseGameTest::aPlayerWithNoConnectionOpensAJar);
         register("loose_buds_lengthen_a_creepers_reach", StashSmellGameTest::looseBudsLengthenACreepersReach);
         register("a_creeper_smells_buds_but_still_needs_to_see_them", StashSmellGameTest::aCreeperSmellsBudsButStillNeedsToSeeThem);
         register("an_opened_jars_pull_is_its_buds", StashSmellGameTest::anOpenedJarsPullIsItsBuds);

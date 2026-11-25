@@ -1,5 +1,13 @@
 package com.warlonmhite.hempdustry.test;
 
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.core.BlockPos;
+import com.warlonmhite.hempdustry.component.StashContents;
+import com.warlonmhite.hempdustry.block.entity.custom.StashJarBlockEntity;
+import com.warlonmhite.hempdustry.block.ModBlocks;
+import net.minecraft.server.level.ClientInformation;
+import java.util.UUID;
+import com.mojang.authlib.GameProfile;
 import com.warlonmhite.hempdustry.component.ModComponents;
 import com.warlonmhite.hempdustry.item.ModItems;
 import com.warlonmhite.hempdustry.item.custom.DeviceType;
@@ -59,5 +67,30 @@ public final class FakePlayerUseGameTest {
                     "the fake player's exhale blinded the player whose UUID it carries");
             context.succeed();
         });
+    }
+
+    /**
+     * A fake player with no connection at all, as some mods make one, opens a Stash Jar with an empty hand and keeps
+     * the stack it took. The sniff it leans into is sent to the players watching and to itself; asking whether a player
+     * with no connection listens threw on Fabric, after the jar had given the stack up and before the hand took it.
+     */
+    public static void aPlayerWithNoConnectionOpensAJar(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        ServerPlayer bare = new ServerPlayer(world.getServer(), world,
+                new GameProfile(UUID.randomUUID(), "bare-fake-player"), ClientInformation.createDefault());
+        context.assertTrue(bare.connection == null, "test setup: the bare player has a connection");
+        BlockPos floor = new BlockPos(3, 1, 3);
+        context.setBlock(floor, Blocks.STONE);
+        context.setBlock(floor.above(), ModBlocks.STASH_JAR);
+        StashJarBlockEntity jar = (StashJarBlockEntity) world.getBlockEntity(context.absolutePos(floor.above()));
+        StashContents.Mutable stash = StashContents.EMPTY.mutable();
+        stash.insert(new ItemStack(ModItems.INDICA_BUDS, 5), 128);
+        jar.setContents(stash.toImmutable());
+        Players.click(context, bare, floor.above(), ItemStack.EMPTY);
+        context.assertTrue(bare.getMainHandItem().is(ModItems.INDICA_BUDS) && bare.getMainHandItem().getCount() == 5
+                        && jar.contents().isEmpty(),
+                "a player with no connection opening a jar holds " + bare.getMainHandItem() + ", the jar "
+                        + jar.contents().count());
+        context.succeed();
     }
 }
