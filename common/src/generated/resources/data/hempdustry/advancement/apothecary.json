@@ -364,5 +364,8 @@
       "stashed_maui_wowie_buds"
     ]
   ],
+  "rewards": {
+    "experience": 100
+  },
   "sends_telemetry_event": true
 }

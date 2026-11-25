@@ -22,6 +22,7 @@ import net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementRequirements;
+import net.minecraft.advancements.AdvancementRewards;
 import net.minecraft.advancements.AdvancementType;
 import net.minecraft.advancements.DisplayInfo;
 import net.minecraft.advancements.predicates.BlockPredicate;
@@ -74,6 +75,22 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public class ModAdvancementProvider extends FabricAdvancementProvider {
+    // Every challenge pays experience on vanilla's scale, as every vanilla challenge but two does (26.3's
+    // data/minecraft/advancement: 40 to 50 for a skill or timing feat or a small collection, Blowback 40,
+    // Bullseye and A Complete Catalogue 50; 100 for a long collection, A Balanced Diet and Two by Two).
+    /** Every strain's buds in a Stash Jar: a long collection, as A Balanced Diet. */
+    private static final int APOTHECARY_XP = 100;
+    /** Five resins from three chains: a small collection, as A Complete Catalogue. */
+    private static final int AROUND_THE_WORLD_XP = 50;
+    /** A flawless batch: a precise feat, as Bullseye. */
+    private static final int PERFECT_BATCH_XP = 50;
+    /** A hit at the right minute of the day: a timed feat, easy once known, as Blowback. */
+    private static final int TIMED_HIT_XP = 40;
+
+    private static AdvancementRewards.Builder challenge(int experience) {
+        return AdvancementRewards.Builder.experience(experience);
+    }
+
 
     /**
      * Background for every advancement in the tree: the hempcrete powder block, tiled the way
@@ -248,6 +265,7 @@ public class ModAdvancementProvider extends FabricAdvancementProvider {
         // once would show no progress at all.
         Advancement.Builder apothecary = Advancement.Builder.advancement()
                 .display(display(ModBlocks.GILDED_STASH_JAR, "apothecary", AdvancementType.CHALLENGE))
+                .rewards(challenge(APOTHECARY_XP))
                 .parent(goodStash);
         for (ResourceKey<Strain> key : budStrains(registryLookup)) {
             Item buds = Strain.registry(registryLookup).getOrThrow(key).value().buds();
@@ -450,6 +468,7 @@ public class ModAdvancementProvider extends FabricAdvancementProvider {
         Advancement.Builder.advancement()
                 .display(display(Items.CLOCK, "blaze_it", AdvancementType.CHALLENGE, true))
                 .addCriterion("smoked_at_420", SmokeCriterion.Conditions.during(10123L, 10543L))
+                .rewards(challenge(TIMED_HIT_XP))
                 .parent(firstContact)
                 .save(consumer, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "blaze_it"));
 
@@ -460,6 +479,7 @@ public class ModAdvancementProvider extends FabricAdvancementProvider {
         Advancement.Builder.advancement()
                 .display(display(Items.BED.red(), "wake_and_bake", AdvancementType.CHALLENGE, true))
                 .addCriterion("smoked_at_dawn", SmokeCriterion.Conditions.during(0L, 420L))
+                .rewards(challenge(TIMED_HIT_XP))
                 .parent(firstContact)
                 .save(consumer, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "wake_and_bake"));
 
@@ -660,6 +680,7 @@ public class ModAdvancementProvider extends FabricAdvancementProvider {
                                 .withComponents(new DataComponentMatchers(
                                         DataComponentExactPredicate.expect(ModComponents.QUALITY, Quality.PERFECT),
                                         Map.of()))))
+                .rewards(challenge(PERFECT_BATCH_XP))
                 .parent(cannabutter)
                 .save(consumer, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "perfect_batch"));
 
@@ -756,6 +777,7 @@ public class ModAdvancementProvider extends FabricAdvancementProvider {
         // TriggerInstance.hasItems(a, b, c…) would demand all five in the inventory at once instead.
         Advancement.Builder aroundTheWorld = Advancement.Builder.advancement()
                 .display(display(Items.COMPASS, "around_the_world_in_80_grams", AdvancementType.CHALLENGE))
+                .rewards(challenge(AROUND_THE_WORLD_XP))
                 .parent(itsNotPollen);
         for (Item resin : List.of(ModItems.CHARAS, ModItems.HASHISH, ModItems.FILTERED_HASHISH,
                 ModItems.BUBBLE_HASH, ModItems.ROSIN)) {

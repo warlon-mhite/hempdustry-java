@@ -197,6 +197,7 @@ public final class HempdustryGameTests {
         register("wild_ruderalis_grows_ripe", RuderalisGameTest::wildRuderalisGrowsRipe);
         register("ruderalis_waits_out_the_dark", RuderalisGameTest::ruderalisWaitsOutTheDark);
         register("eating_grants_the_food_nodes", AdvancementGameTest::eatingGrantsTheFoodNodes);
+        register("every_challenge_pays_experience", AdvancementGameTest::everyChallengePaysExperience);
         register("harvest_nodes_read_the_plant", AdvancementGameTest::harvestNodesReadThePlant);
         register("breaking_the_bed_harvests_the_plant_first",
                 AdvancementGameTest::breakingTheBedHarvestsThePlantFirst);

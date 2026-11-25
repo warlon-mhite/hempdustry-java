@@ -425,6 +425,35 @@ public final class AdvancementGameTest {
     }
 
     /** Fetches a loaded advancement and checks where it hangs, which is half of what it teaches. */
+    /**
+     * Every challenge of the mod pays experience on vanilla's scale, the numbers agreed: Apothecary 100, Around the
+     * World in 80 Grams 50, Perfect Batch 50, Blaze It! and Wake and Bake 40; and nothing else of the mod pays any,
+     * as no vanilla advancement but a challenge does.
+     */
+    public static void everyChallengePaysExperience(GameTestHelper context) {
+        java.util.Map<String, Integer> agreed = java.util.Map.of("apothecary", 100, "around_the_world_in_80_grams", 50,
+                "perfect_batch", 50, "blaze_it", 40, "wake_and_bake", 40);
+        int challenges = 0;
+        for (AdvancementHolder entry : context.getLevel().getServer().getAdvancements().getAllAdvancements()) {
+            if (!entry.id().getNamespace().equals("hempdustry")) {
+                continue;
+            }
+            boolean challenge = entry.value().display()
+                    .map(display -> display.type() == net.minecraft.advancements.AdvancementType.CHALLENGE).orElse(false);
+            int experience = entry.value().rewards().experience();
+            if (challenge) {
+                challenges++;
+                Integer want = agreed.get(entry.id().getPath());
+                context.assertTrue(want != null && experience == want, entry.id() + " is a challenge paying "
+                        + experience + " experience, not the agreed " + want);
+            } else {
+                context.assertTrue(experience == 0, entry.id() + " is no challenge and pays " + experience + " experience");
+            }
+        }
+        context.assertTrue(challenges == agreed.size(), "the mod has " + challenges + " challenges, not " + agreed.size());
+        context.succeed();
+    }
+
     private static AdvancementHolder loaded(GameTestHelper context, String id, String parent) {
         AdvancementHolder entry = context.getLevel().getServer().getAdvancements()
                 .get(Identifier.fromNamespaceAndPath("hempdustry", id));

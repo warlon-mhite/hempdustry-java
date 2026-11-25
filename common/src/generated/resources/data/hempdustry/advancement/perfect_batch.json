@@ -33,5 +33,8 @@
       "has_perfect_cannabutter"
     ]
   ],
+  "rewards": {
+    "experience": 50
+  },
   "sends_telemetry_event": true
 }

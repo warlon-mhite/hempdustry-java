@@ -29,5 +29,8 @@
       "smoked_at_420"
     ]
   ],
+  "rewards": {
+    "experience": 40
+  },
   "sends_telemetry_event": true
 }
