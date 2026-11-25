@@ -376,6 +376,7 @@ public final class HempdustryGameTests {
         register("a_placed_jar_takes_clicks_not_menus", StashJarGameTest::aPlacedJarTakesClicksNotMenus);
         register("a_jar_stands_where_it_was_put", StashJarGameTest::aJarStandsWhereItWasPut);
         register("a_jar_travels_light", StashJarGameTest::aJarTravelsLight);
+        register("a_stack_of_jars_takes_no_clicks", StashJarGameTest::aStackOfJarsTakesNoClicks);
         register("a_jar_blends_each_strain_honestly", StashJarGameTest::aJarBlendsEachStrainHonestly);
         register("a_jars_nose_is_the_whole_jar", StashPuffGameTest::aJarsNoseIsTheWholeJar);
         register("an_opened_jar_puffs_for_everyone_near", StashPuffGameTest::anOpenedJarPuffsForEveryoneNear);

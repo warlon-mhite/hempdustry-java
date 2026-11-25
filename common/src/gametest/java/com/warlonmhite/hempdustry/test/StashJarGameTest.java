@@ -644,6 +644,51 @@ public final class StashJarGameTest {
     }
 
     /**
+     * A jar stacks to one, but a storage mod's stack upgrade can hold several in one slot: such a stack
+     * takes no click, either way round, so no stash is ever written onto two jars at once.
+     */
+    public static void aStackOfJarsTakesNoClicks(GameTestHelper context) {
+        ServerPlayer player = Players.survival(context);
+        ItemStack jars = new ItemStack(ModBlocks.STASH_JAR, 2);
+        Slot slot = new Slot(stackingPastSize(), 0, 0, 0);
+        slot.set(jars);
+        ItemStack[] carried = {new ItemStack(ModItems.INDICA_BUDS, 64)};
+        SlotAccess cursor = SlotAccess.of(() -> carried[0], stack -> carried[0] = stack);
+        boolean took = jars.getItem().overrideOtherStackedOnMe(jars, carried[0], slot, ClickAction.PRIMARY, player, cursor);
+        context.assertTrue(!took && StashJarItem.contentsOf(jars).isEmpty() && jars.getCount() == 2
+                        && carried[0].getCount() == 64,
+                "64 buds clicked onto a stack of two jars left " + StashJarItem.contentsOf(jars).count()
+                        + " in each and " + carried[0].getCount() + " carried");
+
+        jars.set(ModComponents.STASH_CONTENTS, stash(ModItems.INDICA_BUDS, 30));
+        took = jars.getItem().overrideOtherStackedOnMe(jars, ItemStack.EMPTY, slot, ClickAction.SECONDARY, player, cursor);
+        context.assertTrue(!took && StashJarItem.contentsOf(jars).count() == 30 && carried[0].getCount() == 64,
+                "a right-click on a stack of two jars took " + (30 - StashJarItem.contentsOf(jars).count()) + " out");
+
+        // The stack carried onto a slot of buds, and onto an empty slot.
+        Slot buds = new Slot(stackingPastSize(), 0, 0, 0);
+        buds.set(new ItemStack(ModItems.SATIVA_BUDS, 10));
+        took = jars.getItem().overrideStackedOnOther(jars, buds, ClickAction.PRIMARY, player);
+        context.assertTrue(!took && buds.getItem().getCount() == 10 && StashJarItem.contentsOf(jars).count() == 30,
+                "a stack of two jars carried onto ten buds took " + (10 - buds.getItem().getCount()));
+        Slot empty = new Slot(stackingPastSize(), 0, 0, 0);
+        took = jars.getItem().overrideStackedOnOther(jars, empty, ClickAction.SECONDARY, player);
+        context.assertTrue(!took && empty.getItem().isEmpty() && StashJarItem.contentsOf(jars).count() == 30,
+                "a stack of two jars right-clicked onto an empty slot put " + empty.getItem() + " there");
+        context.succeed();
+    }
+
+    /** One slot that holds any item 64 to a stack, its own size or not, as a storage mod's stack upgrade does. */
+    private static net.minecraft.world.SimpleContainer stackingPastSize() {
+        return new net.minecraft.world.SimpleContainer(1) {
+            @Override
+            public int getMaxStackSize(ItemStack stack) {
+                return 64;
+            }
+        };
+    }
+
+    /**
      * The jar blends each strain: tier and band are levelled exactly, nothing made or lost,
      * never past the inputs, order-free, no gain from taking out and putting back, best out first, and
      * the tooltip names what comes out; a chemotype never blends, nor a stack carrying anything else.

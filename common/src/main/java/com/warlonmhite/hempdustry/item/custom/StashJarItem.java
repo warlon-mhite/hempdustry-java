@@ -38,7 +38,9 @@ import java.util.Optional;
  * <p>Vanilla's {@code BundleItem} reads its own component, so its behaviour is written out here
  * against {@code hempdustry:stash_contents}, click for click. One difference by decision: holding
  * right-click in the air does nothing, where a bundle throws its contents out; a jar's right-click
- * is a place.
+ * is a place. A jar stacks to one, but a storage mod may stack items past their own size (a backpack's
+ * stack upgrade); a stack of jars then takes no clicks at all, since one stash written on it would be
+ * every jar's.
  *
  * <p>Taking buds out opens the jar for two minutes, as a hand at a placed jar does: its contents then count
  * with its carrier's loose buds when a creeper sniffs them out ({@link StashSmell}). Putting buds in opens
@@ -74,6 +76,9 @@ public class StashJarItem extends BlockItem {
     /** The jar carried onto a slot: a primary click takes that slot's items in, a secondary one drops the last stack there. */
     @Override
     public boolean overrideStackedOnOther(ItemStack self, Slot slot, ClickAction action, Player player) {
+        if (self.getCount() != 1) {
+            return false; // a stack of jars (a storage mod's stack upgrade) would share one stash between them
+        }
         ItemStack other = slot.getItem();
         StashContents.Mutable contents = contentsOf(self).mutable();
         if (action == ClickAction.PRIMARY && !other.isEmpty()) {
@@ -115,6 +120,9 @@ public class StashJarItem extends BlockItem {
     @Override
     public boolean overrideOtherStackedOnMe(ItemStack self, ItemStack other, Slot slot, ClickAction action,
                                             Player player, SlotAccess carried) {
+        if (self.getCount() != 1) {
+            return false; // a stack of jars (a storage mod's stack upgrade) would share one stash between them
+        }
         if (action == ClickAction.PRIMARY && other.isEmpty()) {
             toggleSelected(self, StashContents.NONE);
             return false;
