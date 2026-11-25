@@ -123,6 +123,8 @@ def expectedGametestLog = [
 	~/\[hempdustry\/\]: Grow climate: a fan's (side|below|above) of 8 is past 4/,
 	// every_config_extreme_keeps_the_numbers_sane pushes every setting past its range
 	~/\[hempdustry\/\]: Config \S+ was (-?1000000000|-?1\.0E9|1\.0E-9), clamped to/,
+	// a_number_that_is_no_number_never_runs sends a client NaN on purpose
+	~/\[hempdustry\/\]: Config \S+ was NaN, not a number/,
 ]
 def gametestLog = file('build/gametest/logs/latest.log')
 tasks.matching { it.name == 'runGameTestServer' }.configureEach {

@@ -11,6 +11,8 @@ import com.warlonmhite.hempdustry.config.ClientConfig;
 import com.warlonmhite.hempdustry.config.ConfigReport;
 import com.warlonmhite.hempdustry.config.EffectPolicy;
 import com.warlonmhite.hempdustry.config.HempdustryConfig;
+import com.warlonmhite.hempdustry.config.ShownConfig;
+import com.warlonmhite.hempdustry.network.ServerSettings;
 import com.warlonmhite.hempdustry.config.ModGameRules;
 import com.warlonmhite.hempdustry.platform.Services;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -129,6 +131,36 @@ public final class ConfigGameTest {
             context.assertTrue(bad.equals(new String(read(file), StandardCharsets.UTF_8)),
                     "a client file with a bad value in it was written over");
         });
+        context.succeed();
+    }
+
+    /**
+     * A number that is no number ({@code NaN}, {@code Infinity}) never runs: in the file it is a bad value and keeps
+     * what was running, and sent by a server to a client it takes the setting's default, where holding it to its
+     * range would have kept {@code NaN} (a machine speed of {@code NaN} shows every batch done in one tick).
+     */
+    public static void aNumberThatIsNoNumberNeverRuns(GameTestHelper context) {
+        Path path = Services.PLATFORM.configDir().resolve(Hempdustry.MOD_ID + ".json");
+        withConfig("{ \"world\": { \"machineSpeedMultiplier\": 2.0 } }", () -> {
+            write(path, "{ \"effects\": { \"durationMultiplier\": NaN, \"cooldownMultiplier\": Infinity },"
+                    + " \"world\": { \"machineSpeedMultiplier\": NaN, \"cropGrowthMultiplier\": -Infinity },"
+                    + " \"loot\": { \"chanceMultiplier\": NaN } }");
+            HempdustryConfig.loadFile();
+            HempdustryConfig config = HempdustryConfig.get();
+            context.assertTrue(config.world().machineSpeedMultiplier() == 2.0
+                            && Double.isFinite(config.effects().durationMultiplier())
+                            && Double.isFinite(config.effects().cooldownMultiplier())
+                            && Double.isFinite(config.world().cropGrowthMultiplier())
+                            && Double.isFinite(config.loot().chanceMultiplier()),
+                    "a file's setting that is no number ran, or did not keep what was running: " + config);
+        });
+        try {
+            ShownConfig.receive(new ServerSettings(Map.of(ServerSettings.MACHINE_SPEED, Double.NaN)));
+            context.assertTrue(ShownConfig.machineSpeedMultiplier() == HempdustryConfig.World.DEFAULT.machineSpeedMultiplier(),
+                    "a machine speed sent as NaN is shown as " + ShownConfig.machineSpeedMultiplier());
+        } finally {
+            ShownConfig.forget();
+        }
         context.succeed();
     }
 

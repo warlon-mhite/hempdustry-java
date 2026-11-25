@@ -216,6 +216,7 @@ public final class HempdustryGameTests {
         register("a_loaded_device_does_not_break_mid_bowl", RebalanceGameTest::aLoadedDeviceDoesNotBreakMidBowl);
         register("a_broken_config_is_left_alone", ConfigGameTest::aBrokenConfigIsLeftAlone);
         register("one_bad_value_costs_only_itself", ConfigGameTest::oneBadValueCostsOnlyItself);
+        register("a_number_that_is_no_number_never_runs", ConfigGameTest::aNumberThatIsNoNumberNeverRuns);
         register("a_misspelled_key_is_named", ConfigGameTest::aMisspelledKeyIsNamed);
         register("the_old_client_section_is_clamped_quietly", ConfigGameTest::theOldClientSectionIsClampedQuietly);
         register("effects_off_means_no_green_out", ConfigGameTest::effectsOffMeansNoGreenOut);

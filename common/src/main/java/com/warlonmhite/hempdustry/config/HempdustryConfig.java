@@ -424,11 +424,22 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
         }
     }
 
-    private static double clampDouble(String name, double value, double min, double max) {
-        return clampDouble(name, value, min, max, true);
+    private static double clampDouble(String name, double value, double min, double max, double fallback) {
+        return clampDouble(name, value, min, max, fallback, true);
     }
 
-    private static double clampDouble(String name, double value, double min, double max, boolean warn) {
+    /**
+     * {@code value} held to {@code min}..{@code max}, or {@code fallback} when it is no number at all. The file is read
+     * leniently, so {@code NaN} and {@code Infinity} come through, and a clamp keeps {@code NaN}: a machine speed of
+     * {@code NaN} finished every batch in one tick, an effect length of {@code NaN} lasted one tick.
+     */
+    private static double clampDouble(String name, double value, double min, double max, double fallback, boolean warn) {
+        if (!Double.isFinite(value)) {
+            if (warn) {
+                Hempdustry.LOGGER.warn("Config {} was {}, not a number, so it takes its default, {}", name, value, fallback);
+            }
+            return fallback;
+        }
         double clamped = Mth.clamp(value, min, max);
         if (warn && clamped != value) {
             Hempdustry.LOGGER.warn("Config {} was {}, clamped to {}", name, value, clamped);
@@ -499,7 +510,7 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
         /** {@link #clamped()}, saying so of a value moved only when {@code warn}. */
         Client clamped(boolean warn) {
             return new Client(updateCheck,
-                    clampDouble("client.biomeTintStrength", biomeTintStrength, 0.0, 1.0, warn), ripeAroma, animations,
+                    clampDouble("client.biomeTintStrength", biomeTintStrength, 0.0, 1.0, DEFAULT.biomeTintStrength(), warn), ripeAroma, animations,
                     fanPuffs, terpenePuffs);
         }
 
@@ -573,10 +584,11 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
             return new Effects(enabled,
                     clampInt("effects.maxLevel", maxLevel, 1, 10),
                     clampInt("effects.maxBuffLevel", maxBuffLevel, 1, 10),
-                    clampDouble("effects.durationMultiplier", durationMultiplier, 0.05, 10.0),
-                    clampDouble("effects.cooldownMultiplier", cooldownMultiplier, 0.0, 10.0),
-                    clampDouble("effects.greenOutChanceMultiplier", greenOutChanceMultiplier, 0.0, 100.0),
-                    clampDouble("effects.onsetMultiplier", onsetMultiplier, 0.05, 10.0),
+                    clampDouble("effects.durationMultiplier", durationMultiplier, 0.05, 10.0, DEFAULT.durationMultiplier()),
+                    clampDouble("effects.cooldownMultiplier", cooldownMultiplier, 0.0, 10.0, DEFAULT.cooldownMultiplier()),
+                    clampDouble("effects.greenOutChanceMultiplier", greenOutChanceMultiplier, 0.0, 100.0,
+                            DEFAULT.greenOutChanceMultiplier()),
+                    clampDouble("effects.onsetMultiplier", onsetMultiplier, 0.05, 10.0, DEFAULT.onsetMultiplier()),
                     greenOut, nausea, munchies, debuffs);
         }
     }
@@ -624,8 +636,8 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
 
         World clamped() {
             return new World(
-                    clampDouble("world.cropGrowthMultiplier", cropGrowthMultiplier, 0.05, 20.0),
-                    clampDouble("world.machineSpeedMultiplier", machineSpeedMultiplier, 0.05, 20.0),
+                    clampDouble("world.cropGrowthMultiplier", cropGrowthMultiplier, 0.05, 20.0, DEFAULT.cropGrowthMultiplier()),
+                    clampDouble("world.machineSpeedMultiplier", machineSpeedMultiplier, 0.05, 20.0, DEFAULT.machineSpeedMultiplier()),
                     creepersSeekHemp, mildew, plantStress);
         }
     }
@@ -717,7 +729,7 @@ public record HempdustryConfig(Client client, Effects effects, World world, Infu
         ).apply(instance, Loot::new));
 
         Loot clamped() {
-            return new Loot(enabled, clampDouble("loot.chanceMultiplier", chanceMultiplier, 0.0, 10.0), grassSeeds,
+            return new Loot(enabled, clampDouble("loot.chanceMultiplier", chanceMultiplier, 0.0, 10.0, DEFAULT.chanceMultiplier()), grassSeeds,
                     chestSeeds, chestBuds, archaeologySeeds, barterSeeds, shipwreckFiber, fisherBait, fishingJunk, discs);
         }
     }
