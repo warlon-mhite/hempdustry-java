@@ -1,6 +1,9 @@
 {
   "replace": false,
   "values": [
-    "minecraft:taiga"
+    "minecraft:taiga",
+    { "id": "terralith:birch_taiga", "required": false },
+    { "id": "terralith:forested_highlands", "required": false },
+    { "id": "terralith:shield", "required": false }
   ]
 }

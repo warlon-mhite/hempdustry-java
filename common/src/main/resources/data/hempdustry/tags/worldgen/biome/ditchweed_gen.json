@@ -4,6 +4,7 @@
     "minecraft:plains",
     "minecraft:sunflower_plains",
     "minecraft:river",
+    { "id": "#c:is_plains", "required": false },
     { "id": "biomesoplenty:prairie", "required": false },
     { "id": "biomesoplenty:field", "required": false },
     { "id": "regions_unexplored:prairie", "required": false }
