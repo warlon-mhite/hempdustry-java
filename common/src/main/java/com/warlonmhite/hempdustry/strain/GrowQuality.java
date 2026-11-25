@@ -17,6 +17,10 @@ import java.util.Map;
  * "good": 25, "elite": 5}}; every key is optional (a gene left out reads as {@link #DEFAULT}'s weight), and
  * a strain with no {@code grow_quality} reads as {@link #DEFAULT}.
  *
+ * <p>A file and this constructor read a gene left out differently, on purpose: a file changes only the genes it
+ * names, the rest keeping {@link #DEFAULT}'s weights, as every keyed sheet of a strain reads; the constructor takes
+ * the map as the whole sheet. To change one gene of the default from code, start from {@code DEFAULT.weights()}.
+ *
  * @param baseLuck the luck every harvest of the strain starts from
  * @param weights  the weight of each gene, one entry per gene; a gene the map leaves out weighs nothing
  */

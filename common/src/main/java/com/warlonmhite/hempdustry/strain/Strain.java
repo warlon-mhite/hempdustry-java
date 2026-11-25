@@ -350,8 +350,18 @@ public record Strain(String translationKey, int color, int modelIndex,
             return new Traits(chemotype, Optional.of(terpene), smokeColor, potency, jarColour, quality, resistances, resin);
         }
 
+        /** These traits with no terpene: the strain smokes plain, unless it names a smoke colour of its own. */
+        public Traits withoutTerpene() {
+            return new Traits(chemotype, Optional.empty(), smokeColor, potency, jarColour, quality, resistances, resin);
+        }
+
         public Traits withSmokeColor(int rgb) {
             return new Traits(chemotype, terpene, Optional.of(rgb), potency, jarColour, quality, resistances, resin);
+        }
+
+        /** These traits with no smoke colour of their own: the smoke takes its terpene's colour, if it has one. */
+        public Traits withoutSmokeColor() {
+            return new Traits(chemotype, terpene, Optional.empty(), potency, jarColour, quality, resistances, resin);
         }
 
         public Traits withPotency(Potency potency) {
@@ -360,6 +370,11 @@ public record Strain(String translationKey, int color, int modelIndex,
 
         public Traits withJarColour(int rgb) {
             return new Traits(chemotype, terpene, smokeColor, potency, Optional.of(rgb), quality, resistances, resin);
+        }
+
+        /** These traits with no jar colour of their own: the pistils in a Stash Jar take the strain's {@code color}. */
+        public Traits withoutJarColour() {
+            return new Traits(chemotype, terpene, smokeColor, potency, Optional.empty(), quality, resistances, resin);
         }
 
         public Traits withQuality(GrowQuality quality) {

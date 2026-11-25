@@ -18,6 +18,11 @@ import java.util.Map;
  * "extra_high": 0}}; every key is optional (a band left out reads as {@link #DEFAULT}'s weight), and a
  * strain with no {@code potency} at all reads as {@link #DEFAULT}.
  *
+ * <p>A file and this constructor read a band left out differently, on purpose: a file changes only the bands it
+ * names, the rest keeping {@link #DEFAULT}'s weights, as every keyed sheet of a strain reads; the constructor takes
+ * the map as the whole sheet, so {@code new Potency(4, Map.of(PotencyBand.HIGH, 1))} rolls high every time. To change
+ * one band of the default from code, start from {@code DEFAULT.weights()}.
+ *
  * @param base    a mid bud's decarboxylated hemp
  * @param weights the weight of each band, one entry per band; a band the map leaves out weighs nothing
  */
