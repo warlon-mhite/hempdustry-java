@@ -351,6 +351,13 @@ public class ModTags {
          */
         public static final TagKey<Block> SPONGE_CLEARS = createTag("sponge_clears");
 
+        /**
+         * What a Grow Fan's wind blows through whatever its shape ({@code FanWind}): open work the air goes through
+         * though a player cannot — bars, fences, fence gates, copper grates, mangrove roots. Anything else stops the
+         * wind when its collision shape covers three quarters of its face. A pack adds its own grilles and meshes.
+         */
+        public static final TagKey<Block> FAN_PASSES_THROUGH = createTag("fan_passes_through");
+
         private static TagKey<Block> createTag(String name) {
             return TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name));
         }

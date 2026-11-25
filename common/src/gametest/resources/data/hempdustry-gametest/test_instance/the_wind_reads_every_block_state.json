@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "hempdustry-gametest:the_wind_reads_every_block_state",
+  "structure": "hempdustry-gametest:empty",
+  "max_ticks": 200,
+  "setup_ticks": 0,
+  "required": true
+}

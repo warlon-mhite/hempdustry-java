@@ -16,7 +16,8 @@ import net.minecraft.world.phys.Vec3;
  * block, gone at its far edge. Faint on purpose: it shows where the wind goes, it is not smoke.
  *
  * <p>It follows its path exactly ({@link FanPuffOption#offset}) instead of being pushed and slowed, so where it
- * dies is where the lane ends. No collision: walls do not stop a fan's wind, and the puff goes where the wind goes.
+ * dies is where the lane ends. No collision of its own: where a wall stops the wind is decided when the puff is made
+ * ({@code GrowFanBlock#puff}, by the same rule as the wind's reach), and its path already ends there.
  */
 public class FanPuffParticle extends SingleQuadParticle {
     private static final float MAX_ALPHA = 0.55f;

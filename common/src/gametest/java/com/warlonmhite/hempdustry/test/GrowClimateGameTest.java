@@ -7,6 +7,7 @@ import com.warlonmhite.hempdustry.block.custom.Climate;
 import com.warlonmhite.hempdustry.block.custom.Climate.Humidity;
 import com.warlonmhite.hempdustry.block.custom.Defoliation;
 import com.warlonmhite.hempdustry.block.custom.DehumidifierBlock;
+import com.warlonmhite.hempdustry.block.custom.FanWind;
 import com.warlonmhite.hempdustry.block.custom.HydroTrayBlock;
 import com.warlonmhite.hempdustry.block.custom.HygrometerBlock;
 import com.warlonmhite.hempdustry.block.custom.GrowFanBlock;
@@ -14,6 +15,7 @@ import com.warlonmhite.hempdustry.block.custom.IndicaCropBlock;
 import com.warlonmhite.hempdustry.block.custom.Mildew;
 import com.warlonmhite.hempdustry.block.entity.custom.PlantRecordBlockEntity;
 import com.warlonmhite.hempdustry.item.ModItems;
+import com.warlonmhite.hempdustry.util.ModTags;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +29,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
@@ -46,6 +49,8 @@ import net.minecraft.world.level.block.FarmlandBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.SlabType;
+import net.minecraft.world.level.block.state.properties.WallSide;
 import net.minecraft.world.level.levelgen.SingleThreadedRandomSource;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -216,9 +221,27 @@ public final class GrowClimateGameTest {
     /** The puffs of a running fan at {@code at}, fixed as {@code face} and blowing {@code facing}, draw its lane. */
     private static void puffsDrawTheLane(GameTestHelper context, GrowClimate.Fan lane, BlockPos at, Direction facing,
                                          AttachFace face) {
+        puffsDrawTheLane(context, lane, at, facing, face, Set.of());
+    }
+
+    /**
+     * The puffs of a running fan at {@code at}, fixed as {@code face} and blowing {@code facing}, draw the lane its
+     * wind reaches with stone set at the fan's height at each of {@code walls} (blocks ahead, blocks clockwise): every
+     * block a puff passes through past the fan's own is one a plant is blown on in, and is in the wind by the rule
+     * worked out here, apart from the game's — a block is, if nothing stands before it in its own line; and every such
+     * block has a puff pass through it, except where the lane's first block would take a puff across a wall on its
+     * way out to its side.
+     */
+    private static void puffsDrawTheLane(GameTestHelper context, GrowClimate.Fan lane, BlockPos at, Direction facing,
+                                         AttachFace face, Set<List<Integer>> walls) {
         ServerLevel world = context.getLevel();
         fan(context, at, facing, face, true);
         BlockPos fan = context.absolutePos(at);
+        Direction across = facing.getClockWise();
+        for (List<Integer> wall : walls) {
+            world.setBlock(fan.relative(facing, wall.get(0)).relative(across, wall.get(1)), Blocks.STONE.defaultBlockState(),
+                    Block.UPDATE_CLIENTS);
+        }
         BlockState state = world.getBlockState(fan);
         Map<BlockPos, Boolean> ventilated = new HashMap<>();
         Set<BlockPos> passed = new HashSet<>();
@@ -234,20 +257,293 @@ public final class GrowClimateGameTest {
                         }
                         boolean reached = ventilated.computeIfAbsent(in, pos -> Climate.ventilated(world, pos));
                         context.assertTrue(reached, "a fan " + face + " blowing " + facing + " puffs through "
-                                + in.subtract(fan) + " from it, where its wind does not reach");
+                                + in.subtract(fan) + " from it, where its wind does not reach, with stone at " + walls
+                                + "; the puff: side " + side + ", up " + up + ", to " + step + "/24, " + puff.path());
                     }
                 }
             }
         }
-        Direction across = facing.getClockWise();
         for (int ahead = 1; ahead <= lane.ahead(); ahead++) {
             for (int side = -lane.side(); side <= lane.side(); side++) {
                 BlockPos block = fan.relative(facing, ahead).relative(across, side);
-                context.assertTrue(passed.contains(block), "no puff of a fan " + face + " blowing " + facing
-                        + " passes through " + block.subtract(fan) + " from it, in the lane its wind reaches");
+                boolean inWind = true;
+                for (int before = 1; before <= ahead; before++) {
+                    inWind &= !walls.contains(List.of(before, side));
+                }
+                boolean drawn = inWind;
+                for (int crossed = 0; crossed != side; crossed += Integer.signum(side)) {
+                    drawn &= !walls.contains(List.of(1, crossed));
+                }
+                context.assertTrue(passed.contains(block) == drawn, "a puff of a fan " + face + " blowing " + facing
+                        + (drawn ? " never passes through " : " passes through ") + block.subtract(fan) + " from it, with "
+                        + "stone at " + walls + " (blocks ahead, blocks clockwise)");
             }
         }
+        for (List<Integer> wall : walls) {
+            world.setBlock(fan.relative(facing, wall.get(0)).relative(across, wall.get(1)), Blocks.AIR.defaultBlockState(),
+                    Block.UPDATE_CLIENTS);
+        }
         clearFan(context, at);
+    }
+
+    /**
+     * Where a fan's wind stops, block by block (#424, #426–#429): a block stops it when its collision shape, seen
+     * along the wind, covers three quarters of its face or more, unless it is in {@code #hempdustry:fan_passes_through}.
+     * The record's list, each state read along the axis given: what is low, thin, small or open passes, what fills the
+     * face stops it, and the tag's blocks pass although they fill it.
+     */
+    public static void theWindStopsAtThreeQuarters(GameTestHelper context) {
+        Direction.Axis x = Direction.Axis.X;
+        Direction.Axis z = Direction.Axis.Z;
+        // Stops: full blocks, leaves (#427), a chest (#429), stairs side-on and end-on, a closed door and a standing
+        // trapdoor across the wind, a pane window and a wall joined across it, and the blocks the record measured.
+        stopsWind(context, Blocks.STONE.defaultBlockState(), x, true);
+        stopsWind(context, Blocks.GLASS.defaultBlockState(), z, true);
+        stopsWind(context, Blocks.OAK_LEAVES.defaultBlockState(), x, true);
+        stopsWind(context, Blocks.CHEST.defaultBlockState(), x, true);
+        stopsWind(context, Blocks.CHEST.defaultBlockState(), z, true);
+        BlockState stairs = Blocks.STONE_STAIRS.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH);
+        stopsWind(context, stairs, x, true);
+        stopsWind(context, stairs, z, true);
+        BlockState door = Blocks.OAK_DOOR.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.EAST);
+        stopsWind(context, door, x, true);
+        stopsWind(context, door, z, false);
+        BlockState standing = Blocks.OAK_TRAPDOOR.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.EAST)
+                .setValue(BlockStateProperties.OPEN, true);
+        stopsWind(context, standing, x, true);
+        stopsWind(context, standing, z, false);
+        BlockState window = Blocks.GLASS_PANE.defaultBlockState().setValue(BlockStateProperties.NORTH, true)
+                .setValue(BlockStateProperties.SOUTH, true);
+        stopsWind(context, window, x, true);
+        stopsWind(context, window, z, false);
+        stopsWind(context, Blocks.GLASS_PANE.defaultBlockState(), x, false);
+        BlockState wall = Blocks.COBBLESTONE_WALL.defaultBlockState().setValue(BlockStateProperties.NORTH_WALL, WallSide.LOW)
+                .setValue(BlockStateProperties.SOUTH_WALL, WallSide.LOW).setValue(BlockStateProperties.UP, false);
+        stopsWind(context, wall, x, true);
+        stopsWind(context, Blocks.COBBLESTONE_WALL.defaultBlockState(), x, false);
+        for (Block block : List.of(Blocks.ENCHANTING_TABLE, Blocks.CAULDRON, Blocks.COMPOSTER, Blocks.DECORATED_POT,
+                ModBlocks.DEHUMIDIFIER)) {
+            stopsWind(context, block.defaultBlockState(), x, true);
+        }
+        stopsWind(context, Blocks.SNOW.defaultBlockState().setValue(BlockStateProperties.LAYERS, 7), x, true);
+        stopsWind(context, Blocks.OAK_SLAB.defaultBlockState().setValue(BlockStateProperties.SLAB_TYPE, SlabType.DOUBLE), x, true);
+        // Passes: low, flat, thin or small.
+        stopsWind(context, Blocks.SNOW.defaultBlockState().setValue(BlockStateProperties.LAYERS, 6), x, false);
+        stopsWind(context, Blocks.OAK_SLAB.defaultBlockState(), x, false);
+        stopsWind(context, Blocks.OAK_SLAB.defaultBlockState().setValue(BlockStateProperties.SLAB_TYPE, SlabType.TOP), z, false);
+        stopsWind(context, Blocks.BED.pick(DyeColor.RED).defaultBlockState(), x, false);
+        stopsWind(context, Blocks.CAMPFIRE.defaultBlockState(), x, false);
+        stopsWind(context, Blocks.OAK_TRAPDOOR.defaultBlockState(), x, false);
+        for (Block block : List.of(Blocks.LANTERN, Blocks.IRON_CHAIN, Blocks.END_ROD, Blocks.HOPPER, Blocks.SCAFFOLDING,
+                Blocks.OAK_FENCE, Blocks.AIR, Blocks.WHEAT, Blocks.TORCH)) {
+            stopsWind(context, block.defaultBlockState(), x, false);
+            stopsWind(context, block.defaultBlockState(), z, false);
+        }
+        for (BlockState fan : ModBlocks.GROW_FAN.getStateDefinition().getPossibleStates()) {
+            stopsWind(context, fan, x, false);
+            stopsWind(context, fan, z, false);
+        }
+        // The tag: shapes that fill the face, and let the wind through all the same.
+        BlockState bars = Blocks.IRON_BARS.defaultBlockState().setValue(BlockStateProperties.NORTH, true)
+                .setValue(BlockStateProperties.SOUTH, true);
+        BlockState fence = Blocks.OAK_FENCE.defaultBlockState().setValue(BlockStateProperties.NORTH, true)
+                .setValue(BlockStateProperties.SOUTH, true);
+        BlockState hempFence = ModBlocks.HEMP_PLANKS_FENCE.defaultBlockState().setValue(BlockStateProperties.NORTH, true)
+                .setValue(BlockStateProperties.SOUTH, true);
+        List<BlockState> open = new java.util.ArrayList<>(List.of(bars, fence, hempFence,
+                Blocks.OAK_FENCE_GATE.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.EAST),
+                ModBlocks.HEMP_PLANKS_FENCE_GATE.defaultBlockState().setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.EAST),
+                Blocks.MANGROVE_ROOTS.defaultBlockState()));
+        Blocks.COPPER_GRATE.forEach(grate -> open.add(grate.defaultBlockState()));
+        for (BlockState state : open) {
+            float cover = FanWind.cover(EmptyBlockGetter.INSTANCE, BlockPos.ZERO, state, x);
+            context.assertTrue(cover >= FanWind.STOPS_AT, state + " covers only " + cover + " of its face, so it needs no "
+                    + "place in #hempdustry:fan_passes_through to let the wind by");
+            stopsWind(context, state, x, false);
+        }
+        context.succeed();
+    }
+
+    /** Whether {@code state} stops wind blowing along {@code axis}, as {@code expected}. */
+    private static void stopsWind(GameTestHelper context, BlockState state, Direction.Axis axis, boolean expected) {
+        boolean stops = FanWind.stops(EmptyBlockGetter.INSTANCE, BlockPos.ZERO, state, axis);
+        context.assertTrue(stops == expected, state + " seen along " + axis + " covers "
+                + FanWind.cover(EmptyBlockGetter.INSTANCE, BlockPos.ZERO, state, axis) + " of its face and "
+                + (stops ? "stops" : "lets through") + " a fan's wind");
+    }
+
+    /**
+     * A wall between a running fan and a plant stops the fan's wind: stone, leaves (#427), chests (#429) and a
+     * glass-pane window across the wind (#426) leave the plant unventilated; iron bars, a joined fence, closed fence
+     * gates, every copper grate and mangrove roots (#428), all in {@code #hempdustry:fan_passes_through}, let it
+     * through, and so do a lone pane, panes edge-on, a bottom slab and a lantern, which cover too little. The tag is
+     * read, not written into the rule (#430): stone put in it lets the wind through.
+     */
+    public static void aWallStopsAFansWind(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        BlockPos root = context.absolutePos(PLANT);
+        fan(context, PLANT.east(4), Direction.WEST, AttachFace.FLOOR, true);
+        context.assertTrue(Climate.ventilated(world, root), "test setup: a running fan 4 blocks east misses the plant");
+        Map<String, BlockState> stopping = new java.util.LinkedHashMap<>();
+        stopping.put("stone", Blocks.STONE.defaultBlockState());
+        stopping.put("leaves", Blocks.OAK_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, true));
+        stopping.put("chests", Blocks.CHEST.defaultBlockState());
+        stopping.put("a glass-pane window", Blocks.GLASS_PANE.defaultBlockState());
+        stopping.forEach((what, state) -> blowsThrough(context, root, wallAcross(), state, false, "a wall of " + what));
+        Map<String, BlockState> open = new java.util.LinkedHashMap<>();
+        open.put("iron bars", Blocks.IRON_BARS.defaultBlockState());
+        open.put("oak fence", Blocks.OAK_FENCE.defaultBlockState());
+        open.put("hemp planks fence", ModBlocks.HEMP_PLANKS_FENCE.defaultBlockState());
+        open.put("closed oak fence gates", Blocks.OAK_FENCE_GATE.defaultBlockState()
+                .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.EAST));
+        open.put("closed hemp planks fence gates", ModBlocks.HEMP_PLANKS_FENCE_GATE.defaultBlockState()
+                .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.EAST));
+        open.put("mangrove roots", Blocks.MANGROVE_ROOTS.defaultBlockState());
+        Blocks.COPPER_GRATE.forEach(grate -> open.put(grate.getDescriptionId(), grate.defaultBlockState()));
+        open.forEach((what, state) -> blowsThrough(context, root, wallAcross(), state, true, "a wall of " + what));
+        // In the plant's own line only: a lone pane, three panes joined along the wind, a slab, a lantern, a chest.
+        blowsThrough(context, root, List.of(PLANT.east(2)), Blocks.GLASS_PANE.defaultBlockState(), true, "a lone pane");
+        blowsThrough(context, root, List.of(PLANT.east(1), PLANT.east(2), PLANT.east(3)), Blocks.GLASS_PANE.defaultBlockState(),
+                true, "panes joined along the wind");
+        blowsThrough(context, root, List.of(PLANT.east(2)), Blocks.OAK_SLAB.defaultBlockState(), true, "a bottom slab");
+        blowsThrough(context, root, List.of(PLANT.east(2)), Blocks.LANTERN.defaultBlockState(), true, "a lantern");
+        blowsThrough(context, root, List.of(PLANT.east(2)), Blocks.CHEST.defaultBlockState(), false, "a chest");
+        Tagged.within(Blocks.STONE, ModTags.Blocks.FAN_PASSES_THROUGH, () -> blowsThrough(context, root, wallAcross(),
+                Blocks.STONE.defaultBlockState(), true, "a wall of stone in #hempdustry:fan_passes_through"));
+        blowsThrough(context, root, wallAcross(), Blocks.STONE.defaultBlockState(), false, "a wall of stone, out of the tag again");
+        clearFan(context, PLANT.east(4));
+        context.succeed();
+    }
+
+    /** A wall across the whole lane, two blocks east of the plant: five blocks wide, a block under it to one over. */
+    private static List<BlockPos> wallAcross() {
+        List<BlockPos> wall = new java.util.ArrayList<>();
+        for (int up = -1; up <= 1; up++) {
+            for (int side = -2; side <= 2; side++) {
+                wall.add(PLANT.east(2).offset(0, up, side));
+            }
+        }
+        return wall;
+    }
+
+    /**
+     * With {@code state} set at each of {@code blocks}, joined to each other as a player would have built them, the
+     * plant rooted at {@code root} is blown on or not as {@code expected}; the blocks are taken away again after.
+     */
+    private static void blowsThrough(GameTestHelper context, BlockPos root, List<BlockPos> blocks, BlockState state,
+                                     boolean expected, String what) {
+        ServerLevel world = context.getLevel();
+        for (BlockPos at : blocks) {
+            world.setBlock(context.absolutePos(at), state, Block.UPDATE_CLIENTS);
+        }
+        if (blocks.size() > 1) {
+            for (BlockPos at : blocks) {
+                BlockPos absolute = context.absolutePos(at);
+                world.setBlock(absolute, Block.updateFromNeighbourShapes(world.getBlockState(absolute), world, absolute),
+                        Block.UPDATE_CLIENTS);
+            }
+        }
+        context.assertTrue(Climate.ventilated(world, root) == expected, what + " between a running fan and a plant "
+                + (expected ? "stops its wind" : "lets its wind through") + "; there: "
+                + world.getBlockState(context.absolutePos(blocks.getFirst())));
+        for (BlockPos at : blocks) {
+            world.setBlock(context.absolutePos(at), Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS);
+        }
+    }
+
+    /**
+     * A block in a fan's lane cuts only its own line (#425): the lane is straight lines along the wind, one block wide
+     * and high, and a plant is in the one at its root's height and column. Stone in that line, between the plant and
+     * the fan, keeps the wind off it; the plants in the lines beside it are still blown on, and stone a row up, behind
+     * the plant, or in the fan's own column is not in its way. A fan hung over the plants blows on them along their
+     * own row, not its own.
+     */
+    public static void aBlockCutsOnlyItsOwnLine(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        BlockPos root = context.absolutePos(PLANT);
+        fan(context, PLANT.east(4), Direction.WEST, AttachFace.FLOOR, true);
+        context.setBlock(PLANT.east(2), Blocks.STONE);
+        context.assertTrue(!Climate.ventilated(world, root), "stone between the fan and the plant, in its line, lets the wind by");
+        context.assertTrue(Climate.ventilated(world, context.absolutePos(PLANT.north()))
+                        && Climate.ventilated(world, context.absolutePos(PLANT.south())),
+                "stone in one line of the lane keeps the wind off the plants in the lines beside it");
+        context.setBlock(PLANT.east(2), Blocks.AIR);
+        for (BlockPos elsewhere : List.of(PLANT.east(2).above(), PLANT.west(), PLANT.east(3).north())) {
+            context.setBlock(elsewhere, Blocks.STONE);
+            context.assertTrue(Climate.ventilated(world, root), "stone at " + elsewhere.subtract(PLANT)
+                    + " from the plant, out of its line, keeps the fan's wind off it");
+            context.setBlock(elsewhere, Blocks.AIR);
+        }
+        clearFan(context, PLANT.east(4));
+
+        BlockPos hung = PLANT.east(4).above(2);
+        fan(context, hung, Direction.WEST, AttachFace.CEILING, true);
+        context.assertTrue(Climate.ventilated(world, root), "test setup: a running fan hung 2 over the plant's row misses it");
+        context.setBlock(PLANT.east(2).above(2), Blocks.STONE);
+        context.assertTrue(Climate.ventilated(world, root), "stone in a hung fan's own row keeps the wind off a plant two rows down");
+        context.setBlock(PLANT.east(2).above(2), Blocks.AIR);
+        context.setBlock(PLANT.east(4), Blocks.STONE);
+        context.assertTrue(Climate.ventilated(world, root), "stone under a hung fan, in its own column, keeps its wind off the plant");
+        context.setBlock(PLANT.east(4), Blocks.AIR);
+        context.setBlock(PLANT.east(2), Blocks.STONE);
+        context.assertTrue(!Climate.ventilated(world, root), "stone in the plant's row between it and a hung fan lets the wind by");
+        context.setBlock(PLANT.east(2), Blocks.AIR);
+        clearFan(context, hung);
+        context.succeed();
+    }
+
+    /**
+     * A fan's puffs stop where its wind stops: against a wall across the lane, before a block in one line only that
+     * line's puffs, and a puff bound across the lane's first block is gone at once if a wall stands in its way there.
+     * In every placement, blowing west (and east, past single blocks), every block a puff passes through is one the wind
+     * reaches, and every block the wind reaches is drawn; a puff whose path runs on the edge between two lines is
+     * stopped by the line it is drawn in, whichever way the lane runs.
+     */
+    public static void aFansPuffsStopWhereItsWindStops(GameTestHelper context) {
+        GrowClimate.Fan lane = GrowClimate.of(context.getLevel().registryAccess()).fan();
+        Set<List<Integer>> across = new HashSet<>();
+        for (int side = -lane.side(); side <= lane.side(); side++) {
+            across.add(List.of(4, side));
+        }
+        BlockPos at = new BlockPos(12, 3, 3);
+        for (AttachFace face : AttachFace.values()) {
+            puffsDrawTheLane(context, lane, at, Direction.WEST, face, across);
+            puffsDrawTheLane(context, lane, at, Direction.WEST, face, Set.of(List.of(3, 2)));
+            puffsDrawTheLane(context, lane, at, Direction.WEST, face, Set.of(List.of(1, 1)));
+            // Single blocks either side, two lines out from each other: a puff on the edge between two lines runs in one.
+            puffsDrawTheLane(context, lane, at, Direction.WEST, face, Set.of(List.of(3, 1), List.of(3, -2)));
+            puffsDrawTheLane(context, lane, at.west(9), Direction.EAST, face, Set.of(List.of(3, 1), List.of(3, -2)));
+        }
+        context.succeed();
+    }
+
+    /**
+     * Every block state the game has, read along both of a fan's axes: how much of its face it covers is a number
+     * from 0 to 1, and reading it never throws. Read where a block stands, in the test's world, for the states whose
+     * shape depends on it.
+     */
+    public static void theWindReadsEveryBlockState(GameTestHelper context) {
+        ServerLevel world = context.getLevel();
+        BlockPos pos = context.absolutePos(new BlockPos(1, 2, 1));
+        Map<String, String> findings = new java.util.TreeMap<>();
+        int seen = 0;
+        for (BlockState state : Block.BLOCK_STATE_REGISTRY) {
+            for (Direction.Axis axis : List.of(Direction.Axis.X, Direction.Axis.Z)) {
+                try {
+                    float cover = FanWind.cover(world, pos, state, axis);
+                    FanWind.stops(world, pos, state, axis);
+                    if (!(cover >= 0.0F && cover <= 1.0F)) {
+                        findings.put(state + " " + axis, "covers " + cover);
+                    }
+                } catch (RuntimeException e) {
+                    findings.put(state + " " + axis, e.toString());
+                }
+            }
+            seen++;
+        }
+        Sweep.atLeast(context, "block states", seen, 20_000);
+        Sweep.report(context, "every block state's cover of its face is a number from 0 to 1", findings, Map.of());
+        context.succeed();
     }
 
     /**

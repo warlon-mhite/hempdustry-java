@@ -336,6 +336,11 @@ public final class HempdustryGameTests {
         register("a_grow_fan_runs_on_redstone", GrowClimateGameTest::aGrowFanRunsOnRedstone);
         register("a_grow_fan_stirs_the_air_in_its_reach", GrowClimateGameTest::aGrowFanStirsTheAirInItsReach);
         register("a_fans_puffs_draw_its_lane", GrowClimateGameTest::aFansPuffsDrawItsLane);
+        register("the_wind_stops_at_three_quarters", GrowClimateGameTest::theWindStopsAtThreeQuarters);
+        register("a_wall_stops_a_fans_wind", GrowClimateGameTest::aWallStopsAFansWind);
+        register("a_block_cuts_only_its_own_line", GrowClimateGameTest::aBlockCutsOnlyItsOwnLine);
+        register("a_fans_puffs_stop_where_its_wind_stops", GrowClimateGameTest::aFansPuffsStopWhereItsWindStops);
+        register("the_wind_reads_every_block_state", GrowClimateGameTest::theWindReadsEveryBlockState);
         register("a_fan_thickens_the_stalk", GrowClimateGameTest::aFanThickensTheStalk);
         register("a_dehumidifier_dries_a_roofed_room", GrowClimateGameTest::aDehumidifierDriesARoofedRoom);
         register("a_dehumidifier_fills_from_the_plants_it_dries", GrowClimateGameTest::aDehumidifierFillsFromThePlantsItDries);

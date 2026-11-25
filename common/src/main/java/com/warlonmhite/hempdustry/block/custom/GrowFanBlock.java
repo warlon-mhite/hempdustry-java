@@ -32,7 +32,8 @@ import org.jetbrains.annotations.Nullable;
  * <p>It blows level the way its grille faces ({@link #blows}), wherever it is fixed: placed on a floor or a
  * ceiling, away from the player who set it; on a wall, out of the wall. A running fan moves the air of every
  * plant it blows on one step towards the open ({@link Climate#ventilated}, {@link Climate#air}): a sealed room's
- * still air is stirred, a greenhouse's is as good as a field's. Fans do not add up; one is enough. And a plant
+ * still air is stirred, a greenhouse's is as good as a field's. A wall stops its wind, line by line
+ * ({@link FanWind}); bars, fences and grates do not. Fans do not add up; one is enough. And a plant
  * that grew in a fan's wind at every step thickens its stalk: one stem more at harvest
  * ({@code hempdustry:ventilated}), which a Grow Pot's plant, short of a stem, is glad of.
  *
@@ -123,7 +124,10 @@ public class GrowFanBlock extends FaceAttachedHorizontalDirectionalBlock {
         }
         Puff puff = puff(state, world, pos, GrowClimate.of(world.registryAccess()).fan(),
                 random.nextDouble() * 2.0 - 1.0, random.nextDouble() * 2.0 - 1.0, random.nextDouble() * 2.0 - 1.0);
-        world.addParticle(puff.path(), puff.from().x, puff.from().y, puff.from().z, 0.0, 0.0, 0.0);
+        // One stopped before it leaves the fan's block would only flicker inside the housing.
+        if (puff.path().reach() > puff.path().clear()) {
+            world.addParticle(puff.path(), puff.from().x, puff.from().y, puff.from().z, 0.0, 0.0, 0.0);
+        }
     }
 
     /**
@@ -139,6 +143,11 @@ public class GrowFanBlock extends FaceAttachedHorizontalDirectionalBlock {
      * of the way it blows, seen from above). It runs straight out of the fan's own block, drifts out to that side
      * over the lane's first block, then goes straight on, and is gone at the lane's far edge: {@code ahead} blocks
      * of lane in front of the fan's own block, half a block past the middle of the last.
+     *
+     * <p>Or short of it, where a wall stops the wind ({@link FanWind}): a puff runs in the line of the column it ends
+     * in, at the fan's height, and is gone at the near face of the first block in that line that stops the wind, as a
+     * plant behind that block is not blown on. One bound across the lane's first block is gone at its near face if
+     * any block it would drift through there stops the wind.
      */
     public static Puff puff(BlockState state, BlockGetter world, BlockPos pos, GrowClimate.Fan lane,
                             double side, double up, double to) {
@@ -149,9 +158,24 @@ public class GrowFanBlock extends FaceAttachedHorizontalDirectionalBlock {
         Vec3 off = from.subtract(Vec3.atCenterOf(pos));
         double alreadyAhead = off.x * blows.getStepX() + off.z * blows.getStepZ();
         double alreadyAcross = off.x * across.getStepX() + off.z * across.getStepZ();
-        double reach = lane.ahead() + 0.5 - alreadyAhead - SHORT;
-        double sideways = to * (lane.side() + EDGE) - alreadyAcross;
+        double ends = to * (lane.side() + EDGE);
+        double sideways = ends - alreadyAcross;
         double clear = 0.5 - alreadyAhead;
+        // The column the puff runs on in, read off its own path once it has spread, as the particle will follow it: a
+        // path near the edge between two blocks is in whichever one the path's own numbers put it.
+        FanPuffOption spread = new FanPuffOption(blows, (float) clear, (float) sideways, Float.MAX_VALUE);
+        BlockPos landing = BlockPos.containing(from.add(spread.offset(clear + 2.0 * FanPuffOption.SPREAD)));
+        int column = Math.clamp((long) across.getStepX() * (landing.getX() - pos.getX())
+                + (long) across.getStepZ() * (landing.getZ() - pos.getZ()), -lane.side(), lane.side());
+        int stop = FanWind.firstStop(world, pos.relative(across, column), blows, lane.ahead());
+        BlockPos.MutableBlockPos first = new BlockPos.MutableBlockPos();
+        for (int passed = 0; passed != column && stop > 1; passed += Integer.signum(column)) {
+            first.set(pos).move(blows).move(across, passed);
+            if (FanWind.stops(world, first, world.getBlockState(first), blows.getAxis())) {
+                stop = 1;
+            }
+        }
+        double reach = Math.max(0.0, stop - 0.5 - alreadyAhead - SHORT);
         return new Puff(from, new FanPuffOption(blows, (float) clear, (float) sideways, (float) reach));
     }
 

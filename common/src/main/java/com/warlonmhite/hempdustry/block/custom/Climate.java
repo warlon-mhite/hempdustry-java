@@ -30,7 +30,8 @@ import org.jetbrains.annotations.Nullable;
  *       (sky light at the plant's full-grown top: glass), the sun warming and moving the air by day;
  *       {@link Air#STILL} under a roof that blocks the sun, a sealed room. What a roof is stays
  *       {@link Mildew#roofed}: a Grow Lamp is none. A running {@link GrowFanBlock Grow Fan} blowing on it moves
- *       a plant one step towards the open; two fans do no more than one.</li>
+ *       a plant one step towards the open, unless a wall stands between them ({@link FanWind}); two fans do no
+ *       more than one.</li>
  *   <li><b>Humidity</b>: {@link Humidity#NORMAL}, one drier in a biome with almost no rain (a desert, the
  *       badlands, a savanna, the Nether), one wetter in a warm, rainy one (a jungle, a swamp, the mushroom
  *       fields), and one wetter again in a wet room: the plant's own bed a Hydro Tray, or, under a roof,
@@ -142,7 +143,12 @@ public final class Climate {
      * Whether a running Grow Fan blows on the plant whose root is at {@code root}: one facing the plant, from 1 to
      * the climate's {@code ahead} blocks behind it along the way it blows, at most {@code side} blocks off its line,
      * standing from {@code above} blocks under the root to {@code below} blocks over it. A fan beside a plant or
-     * behind it blows past it. Walls do not stop the wind, as they stop no other reach of a grow room's gear.
+     * behind it blows past it.
+     *
+     * <p>A wall between them stops the wind ({@link FanWind}): the lane is straight lines along the wind, one block
+     * wide and high each, and the plant is in the one at its root's height and column. That line, from the block
+     * after the fan's own column to the block before the plant, must hold nothing that stops it; a block anywhere
+     * else in the lane cuts only its own line.
      */
     public static boolean ventilated(Level world, BlockPos root) {
         GrowClimate.Fan fan = GrowClimate.of(world.registryAccess()).fan();
@@ -156,6 +162,14 @@ public final class Climate {
         for (Direction blows : Direction.Plane.HORIZONTAL) {
             Direction across = blows.getClockWise();
             for (int ahead = 1; ahead <= fan.ahead(); ahead++) {
+                // A fan this far back blows on the plant only if the line between holds no wall: the blocks behind
+                // the root, up to the one before the fan's column. Walked out a block at a time with the search.
+                if (ahead > 1) {
+                    at.set(root).move(blows.getOpposite(), ahead - 1);
+                    if (FanWind.stops(world, at, world.getBlockState(at), blows.getAxis())) {
+                        break;
+                    }
+                }
                 for (int side = -fan.side(); side <= fan.side(); side++) {
                     // A fan blowing this way that reaches the root stands this far back against its wind.
                     int x = root.getX() - blows.getStepX() * ahead + across.getStepX() * side;

@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:function",
+  "environment": "minecraft:default",
+  "function": "hempdustry-gametest:a_wall_stops_a_fans_wind",
+  "structure": "hempdustry-gametest:empty_long",
+  "max_ticks": 200,
+  "setup_ticks": 0,
+  "required": true
+}

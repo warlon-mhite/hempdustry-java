@@ -112,6 +112,20 @@ public class ModBlockTagProvider extends FabricTagsProvider.BlockTagsProvider {
                 .add(ModBlocks.MAUI_WOWIE_CROP)
                 .add(ModBlocks.MAUI_WOWIE_FLOWER);
 
+        // Open work a Grow Fan's wind blows through, though the shape covers the face: joined bars, a joined fence
+        // and a closed gate (their collision is 24 pixels tall and spans the block), the copper grates (full cubes
+        // with holes, in no vanilla tag) and mangrove roots (a full collision cube, an open tangle). Our fences and
+        // gates come in through #minecraft:wooden_fences and #minecraft:fence_gates; other mods' through the
+        // optional #c: tags.
+        ValueTagAppender<Block> passes = valueLookupBuilder(ModTags.Blocks.FAN_PASSES_THROUGH)
+                .forceAddTag(BlockTags.BARS)
+                .forceAddTag(BlockTags.FENCES)
+                .forceAddTag(BlockTags.FENCE_GATES);
+        Blocks.COPPER_GRATE.forEach(passes::add);
+        passes.add(Blocks.MANGROVE_ROOTS)
+                .addOptionalTag(ConventionalBlockTags.FENCES)
+                .addOptionalTag(ConventionalBlockTags.FENCE_GATES);
+
         // The wild flowers were in no tag at all, so a sword took as long over one as a fist did and
         // an enderman walked past them. Both of these are joined DIRECTLY rather than by way of
         // #minecraft:small_flowers, and that is the whole point of the entry:
