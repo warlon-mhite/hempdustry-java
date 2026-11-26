@@ -1,0 +1,40 @@
+{
+  "values": [
+    {
+      "id": "hempdustry:indica_crop",
+      "required": false
+    },
+    {
+      "id": "hempdustry:sativa_crop",
+      "required": false
+    },
+    {
+      "id": "hempdustry:beldia_crop",
+      "required": false
+    },
+    {
+      "id": "hempdustry:industrial_hemp_crop",
+      "required": false
+    },
+    {
+      "id": "hempdustry:cherry_wine_crop",
+      "required": false
+    },
+    {
+      "id": "hempdustry:white_widow_crop",
+      "required": false
+    },
+    {
+      "id": "hempdustry:dud_weed_crop",
+      "required": false
+    },
+    {
+      "id": "hempdustry:echo_og_crop",
+      "required": false
+    },
+    {
+      "id": "hempdustry:maui_wowie_crop",
+      "required": false
+    }
+  ]
+}

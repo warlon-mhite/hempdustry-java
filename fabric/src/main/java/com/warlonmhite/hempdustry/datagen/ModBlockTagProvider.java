@@ -243,6 +243,21 @@ public class ModBlockTagProvider extends FabricTagsProvider.BlockTagsProvider {
         valueLookupBuilder(TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("carryon", "block_blacklist")))
                 .forceAddTag(ModTags.Blocks.HEMP_CROPS);
 
+        // Serene Seasons: every hemp crop grows in spring, summer and autumn and rests in winter, as the vanilla crops
+        // beside it do, unless ModCrops names its reason to grow all year (Ruderalis, which flowers by age; the
+        // Nether's and the End's strains, which have no seasons at home). Each entry optional, as the seeds' below.
+        for (TagKey<Block> season : ModTags.SereneSeasons.GROWING_SEASON) {
+            valueLookupBuilder(season).addAllOptional(ModCrops.ALL.stream()
+                    .filter(crop -> !crop.seasons().yearRound()).map(ModCrops.Crop::crop));
+        }
+        valueLookupBuilder(ModTags.SereneSeasons.YEAR_ROUND).addAllOptional(ModCrops.ALL.stream()
+                .filter(crop -> crop.seasons().yearRound()).map(ModCrops.Crop::crop));
+        // Its third setting breaks an out-of-season crop with no drops. Only a hemp plant's root random-ticks, at
+        // any age, so it would take every plant whole, a ripe one too, where vanilla's ripe crops (which stop
+        // ticking) are spared. Every hemp crop is listed: out of season hemp waits, as in its second setting.
+        valueLookupBuilder(ModTags.SereneSeasons.UNBREAKABLE).addAllOptional(ModCrops.ALL.stream()
+                .map(ModCrops.Crop::crop));
+
         // HEMP_LEAVES joins the vanilla leaves tag, which is the only route to shears' 15x mining
         // rule — that rule names this tag rather than a block list (ShearsItem#createToolComponent).
         // It brings #minecraft:mineable/hoe and #minecraft:sword_efficient along, since both include

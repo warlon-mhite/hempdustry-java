@@ -13,6 +13,8 @@ import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.levelgen.structure.Structure;
 
+import java.util.List;
+
 public class ModTags {
 
     public static class Biomes {
@@ -410,6 +412,43 @@ public class ModTags {
 
         private static TagKey<EntityType<?>> createTag(String name) {
             return TagKey.create(Registries.ENTITY_TYPE, Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, name));
+        }
+    }
+
+    /**
+     * Serene Seasons' crop tags, which we only add to: a crop listed in a season's tag grows in that season and
+     * rests in the others (in its default setting it grows a sixth as often, and its bone meal mostly does
+     * nothing); a crop in none of them grows all year as if there were no seasons. The mod puts its
+     * {@code year_round_crops} inside every season's tag itself, on the block side and the item side, and the item
+     * side is what names a seed's seasons in its tooltip. Every entry of ours is optional, and a tag in another
+     * mod's namespace is read by nothing where that mod is not installed.
+     */
+    public static class SereneSeasons {
+        private static final String NAMESPACE = "sereneseasons";
+
+        /** The three seasons of hemp's growing year, in the order of the year: spring, summer, autumn. */
+        public static final List<TagKey<Block>> GROWING_SEASON = List.of(
+                blockTag("spring_crops"), blockTag("summer_crops"), blockTag("autumn_crops"));
+        /** The same three, for the seeds. */
+        public static final List<TagKey<Item>> GROWING_SEASON_SEEDS = List.of(
+                itemTag("spring_crops"), itemTag("summer_crops"), itemTag("autumn_crops"));
+        /** The crops that grow all year, in every season's tag. */
+        public static final TagKey<Block> YEAR_ROUND = blockTag("year_round_crops");
+        /** The same, for the seeds: their tooltip reads "Year-Round". */
+        public static final TagKey<Item> YEAR_ROUND_SEEDS = itemTag("year_round_crops");
+        /**
+         * The crops its "break out of season" setting spares: they wait instead, as in its "never grow" setting.
+         * It breaks the block it random-ticks, which for hemp is a plant's root at any age, so without this a
+         * plant would go whole, harvest and record with it, even when ripe.
+         */
+        public static final TagKey<Block> UNBREAKABLE = blockTag("unbreakable_infertile_crops");
+
+        private static TagKey<Block> blockTag(String path) {
+            return TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(NAMESPACE, path));
+        }
+
+        private static TagKey<Item> itemTag(String path) {
+            return TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(NAMESPACE, path));
         }
     }
 

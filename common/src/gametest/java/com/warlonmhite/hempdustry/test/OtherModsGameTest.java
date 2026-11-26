@@ -11,6 +11,7 @@ import com.warlonmhite.hempdustry.block.custom.IndicaCropBlock;
 import com.warlonmhite.hempdustry.block.custom.SativaCropBlock;
 import com.warlonmhite.hempdustry.block.custom.TallHemp;
 import com.warlonmhite.hempdustry.block.custom.TriplePlantSegment;
+import com.warlonmhite.hempdustry.util.ModTags;
 import net.minecraft.core.Holder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -23,6 +24,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.BonemealSource;
@@ -34,6 +36,7 @@ import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.levelgen.SingleThreadedRandomSource;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -460,6 +463,75 @@ public final class OtherModsGameTest {
         }
         Sweep.atLeast(context, "crops of ours", seen, 13);
         Sweep.report(context, "Carry On never lifts a plant of ours", findings, Map.of());
+        context.succeed();
+    }
+    /**
+     * In a game with Serene Seasons every hemp crop grows in spring, summer and autumn and rests in winter, as
+     * hemp sown after the last frost does, except the four that grow all year: Ruderalis (it flowers by age, not by
+     * the length of the day) and Warped Kush, Crimson Weed and Ender Haze (no seasons where they come from). Each
+     * crop and its seed is under exactly one of the two rules, so a strain added and forgotten fails here; the
+     * year-round four are named, so a crop moved between the rules by mistake fails too. Every crop is also one its
+     * "break out of season" setting spares, so a plant there waits as in its "never grow" setting instead of going
+     * whole, ripe or not. Every entry is optional.
+     * Run without Serene Seasons, so its own {@code year_round_crops} is not yet inside every season's tag.
+     */
+    public static void everyCropAndSeedKeepsItsSeasons(GameTestHelper context) {
+        Set<String> yearRound = Set.of("ruderalis_crop", "warped_kush_crop", "crimson_crop", "ender_haze_crop");
+        Identifier winterId = Identifier.fromNamespaceAndPath("sereneseasons", "winter_crops");
+        TagKey<Block> winter = TagKey.create(Registries.BLOCK, winterId);
+        TagKey<Item> winterSeeds = TagKey.create(Registries.ITEM, winterId);
+        Map<String, String> findings = new TreeMap<>();
+        int seen = 0;
+        for (Block block : BuiltInRegistries.BLOCK) {
+            Identifier id = BuiltInRegistries.BLOCK.getKey(block);
+            if (!block.defaultBlockState().is(ModTags.Blocks.HEMP_CROPS)) {
+                continue;
+            }
+            seen++;
+            Item seed = block.asItem();
+            if (seed == Items.AIR) {
+                findings.put(id.toString(), "a hemp crop with no seed item");
+                continue;
+            }
+            boolean allYear = yearRound.contains(id.getPath()) && Sweep.ours(id);
+            List<String> wrong = new ArrayList<>();
+            for (int i = 0; i < 3; i++) {
+                TagKey<Block> season = ModTags.SereneSeasons.GROWING_SEASON.get(i);
+                if (block.defaultBlockState().is(season) == allYear) wrong.add("#" + season.location());
+                TagKey<Item> seeds = ModTags.SereneSeasons.GROWING_SEASON_SEEDS.get(i);
+                if (seed.builtInRegistryHolder().is(seeds) == allYear) wrong.add("item #" + seeds.location());
+            }
+            if (block.defaultBlockState().is(ModTags.SereneSeasons.YEAR_ROUND) != allYear) {
+                wrong.add("#" + ModTags.SereneSeasons.YEAR_ROUND.location());
+            }
+            if (seed.builtInRegistryHolder().is(ModTags.SereneSeasons.YEAR_ROUND_SEEDS) != allYear) {
+                wrong.add("item #" + ModTags.SereneSeasons.YEAR_ROUND_SEEDS.location());
+            }
+            if (!block.defaultBlockState().is(ModTags.SereneSeasons.UNBREAKABLE)) {
+                wrong.add("not in #" + ModTags.SereneSeasons.UNBREAKABLE.location());
+            }
+            if (block.defaultBlockState().is(winter)) wrong.add("#" + winterId);
+            if (seed.builtInRegistryHolder().is(winterSeeds)) wrong.add("item #" + winterId);
+            if (!wrong.isEmpty()) {
+                findings.put(id.toString(), (allYear ? "grows all year" : "rests in winter") + ", wrong in " + wrong);
+            }
+        }
+        // Every entry a pack loads without: Serene Seasons' tags in our jar are written as optional, one by one.
+        int entries = 0;
+        for (Map.Entry<String, Path> file : Sweep.modFiles().entrySet()) {
+            if (!file.getKey().startsWith("data/sereneseasons/tags/") || !file.getKey().endsWith(".json")) {
+                continue;
+            }
+            for (JsonElement entry : Sweep.json(file.getValue()).getAsJsonObject().getAsJsonArray("values")) {
+                entries++;
+                if (!entry.isJsonObject() || entry.getAsJsonObject().get("required").getAsBoolean()) {
+                    findings.put(file.getKey() + " " + entry, "a required entry in another mod's tag");
+                }
+            }
+        }
+        Sweep.atLeast(context, "hemp crops", seen, 13);
+        Sweep.atLeast(context, "entries in Serene Seasons' tags", entries, 40);
+        Sweep.report(context, "every hemp crop and seed keeps the seasons of its kind", findings, Map.of());
         context.succeed();
     }
 }

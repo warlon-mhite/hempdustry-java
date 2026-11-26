@@ -1,0 +1,20 @@
+{
+  "values": [
+    {
+      "id": "hempdustry:warped_kush_crop",
+      "required": false
+    },
+    {
+      "id": "hempdustry:ruderalis_crop",
+      "required": false
+    },
+    {
+      "id": "hempdustry:crimson_crop",
+      "required": false
+    },
+    {
+      "id": "hempdustry:ender_haze_crop",
+      "required": false
+    }
+  ]
+}

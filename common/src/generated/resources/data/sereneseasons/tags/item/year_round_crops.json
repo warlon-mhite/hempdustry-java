@@ -1,0 +1,20 @@
+{
+  "values": [
+    {
+      "id": "hempdustry:warped_kush_seeds",
+      "required": false
+    },
+    {
+      "id": "hempdustry:ruderalis_seeds",
+      "required": false
+    },
+    {
+      "id": "hempdustry:crimson_seeds",
+      "required": false
+    },
+    {
+      "id": "hempdustry:ender_haze_seeds",
+      "required": false
+    }
+  ]
+}

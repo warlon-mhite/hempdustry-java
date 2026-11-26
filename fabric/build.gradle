@@ -79,6 +79,12 @@ dependencies {
 		localRuntime "maven.modrinth:forge-config-api-port:${forge_config_api_port_fabric_version}"
 	}
 
+	//   ./gradlew :fabric:runClient -Psereneseasons  # ...and Serene Seasons (with GlitchCore), to see hemp rest in winter
+	if (project.hasProperty("sereneseasons")) {
+		localRuntime "maven.modrinth:serene-seasons:${sereneseasons_fabric_version}"
+		localRuntime "maven.modrinth:glitchcore:${glitchcore_fabric_version}"
+	}
+
 	//   ./gradlew :fabric:runClient                  # JEI on the runtime (default)
 	//   ./gradlew :fabric:runClient -Pviewer=rei     # REI instead
 	//   ./gradlew :fabric:runClient -Pviewer=none    # no viewer

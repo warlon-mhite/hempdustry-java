@@ -300,6 +300,7 @@ public final class HempdustryGameTests {
         register("every_plant_of_ours_washes_away", SweepGameTest::everyPlantOfOursWashesAway);
         register("no_loot_of_ours_decays_twice", SweepGameTest::noLootOfOursDecaysTwice);
         register("carry_on_never_lifts_a_plant", OtherModsGameTest::carryOnNeverLiftsAPlant);
+        register("every_crop_and_seed_keeps_its_seasons", OtherModsGameTest::everyCropAndSeedKeepsItsSeasons);
         register("every_vanilla_tag_we_add_to_is_vanillas", SweepGameTest::everyVanillaTagWeAddToIsVanillas);
         register("every_sound_is_mono_and_on_disk", SweepGameTest::everySoundIsMonoAndOnDisk);
         register("the_frozen_surface_holds", FrozenSurfaceGameTest::theFrozenSurfaceHolds);

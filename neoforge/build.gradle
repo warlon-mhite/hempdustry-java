@@ -108,6 +108,12 @@ dependencies {
 		}
 	}
 
+	//   ./gradlew :neoforge:runClient -Psereneseasons  # ...and Serene Seasons (with GlitchCore), to see hemp rest in winter
+	if (project.hasProperty("sereneseasons")) {
+		localRuntime "maven.modrinth:serene-seasons:${sereneseasons_neoforge_version}"
+		localRuntime "maven.modrinth:glitchcore:${glitchcore_neoforge_version}"
+	}
+
 	//   ./gradlew :neoforge:runClient                  # JEI on the runtime (default)
 	//   ./gradlew :neoforge:runClient -Pviewer=rei     # REI instead
 	//   ./gradlew :neoforge:runClient -Pviewer=none    # no viewer

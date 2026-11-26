@@ -290,6 +290,13 @@ public class ModItemTagProvider extends FabricTagsProvider.ItemTagsProvider {
                 .addOptional(item("yyzsbackpack", "gold_backpack"))
                 .addOptional(item("yyzsbackpack", "diamond_backpack"))
                 .addOptional(item("yyzsbackpack", "netherite_backpack"));
+        // Serene Seasons names a seed's seasons in its tooltip from these: the same rule as the crops' block tags.
+        for (TagKey<Item> season : ModTags.SereneSeasons.GROWING_SEASON_SEEDS) {
+            valueLookupBuilder(season).addAllOptional(ModCrops.ALL.stream()
+                    .filter(crop -> !crop.seasons().yearRound()).map(ModCrops.Crop::seeds));
+        }
+        valueLookupBuilder(ModTags.SereneSeasons.YEAR_ROUND_SEEDS).addAllOptional(ModCrops.ALL.stream()
+                .filter(crop -> crop.seasons().yearRound()).map(ModCrops.Crop::seeds));
         valueLookupBuilder(ModTags.Items.SIFTABLE_RESINOUS)
                 .add(ModItems.BELDIA_BUDS);
         valueLookupBuilder(ModTags.Items.SIFTABLE_TRIM)

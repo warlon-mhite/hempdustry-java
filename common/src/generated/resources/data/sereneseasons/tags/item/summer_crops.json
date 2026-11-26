@@ -1,0 +1,40 @@
+{
+  "values": [
+    {
+      "id": "hempdustry:indica_seeds",
+      "required": false
+    },
+    {
+      "id": "hempdustry:sativa_seeds",
+      "required": false
+    },
+    {
+      "id": "hempdustry:beldia_seeds",
+      "required": false
+    },
+    {
+      "id": "hempdustry:industrial_hemp_seeds",
+      "required": false
+    },
+    {
+      "id": "hempdustry:cherry_wine_seeds",
+      "required": false
+    },
+    {
+      "id": "hempdustry:white_widow_seeds",
+      "required": false
+    },
+    {
+      "id": "hempdustry:dud_weed_seeds",
+      "required": false
+    },
+    {
+      "id": "hempdustry:echo_og_seeds",
+      "required": false
+    },
+    {
+      "id": "hempdustry:maui_wowie_seeds",
+      "required": false
+    }
+  ]
+}

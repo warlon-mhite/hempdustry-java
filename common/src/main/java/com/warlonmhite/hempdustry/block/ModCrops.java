@@ -11,8 +11,8 @@ import java.util.stream.Stream;
 
 /**
  * Every hemp crop of the mod, each once, with what the rest of the mod needs to know about it: its
- * seeds and buds, its wild plant, the ground it takes, whether it burns, how it is tinted and where
- * its seeds are found. The block entity of the plant record, the composter, fire, the client's tints,
+ * seeds and buds, its wild plant, the ground it takes, whether it burns, how it is tinted, where
+ * its seeds are found and when it grows in a year with seasons. The block entity of the plant record, the composter, fire, the client's tints,
  * the tags and the item models read this list; a new crop is one entry here, and each of those gets
  * it the day it is added.
  *
@@ -72,6 +72,25 @@ public final class ModCrops {
     }
 
     /**
+     * When a crop grows in a year that has seasons: Serene Seasons' crop tags, which the tag provider writes from
+     * this. Hemp is an annual, sown after the last frost and dead by winter, so a crop rests in winter, as the
+     * vanilla crops beside it do, unless a reason named here says it does not.
+     */
+    public enum Seasons {
+        /** Spring, summer and autumn; it rests in winter. */
+        GROWING_SEASON,
+        /** All year: it flowers by its age, not by the length of the day, and is the hemp of the cold steppes. */
+        DAY_NEUTRAL,
+        /** All year: it grows in the Nether or the End, which have no seasons for it to follow. */
+        SEASONLESS_HOME;
+
+        /** In the year-round crops, rather than in the three seasons of the growing year. */
+        public boolean yearRound() {
+            return this != GROWING_SEASON;
+        }
+    }
+
+    /**
      * A crop's wild plant. {@code holdable}: an enderman may carry it (one small block on land; never a
      * two-block plant, whose other half would pop off, nor one holding its own water).
      */
@@ -81,10 +100,10 @@ public final class ModCrops {
     /**
      * One crop. {@code farmland}: it stands on farmland, so it keeps the farmland wet and a farmer
      * villager plants it. {@code bees}: a bee carrying pollen hurries it ({@code #minecraft:crops}).
-     * {@code burns}: fire takes it, and its wild plant.
+     * {@code burns}: fire takes it, and its wild plant. {@code seasons}: when it grows in a year with seasons.
      */
     public record Crop(Block crop, Item seeds, Optional<Item> buds, Optional<Wild> wild, boolean farmland,
-                       boolean bees, boolean burns, Tint tint, Home home) {
+                       boolean bees, boolean burns, Tint tint, Home home, Seasons seasons) {
     }
 
     private static Wild wild(Block flower, Block potted, boolean holdable) {
@@ -95,41 +114,41 @@ public final class ModCrops {
     public static final List<Crop> ALL = List.of(
             new Crop(ModBlocks.INDICA_CROP, ModItems.INDICA_SEEDS, Optional.of(ModItems.INDICA_BUDS),
                     Optional.of(wild(ModBlocks.INDICA_FLOWER, ModBlocks.POTTED_INDICA_FLOWER, true)),
-                    true, true, true, Tint.BIOME_AND_LIGHT, Home.SHARED),
+                    true, true, true, Tint.BIOME_AND_LIGHT, Home.SHARED, Seasons.GROWING_SEASON),
             new Crop(ModBlocks.SATIVA_CROP, ModItems.SATIVA_SEEDS, Optional.of(ModItems.SATIVA_BUDS),
                     Optional.of(wild(ModBlocks.SATIVA_FLOWER, ModBlocks.POTTED_SATIVA_FLOWER, false)),
-                    true, true, true, Tint.BIOME_AND_LIGHT, Home.SHARED),
+                    true, true, true, Tint.BIOME_AND_LIGHT, Home.SHARED, Seasons.GROWING_SEASON),
             // Never on farmland (sand only), but a bee hurries it all the same.
             new Crop(ModBlocks.BELDIA_CROP, ModItems.BELDIA_SEEDS, Optional.of(ModItems.BELDIA_BUDS), Optional.empty(),
-                    false, true, true, Tint.LIGHT_ONLY, Home.DESERT),
+                    false, true, true, Tint.LIGHT_ONLY, Home.DESERT, Seasons.GROWING_SEASON),
             // No buds; its wild kin is Ditchweed, two blocks tall.
             new Crop(ModBlocks.INDUSTRIAL_HEMP_CROP, ModItems.INDUSTRIAL_HEMP_SEEDS, Optional.empty(),
                     Optional.of(wild(ModBlocks.DITCHWEED, ModBlocks.POTTED_DITCHWEED, false)),
-                    true, true, true, Tint.BIOME_AND_LIGHT, Home.SHARED),
+                    true, true, true, Tint.BIOME_AND_LIGHT, Home.SHARED, Seasons.GROWING_SEASON),
             new Crop(ModBlocks.WARPED_KUSH_CROP, ModItems.WARPED_KUSH_SEEDS, Optional.of(ModItems.WARPED_KUSH_BUDS),
-                    Optional.empty(), false, false, false, Tint.NONE, Home.NETHER),
+                    Optional.empty(), false, false, false, Tint.NONE, Home.NETHER, Seasons.SEASONLESS_HOME),
             // Nothing hurries Ruderalis, not even a bee.
             new Crop(ModBlocks.RUDERALIS_CROP, ModItems.RUDERALIS_SEEDS, Optional.of(ModItems.RUDERALIS_BUDS),
-                    Optional.empty(), false, false, true, Tint.BIOME_ONLY, Home.BURIED),
+                    Optional.empty(), false, false, true, Tint.BIOME_ONLY, Home.BURIED, Seasons.DAY_NEUTRAL),
             new Crop(ModBlocks.CRIMSON_CROP, ModItems.CRIMSON_SEEDS, Optional.of(ModItems.CRIMSON_BUDS),
-                    Optional.empty(), false, false, false, Tint.NONE, Home.STABLE),
+                    Optional.empty(), false, false, false, Tint.NONE, Home.STABLE, Seasons.SEASONLESS_HOME),
             new Crop(ModBlocks.ENDER_HAZE_CROP, ModItems.ENDER_HAZE_SEEDS, Optional.of(ModItems.ENDER_HAZE_BUDS),
-                    Optional.empty(), false, false, false, Tint.NONE, Home.END),
+                    Optional.empty(), false, false, false, Tint.NONE, Home.END, Seasons.SEASONLESS_HOME),
             new Crop(ModBlocks.CHERRY_WINE_CROP, ModItems.CHERRY_WINE_SEEDS, Optional.of(ModItems.CHERRY_WINE_BUDS),
                     Optional.of(wild(ModBlocks.CHERRY_WINE_FLOWER, ModBlocks.POTTED_CHERRY_WINE_FLOWER, true)),
-                    true, true, true, Tint.BIOME_AND_LIGHT, Home.GROVE),
+                    true, true, true, Tint.BIOME_AND_LIGHT, Home.GROVE, Seasons.GROWING_SEASON),
             new Crop(ModBlocks.WHITE_WIDOW_CROP, ModItems.WHITE_WIDOW_SEEDS, Optional.of(ModItems.WHITE_WIDOW_BUDS),
                     Optional.of(wild(ModBlocks.WHITE_WIDOW_FLOWER, ModBlocks.POTTED_WHITE_WIDOW_FLOWER, true)),
-                    true, true, true, Tint.LIGHT_ONLY, Home.PALE),
+                    true, true, true, Tint.LIGHT_ONLY, Home.PALE, Seasons.GROWING_SEASON),
             new Crop(ModBlocks.DUD_WEED_CROP, ModItems.DUD_WEED_SEEDS, Optional.of(ModItems.DUD_WEED_BUDS),
-                    Optional.empty(), true, true, true, Tint.BIOME_AND_LIGHT, Home.SPORT),
+                    Optional.empty(), true, true, true, Tint.BIOME_AND_LIGHT, Home.SPORT, Seasons.GROWING_SEASON),
             // It grows on experience: no bee hurries it.
             new Crop(ModBlocks.ECHO_OG_CROP, ModItems.ECHO_OG_SEEDS, Optional.of(ModItems.ECHO_OG_BUDS),
-                    Optional.empty(), false, false, true, Tint.NONE, Home.CITY),
+                    Optional.empty(), false, false, true, Tint.NONE, Home.CITY, Seasons.GROWING_SEASON),
             // Under the sea: no fire, no bee, no pot; its wild plant holds its own water.
             new Crop(ModBlocks.MAUI_WOWIE_CROP, ModItems.MAUI_WOWIE_SEEDS, Optional.of(ModItems.MAUI_WOWIE_BUDS),
                     Optional.of(new Wild(ModBlocks.MAUI_WOWIE_FLOWER, Optional.empty(), false)),
-                    false, false, false, Tint.LIGHT_ONLY, Home.OCEAN));
+                    false, false, false, Tint.LIGHT_ONLY, Home.OCEAN, Seasons.GROWING_SEASON));
 
     /** Every crop block, in {@link #ALL}'s order. */
     public static Block[] blocks() {

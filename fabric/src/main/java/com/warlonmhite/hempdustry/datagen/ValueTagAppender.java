@@ -40,6 +40,18 @@ public final class ValueTagAppender<T> {
         return this;
     }
 
+    /** {@code value} as an entry the tag loads without, should it be gone ({@code "required": false}). */
+    public ValueTagAppender<T> addOptional(T value) {
+        keys.addOptional(registry.getResourceKey(value).orElseThrow(
+                () -> new IllegalStateException(value + " is not registered in " + registry.key().identifier())));
+        return this;
+    }
+
+    public ValueTagAppender<T> addAllOptional(Stream<? extends T> values) {
+        values.forEach(this::addOptional);
+        return this;
+    }
+
     public ValueTagAppender<T> addTag(TagKey<T> tag) {
         keys.addTag(tag);
         return this;
