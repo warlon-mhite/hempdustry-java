@@ -440,7 +440,7 @@ public final class PlantStressGameTest {
     private static GrowClimate boneMealFailing(int oneIn) {
         GrowClimate c = GrowClimate.BUILT_IN;
         return new GrowClimate(c.onsetOneIn(), c.spreadOneIn(), c.air(), c.humidity(), c.biome(), c.wetReach(),
-                c.trimmed(), c.fan(), c.dehumidifier(), c.stress(), oneIn);
+                c.trimmed(), c.fan(), c.dehumidifier(), c.uvcLamp(), c.stress(), oneIn);
     }
 
     // ----- the pot's water -----

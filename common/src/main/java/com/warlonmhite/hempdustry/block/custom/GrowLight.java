@@ -51,7 +51,7 @@ public enum GrowLight implements StringRepresentable {
     /** Grow Lamp speed while the plant is young: the long days growers give a plant before they flip it to flower. */
     public static final float VEG_SPEED = 1.1F;
     /** How far above the plant's full-grown top a light still counts. */
-    private static final int REACH = 3;
+    static final int REACH = 3;
 
     private final String name;
 

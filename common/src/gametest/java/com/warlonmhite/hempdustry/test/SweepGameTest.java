@@ -595,7 +595,8 @@ public final class SweepGameTest {
         }
         Sweep.atLeast(context, "solid blocks", checked, 20);
         Sweep.report(context, "Every solid block of ours is a roof", findings, Map.of(
-                "hempdustry:grow_lamp", "a light hung over a plant, not a ceiling: the plant under it keeps its sky"));
+                "hempdustry:grow_lamp", "a light hung over a plant, not a ceiling: the plant under it keeps its sky",
+                "hempdustry:uvc_lamp", "a lamp hung over a plant, not a ceiling: the plant under it keeps its sky"));
 
         // And the other way: a block of ours in the roof tags is solid, or a torch or a crop would roof a plant.
         Map<String, String> loose = new TreeMap<>();

@@ -279,7 +279,8 @@ public class ModBlockTagProvider extends FabricTagsProvider.BlockTagsProvider {
                 .add(ModBlocks.HYDRO_TRAY)
                 .add(ModBlocks.GROW_FAN)
                 .add(ModBlocks.DEHUMIDIFIER)
-                .add(ModBlocks.HYGROMETER);
+                .add(ModBlocks.HYGROMETER)
+                .add(ModBlocks.UVC_LAMP);
 
         valueLookupBuilder(ModTags.Blocks.GROW_LAMPS).add(ModBlocks.GROW_LAMP);
         // Empty on purpose, so the file exists for a datapack or an addon crop to join: see Mildew.

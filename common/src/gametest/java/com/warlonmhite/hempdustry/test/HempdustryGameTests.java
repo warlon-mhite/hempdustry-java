@@ -352,6 +352,12 @@ public final class HempdustryGameTests {
         register("a_dispenser_with_shears_trims_hemp", GrowClimateGameTest::aDispenserWithShearsTrimsHemp);
         register("a_hygrometer_reads_the_air", GrowClimateGameTest::aHygrometerReadsTheAir);
         register("a_hygrometer_reads_the_plants_around_it", GrowClimateGameTest::aHygrometerReadsThePlantsAroundIt);
+        register("a_uvc_lamp_lights_in_the_dark_only", UvcLampGameTest::aUvcLampLightsInTheDarkOnly);
+        register("a_uvc_lamp_gives_no_light_and_is_no_roof", UvcLampGameTest::aUvcLampGivesNoLightAndIsNoRoof);
+        register("a_lit_uvc_lamp_clears_mildew_in_the_dark", UvcLampGameTest::aLitUvcLampClearsMildewInTheDark);
+        register("a_uvc_lamp_reaches_five_by_five_and_three_blocks_down", UvcLampGameTest::aUvcLampReachesFiveByFiveAndThreeBlocksDown);
+        register("a_uvc_lamp_halves_mildews_onset_and_spread", UvcLampGameTest::aUvcLampHalvesMildewsOnsetAndSpread);
+        register("the_nether_and_the_end_are_dark_at_every_hour", UvcLampGameTest::theNetherAndTheEndAreDarkAtEveryHour);
         register("every_outfit_comes_in_a_baby_size", BabyLayerGameTest::everyOutfitComesInABabySize);
         register("every_route_keeps_the_chemotype", ChemotypeGameTest::everyRouteKeepsTheChemotype);
         register("nine_leaves_make_a_block_of_their_kind", ChemotypeGameTest::nineLeavesMakeABlockOfTheirKind);

@@ -39,5 +39,10 @@
     "stagnant_one_in": 6
   },
   "trimmed": 0.75,
+  "uvc_lamp": {
+    "cure_one_in": 16,
+    "night_factor": 0.5,
+    "reach": 2
+  },
   "wet_reach": 2
 }

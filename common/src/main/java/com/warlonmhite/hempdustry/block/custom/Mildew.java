@@ -52,6 +52,8 @@ import org.jetbrains.annotations.Nullable;
  *       kills a plant.</li>
  *   <li><b>Shears clear it</b> in a trim window: the cut is that window's trim, and the diseased
  *       leaf is thrown away ({@link Defoliation#tryCut}).</li>
+ *   <li><b>A lit UV-C Lamp</b> over a plant in the dark takes half off the odds of catching it and of its being
+ *       reached, and clears a mildewed one at one in sixteen of its random ticks, at any age ({@link UvcLampBlock}).</li>
  *   <li><b>Vanilla's sulfur gas clears and prevents it</b> — the noxious gas over a potent sulfur
  *       block under water ({@link #gassed}). A flowering plant the gas reaches is left
  *       {@link #SULFURED}: sulfur is no thing to have on a bud you will smoke.</li>
@@ -130,6 +132,11 @@ public enum Mildew implements StringRepresentable {
             return;
         }
         if (now == MILDEWED) {
+            // A lit UV-C Lamp over a plant in the dark clears it, ripe or not, to clean: residue (SULFURED) it leaves.
+            if (UvcLampBlock.cures(world, lower, plant, random)) {
+                write(world, lower, CLEAN);
+                return;
+            }
             spread(world, lower, random);
         }
     }

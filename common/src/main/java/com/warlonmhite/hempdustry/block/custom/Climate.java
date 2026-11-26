@@ -40,6 +40,8 @@ import org.jetbrains.annotations.Nullable;
  *   <li><b>A plant in water</b> never catches it, nor is it reached: free water washes the spores off
  *       and bursts them, which is why the fungus is a dry-leaf, humid-air one.</li>
  *   <li><b>A trimmed plant</b>, in either window, is a little less at risk: a thinner canopy.</li>
+ *   <li><b>A plant in the dark under a lit {@link UvcLampBlock UV-C Lamp}</b> is at half the risk
+ *       ({@link GrowClimate.Uvc#nightFactor}).</li>
  * </ul>
  *
  * <p>The numbers are data ({@link GrowClimate}); the steps and what moves a plant between them are here.
@@ -127,6 +129,7 @@ public final class Climate {
         boolean roofed = Mildew.roofed(world, root);
         float factor = air(world, root, heightOf(plant), roofed).factor(climate)
                 * humidity(world, root, roofed, onTray(world, root)).factor(climate);
+        factor *= UvcLampBlock.factorOver(world, root, plant);
         return trimmed(plant) ? factor * climate.trimmed() : factor;
     }
 

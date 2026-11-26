@@ -2,7 +2,8 @@
 
     python3 textures-src/grow_climate.py common/src/main/resources/assets/hempdustry
 
-Writes textures/block/grow_fan_*.png (and the animation's .mcmeta), dehumidifier_*.png and hygrometer_*.png. The colours are the mod's own: the
+Writes textures/block/grow_fan_*.png (and the animation's .mcmeta), dehumidifier_*.png, hygrometer_*.png and
+uvc_lamp_tube*.png. The colours are the mod's own: the
 Grow Lamp's copper ramp (textures-src/grow_lamp.mctex) for every housing, the Hydro Tray's greys and its
 airline's light metal (textures-src/hydro_tray.mctex) for the blades and the grille. Nothing new.
 
@@ -208,6 +209,33 @@ def dial(step):
     return img
 
 
+# The UV-C Lamp's quartz tube, one 16 x 16 sheet: rows 0..3 are the glass along the tube (four pixels round, lit from
+# the top), and u 0..3 of rows 12..15 the copper end cap. Dark by day, the Grow Fan's greys and its light metal; lit,
+# the pale blues of the Hygrometer's damp dial, with the catch-light's white core, as a low-pressure tube glows.
+TUBE_OFF = [GREY[6], GREY[5], GREY[3], GREY[1]]
+TUBE_ON = ['6699B5', '86B4CC', SHINE, '86B4CC']
+
+
+def tube(rows, lit):
+    """The tube's sheet: {rows} for the glass (top to bottom), an end cap in copper, the rest left alone."""
+    img = Image.new('RGBA', (16, 16))
+    for y in range(4):
+        for x in range(2, 14):
+            colour = rows[y]
+            # A pale highlight along the top of an unlit tube, and a brighter core where a lit one is hottest.
+            if y == 0 and not lit and 3 <= x <= 10:
+                colour = METAL
+            if lit and y == 2 and x in (2, 13):
+                colour = '86B4CC'
+            img.putpixel((x, y), rgb(colour))
+    for y in range(12, 16):
+        for x in range(4):
+            img.putpixel((x, y), rgb(COPPER[3] if (x, y) != (0, 12) else COPPER[4]))
+    for y in range(12, 16):
+        img.putpixel((3, y), rgb(COPPER[1]))
+    return img
+
+
 def main(assets):
     out = os.path.join(assets, 'textures', 'block')
     casing().save(os.path.join(out, 'grow_fan_casing.png'))
@@ -227,6 +255,8 @@ def main(assets):
         cabinet_front(level, True).save(os.path.join(out, f'dehumidifier_front_{level}_on.png'))
     for step in STEPS:
         dial(step).save(os.path.join(out, f'hygrometer_{step}.png'))
+    tube(TUBE_OFF, False).save(os.path.join(out, 'uvc_lamp_tube.png'))
+    tube(TUBE_ON, True).save(os.path.join(out, 'uvc_lamp_tube_on.png'))
 
 
 if __name__ == '__main__':

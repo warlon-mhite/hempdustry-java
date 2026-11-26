@@ -168,7 +168,7 @@ public final class ViewerGameTest {
         GrowClimate moved = new GrowClimate(shipped.onsetOneIn(), shipped.spreadOneIn(), shipped.air(), shipped.humidity(),
                 shipped.biome(), shipped.wetReach(), shipped.trimmed(), new GrowClimate.Fan(12, 3, 4, 1),
                 new GrowClimate.Drier(5, 1, 3, shipped.dehumidifier().dries(), shipped.dehumidifier().stepsPerLevel()),
-                shipped.stress(), shipped.boneMealFailsOneIn());
+                shipped.uvcLamp(), shipped.stress(), shipped.boneMealFailsOneIn());
         Map<Item, Component> movedPages = ViewerRecipes.info(moved);
         Map<String, String> findings = new TreeMap<>();
         int checked = 0;

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "C": "minecraft:copper_ingot",
+    "Q": "minecraft:quartz",
+    "R": "minecraft:redstone"
+  },
+  "pattern": [
+    "CQC",
+    "QRQ",
+    "CQC"
+  ],
+  "result": {
+    "id": "hempdustry:uvc_lamp"
+  }
+}

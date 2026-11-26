@@ -88,13 +88,13 @@ public final class MildewGameTest {
         context.assertTrue(climate("{}").equals(built), "an empty climate file is not the built-in climate: " + climate("{}"));
         GrowClimate onset = climate("{\"onset_one_in\": 500}");
         context.assertTrue(onset.equals(new GrowClimate(500, built.spreadOneIn(), built.air(), built.humidity(),
-                        built.biome(), built.wetReach(), built.trimmed(), built.fan(), built.dehumidifier(), built.stress(),
+                        built.biome(), built.wetReach(), built.trimmed(), built.fan(), built.dehumidifier(), built.uvcLamp(), built.stress(),
                         built.boneMealFailsOneIn())),
                 "a file holding only onset_one_in did not keep every other number: " + onset);
         GrowClimate fan = climate("{\"fan\": {\"ahead\": 12}}");
         context.assertTrue(fan.fan().equals(new GrowClimate.Fan(12, 2, 3, 1))
                         && fan.equals(new GrowClimate(built.onsetOneIn(), built.spreadOneIn(), built.air(), built.humidity(),
-                        built.biome(), built.wetReach(), built.trimmed(), fan.fan(), built.dehumidifier(), built.stress(),
+                        built.biome(), built.wetReach(), built.trimmed(), fan.fan(), built.dehumidifier(), built.uvcLamp(), built.stress(),
                         built.boneMealFailsOneIn())),
                 "a file holding only the fan's reach ahead did not keep every other number: " + fan);
         GrowClimate humidity = climate("{\"humidity\": {\"soaked\": 8.0}, \"dehumidifier\": {\"dries\": 1}}");
@@ -103,14 +103,21 @@ public final class MildewGameTest {
                         && humidity.air().equals(built.air()) && humidity.biome().equals(built.biome()),
                 "a file holding one number in two objects did not keep the rest of each: " + humidity);
 
+        GrowClimate uvc = climate("{\"uvc_lamp\": {\"cure_one_in\": 8}}");
+        context.assertTrue(uvc.uvcLamp().equals(new GrowClimate.Uvc(2, 8, 0.5F)) && uvc.fan().equals(built.fan()),
+                "a file holding only the UV-C Lamp's cure did not keep its reach and factor, or the rest: " + uvc);
+        context.assertTrue(built.uvcLamp().equals(new GrowClimate.Uvc(2, 16, 0.5F)),
+                "the UV-C Lamp is not reach 2, a cure at 1 in 16 and half the risk: " + built.uvcLamp());
+
         JsonObject written = GrowClimate.CODEC.encodeStart(JsonOps.INSTANCE, built)
                 .getOrThrow().getAsJsonObject();
         context.assertTrue(written.keySet().equals(Set.of("onset_one_in", "spread_one_in", "air", "humidity",
-                        "biome", "wet_reach", "trimmed", "fan", "dehumidifier", "stress", "bone_meal_fails_one_in")),
+                        "biome", "wet_reach", "trimmed", "fan", "dehumidifier", "uvc_lamp", "stress", "bone_meal_fails_one_in")),
                 "the built-in climate is not written in full: " + written.keySet());
         context.assertTrue(written.getAsJsonObject("fan").size() == 4 && written.getAsJsonObject("air").size() == 3
                         && written.getAsJsonObject("humidity").size() == 4 && written.getAsJsonObject("biome").size() == 3
-                        && written.getAsJsonObject("dehumidifier").size() == 5 && written.getAsJsonObject("stress").size() == 5,
+                        && written.getAsJsonObject("dehumidifier").size() == 5 && written.getAsJsonObject("uvc_lamp").size() == 3
+                        && written.getAsJsonObject("stress").size() == 5,
                 "an object of the built-in climate is not written in full: " + written);
         context.assertTrue(climate(written.toString()).equals(built), "the built-in climate does not read back as itself");
         // Every key, one at a time, at the top and inside each object: the file without it is still the built-in climate.

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "hempdustry:block/uvc_lamp"
+    },
+    "lit=true": {
+      "model": "hempdustry:block/uvc_lamp_on"
+    }
+  }
+}

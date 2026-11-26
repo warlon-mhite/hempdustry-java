@@ -87,12 +87,13 @@ public final class PlantInspection {
     }
 
     /**
-     * How far from a plant, across, its rules read what stands around it: a Grow Fan's lane, a Dehumidifier's reach,
+     * How far from a plant, across, its rules read what stands around it: a Grow Fan's lane, a Dehumidifier's or a UV-C Lamp's reach,
      * the water a room is wet from, the light and the ground beside it.
      */
     public static int reach(GrowClimate climate) {
         return Math.max(Math.max(2, climate.wetReach()),
-                Math.max(Math.max(climate.fan().ahead(), climate.fan().side()), climate.dehumidifier().area().reach()));
+                Math.max(Math.max(climate.fan().ahead(), climate.fan().side()),
+                        Math.max(climate.dehumidifier().area().reach(), climate.uvcLamp().reach())));
     }
 
     /** Whether every chunk within {@code reach} blocks of {@code root}, across, is loaded; asked without loading one. */

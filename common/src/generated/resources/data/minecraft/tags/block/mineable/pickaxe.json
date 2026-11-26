@@ -9,6 +9,7 @@
     "hempdustry:hydro_tray",
     "hempdustry:grow_fan",
     "hempdustry:dehumidifier",
-    "hempdustry:hygrometer"
+    "hempdustry:hygrometer",
+    "hempdustry:uvc_lamp"
   ]
 }

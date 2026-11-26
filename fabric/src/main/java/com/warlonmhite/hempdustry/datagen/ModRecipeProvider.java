@@ -798,6 +798,19 @@ public class ModRecipeProvider extends FabricRecipeProvider {
                 .unlockedBy(getHasName(ModItems.HEMP_FIBER), has(ModItems.HEMP_FIBER))
                 .save(output, id("hygrometer"));
 
+        // A germicidal tube is fused quartz (glass stops UV-C), in the Grow Lamp's copper housing and grid, with a
+        // redstone dust for its ballast. Nether quartz gates it behind the Nether as the Grow Lamp's glowstone gates
+        // that one; no glowstone, because the lamp gives no light.
+        shaped(RecipeCategory.REDSTONE, ModBlocks.UVC_LAMP)
+                .pattern("CQC")
+                .pattern("QRQ")
+                .pattern("CQC")
+                .define('C', Items.COPPER_INGOT)
+                .define('Q', Items.QUARTZ)
+                .define('R', Items.REDSTONE)
+                .unlockedBy(getHasName(Items.QUARTZ), has(Items.QUARTZ))
+                .save(output, id("uvc_lamp"));
+
         // A Grow Pot plumbed into a copper reservoir with a pump in it. Copper is the mod's
         // electrical metal (the lamp's housing, and vanilla's own copper bulb); the redstone is the
         // pump, which is also what the block needs a signal for once it is placed.

@@ -43,6 +43,7 @@ import com.warlonmhite.hempdustry.block.custom.SativaCropBlock;
 import com.warlonmhite.hempdustry.block.custom.SativaFlower;
 import com.warlonmhite.hempdustry.block.custom.SpaceCakeBlock;
 import com.warlonmhite.hempdustry.block.custom.RuderalisCropBlock;
+import com.warlonmhite.hempdustry.block.custom.UvcLampBlock;
 import com.warlonmhite.hempdustry.block.custom.WarpedKushCropBlock;
 import com.warlonmhite.hempdustry.block.custom.CrimsonWeedCropBlock;
 import com.warlonmhite.hempdustry.item.custom.EdibleBlockItem;
@@ -594,6 +595,21 @@ public class ModBlocks {
                     .mapColor(MapColor.COLOR_ORANGE)
                     .strength(0.5F)
                     .sound(SoundType.COPPER));
+
+    /**
+     * The UV-C Lamp — a quartz tube under a copper hood, hung on chains; see {@link UvcLampBlock}. The Grow Lamp's
+     * copper and hardness, but it gives <b>no light</b> (level 0), which is the point: it works in the dark. A lit
+     * tube is drawn full-bright instead, by its model (the tube's faces carry {@code light_emission}, as the Hydro Tray's
+     * LED does), so the hood and chains keep their shading.
+     * {@code noOcclusion()}: a hood and a tube on chains, never a cube.
+     */
+    public static final Block UVC_LAMP = registerBlock("uvc_lamp", UvcLampBlock::new,
+            BlockBehaviour.Properties.of()
+                    .noOcclusion()
+                    .mapColor(MapColor.COLOR_ORANGE)
+                    .strength(3.0F, 6.0F)
+                    .requiresCorrectToolForDrops()
+                    .sound(SoundType.COPPER_BULB));
 
     /**
      * The pressed slab of hashish, and the hash family's storage block. Cut with a blade, nine

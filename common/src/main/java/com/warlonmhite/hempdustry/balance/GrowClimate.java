@@ -42,12 +42,14 @@ import net.minecraft.util.RandomSource;
  * @param trimmed      the factor for a plant trimmed in either window: a thinner canopy
  * @param fan          how far ahead of it, and how wide, a running Grow Fan blows
  * @param dehumidifier how far a running Dehumidifier dries the air, by how much, and what fills its tank
+ * @param uvcLamp      how far a lit UV-C Lamp reaches, how often it clears a mildewed plant, and how much it takes off
+ *                     the risk of mildew while it is dark
  * @param stress       the odds of each cause of plant stress beyond the light, against a neutral plant
  * @param boneMealFailsOneIn the share of bone meal on a hemp plant that does nothing, though it is still used up,
  *                     as one in this many
  */
 public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity humidity, BiomeRule biome, int wetReach,
-                          float trimmed, Fan fan, Drier dehumidifier, Stress stress, int boneMealFailsOneIn) {
+                          float trimmed, Fan fan, Drier dehumidifier, Uvc uvcLamp, Stress stress, int boneMealFailsOneIn) {
 
     public static final ResourceKey<Registry<GrowClimate>> REGISTRY_KEY =
             ResourceKey.createRegistryKey(Identifier.fromNamespaceAndPath(Hempdustry.MOD_ID, "grow_climate"));
@@ -169,6 +171,20 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
     }
 
     /**
+     * A UV-C Lamp's work on the plants under it, in the dark: it reaches {@code reach} blocks each way across (and the
+     * three blocks under it, as a Grow Lamp does); a mildewed plant comes clean at one in {@code cureOneIn} on each of
+     * its random ticks; and mildew starts on a plant, and spreads to it, at {@code nightFactor} of the odds.
+     */
+    public record Uvc(int reach, int cureOneIn, float nightFactor) {
+        public static final Uvc DEFAULT = new Uvc(2, 16, 0.5F);
+        public static final Codec<Uvc> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                FileFields.written(Ranges.BLOCKS, "reach", DEFAULT.reach).forGetter(Uvc::reach),
+                FileFields.written(Ranges.ONE_IN, "cure_one_in", DEFAULT.cureOneIn).forGetter(Uvc::cureOneIn),
+                FileFields.written(Ranges.FACTOR, "night_factor", DEFAULT.nightFactor).forGetter(Uvc::nightFactor)
+        ).apply(instance, Uvc::new));
+    }
+
+    /**
      * The odds of each cause of stress beyond the light against a flowering plant of neutral resistance, each as one
      * in this many: bone meal on a plant in a fed Grow Pot or Hydro Tray ({@code overfed}), a bottle poured into a
      * pot that is still wet ({@code overwatered}), a growth step in a dry pot or tray ({@code dry_bed}), one in a
@@ -220,7 +236,9 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
      * keeps farmland wet across, and one Dehumidifier dries), 45 plants a fan, about the 49 of a square around it;
      * it reaches from a plant one block above it (one on the floor beside a pot) to three below it (one hung from the
      * ceiling over a field). A Dehumidifier dries a 9 x 9 room two steps, two blocks up and down, and 64 dried steps
-     * make a level of its tank: a 9 x 9 grow of 81 plants, seven steps each, empties it about once.
+     * make a level of its tank: a 9 x 9 grow of 81 plants, seven steps each, empties it about once. A UV-C Lamp, lit
+     * at night over a plant in the dark, takes half off the odds of mildew starting on it and reaching it, and
+     * clears a mildewed one at one in sixteen of its random ticks: about a Grow Fan's worth, not a certain cure.
      *
      * <p>Stress and bone meal are 2.1's numbers, as {@code PlantStress} has them: a bed carries the risk and a field
      * barely does, and a third of bone meal on hemp is wasted, so it nudges a plant rather than rushing it.
@@ -234,6 +252,7 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
             0.75F,
             Fan.DEFAULT,
             Drier.DEFAULT,
+            Uvc.DEFAULT,
             Stress.DEFAULT,
             3);
 
@@ -247,6 +266,7 @@ public record GrowClimate(int onsetOneIn, int spreadOneIn, Air air, Humidity hum
             FileFields.written(Ranges.FACTOR, "trimmed", BUILT_IN.trimmed).forGetter(GrowClimate::trimmed),
             FileFields.written(Fan.CODEC, "fan", BUILT_IN.fan).forGetter(GrowClimate::fan),
             FileFields.written(Drier.CODEC, "dehumidifier", BUILT_IN.dehumidifier).forGetter(GrowClimate::dehumidifier),
+            FileFields.written(Uvc.CODEC, "uvc_lamp", BUILT_IN.uvcLamp).forGetter(GrowClimate::uvcLamp),
             FileFields.written(Stress.CODEC, "stress", BUILT_IN.stress).forGetter(GrowClimate::stress),
             FileFields.written(Ranges.ONE_IN, "bone_meal_fails_one_in", BUILT_IN.boneMealFailsOneIn)
                     .forGetter(GrowClimate::boneMealFailsOneIn)

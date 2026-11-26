@@ -456,6 +456,8 @@ public final class ViewerRecipes {
         out.put(ModBlocks.DEHUMIDIFIER.asItem(), Component.translatable("hempdustry.info.dehumidifier",
                 2 * drier.reach() + 1, Math.max(drier.above(), drier.below())));
         out.put(ModBlocks.HYGROMETER.asItem(), Component.translatable("hempdustry.info.hygrometer"));
+        out.put(ModBlocks.UVC_LAMP.asItem(), Component.translatable("hempdustry.info.uvc_lamp",
+                2 * climate.uvcLamp().reach() + 1));
         for (Block jar : List.of(ModBlocks.STASH_JAR, ModBlocks.GILDED_STASH_JAR, ModBlocks.DIAMOND_STASH_JAR,
                 ModBlocks.NETHERITE_STASH_JAR)) {
             out.put(jar.asItem(), Component.translatable("hempdustry.info.stash_jar"));
